@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASES - Academic Schedule Execution System</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f3f4f6;
+            --surface-color: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --error-color: #ef4444;
+            --radius: 8px;
+            --font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .login-container {
+            background-color: var(--surface-color);
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo-area h1 {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .logo-area p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .forgot-password {
+            display: block;
+            text-align: right;
+            font-size: 0.875rem;
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:disabled {
+            background-color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            min-height: 1.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="logo-area">
+            <h1>ASES</h1>
+            <p>Academic Schedule Execution System</p>
+        </div>
+
+        <div id="errorMsg" class="error-message"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" required autocomplete="email">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required autocomplete="current-password">
+            </div>
+
+            <a href="#" id="forgotPasswordLink" class="forgot-password">Forgot Password?</a>
+
+            <button type="submit" id="loginBtn">Log In</button>
+        </form>
+    </div>
+
+    <!-- ES Module Script -->
+    <script type="module">
+        import { supabase } from './js/config/supabase.js';
+
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const errorMsg = document.getElementById('errorMsg');
+        const loginBtn = document.getElementById('loginBtn');
+        const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+
+        // Check if user is already logged in
+        window.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                routeUser(session.user.id);
+            }
+        });
+
+        // Handle Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            
+            errorMsg.textContent = '';
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Authenticating...';
+
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+
+            if (error) {
+                errorMsg.textContent = error.message;
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Log In';
+                return;
+            }
+
+            // Route based on role
+            await routeUser(data.user.id);
+        });
+
+        // Route user based on their role in the database
+        async function routeUser(userId) {
+            loginBtn.textContent = 'Loading Dashboard...';
+            
+            const { data, error } = await supabase
+                .from('users')
+                .select('role')
+                .eq('id', userId)
+                .single();
+
+            if (error || !data) {
+                errorMsg.textContent = 'Error fetching user profile. Contact Admin.';
+                await supabase.auth.signOut();
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Log In';
+                return;
+            }
+
+            if (data.role === 'admin') {
+                window.location.href = 'dashboard.html';
+            } else if (data.role === 'faculty') {
+                window.location.href = 'faculty-portal.html';
+            } else {
+                errorMsg.textContent = 'Unknown role assigned.';
+                await supabase.auth.signOut();
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Log In';
+            }
+        }
+
+        // Handle Forgot Password
+        forgotPasswordLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const email = emailInput.value.trim();
+            
+            if (!email) {
+                errorMsg.textContent = 'Please enter your email address first.';
+                return;
+            }
+
+            loginBtn.disabled = true;
+            errorMsg.textContent = '';
+            errorMsg.style.color = '#10b981'; // Green for success msg
+            errorMsg.textContent = 'Sending reset link...';
+
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/index.html` 
+                // NOTE: Supabase requires you to handle the hash fragment for password resets
+                // which you can catch on load to show a "Change Password" modal/form
+            });
+
+            if (error) {
+                errorMsg.style.color = 'var(--error-color)';
+                errorMsg.textContent = error.message;
+            } else {
+                errorMsg.textContent = 'Password reset email sent. Check your inbox.';
+            }
+            
+            loginBtn.disabled = false;
+        });
+    </script>
+</body>
+</html>
