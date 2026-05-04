@@ -1,8 +1,31 @@
-// js/config/supabase.js
+/**
+ * ASES — Supabase Client Configuration
+ * ─────────────────────────────────────
+ * Replace SUPABASE_URL and SUPABASE_ANON_KEY with your
+ * project values from: https://app.supabase.com → Project Settings → API
+ */
+
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-// TODO: Replace these with your actual Supabase project URL and anon key
-const SUPABASE_URL = 'https://xgwtqcagdngqvzwolgea.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_NQDTgflGRo0McYAIApDHxA_ZgX7-6Pb';
+// ──────────────────────────────────────────────
+// REPLACE THESE WITH YOUR ACTUAL PROJECT VALUES
+// ──────────────────────────────────────────────
+const SUPABASE_URL  = 'https://jpmijvxdmfdmtkvfdvdq.supabase.co';   // ← replace
+const SUPABASE_ANON_KEY = 'sb_publishable_RNXHWHbtjMpYfPCqLAfbuQ_7vkD9UM0';              // ← replace
+// ──────────────────────────────────────────────
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+if (SUPABASE_URL === 'https://YOUR_PROJECT_ID.supabase.co') {
+  console.warn(
+    '[ASES] Supabase is not configured yet.\n' +
+    'Open js/config/supabase.js and set SUPABASE_URL and SUPABASE_ANON_KEY.'
+  );
+}
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    // Persist session in localStorage so page refreshes keep the user logged in
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,   // needed for password-reset redirect links
+  },
+});
