@@ -1,267 +1,929 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASES - Academic Schedule Execution System</title>
-    <style>
-        :root {
-            --primary-color: #2563eb;
-            --primary-hover: #1d4ed8;
-            --bg-color: #f3f4f6;
-            --surface-color: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border-color: #e5e7eb;
-            --error-color: #ef4444;
-            --radius: 8px;
-            --font-family: system-ui, -apple-system, sans-serif;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASES — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Design Tokens ─────────────────────────────────────────── */
+    :root {
+      --bg:           #0d0f14;
+      --bg-card:      #13161e;
+      --bg-input:     #1a1d27;
+      --border:       #252935;
+      --border-focus: #4f6af5;
+      --accent:       #4f6af5;
+      --accent-hover: #3d58e8;
+      --accent-glow:  rgba(79, 106, 245, 0.22);
+      --text-primary: #eceef5;
+      --text-muted:   #6b7089;
+      --text-label:   #a0a5c0;
+      --error:        #e05c6b;
+      --error-bg:     rgba(224, 92, 107, 0.10);
+      --success:      #3ecf8e;
+      --ff-display:   'DM Serif Display', Georgia, serif;
+      --ff-body:      'DM Sans', system-ui, sans-serif;
+      --radius:       10px;
+      --shadow-card:  0 24px 64px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.3);
+    }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+    /* ── Reset ─────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: var(--font-family);
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
+    /* ── Page layout ───────────────────────────────────────────── */
+    html, body {
+      height: 100%;
+      font-family: var(--ff-body);
+      background-color: var(--bg);
+      color: var(--text-primary);
+      overflow: hidden;
+    }
 
-        .login-container {
-            background-color: var(--surface-color);
-            padding: 2.5rem;
-            border-radius: var(--radius);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            width: 100%;
-            max-width: 400px;
-        }
+    body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 100vh;
+    }
 
-        .logo-area {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
+    /* ── Left panel — branding ─────────────────────────────────── */
+    .brand-panel {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 3rem;
+      overflow: hidden;
+      background: linear-gradient(145deg, #0f1120 0%, #111526 60%, #0d0f14 100%);
+    }
 
-        .logo-area h1 {
-            font-size: 1.5rem;
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-        }
+    /* Geometric grid overlay */
+    .brand-panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(79,106,245,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,106,245,0.06) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 100%);
+    }
 
-        .logo-area p {
-            color: var(--text-muted);
-            font-size: 0.875rem;
-        }
+    /* Accent orb */
+    .brand-panel::after {
+      content: '';
+      position: absolute;
+      width: 480px;
+      height: 480px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(79,106,245,0.18) 0%, transparent 70%);
+      top: -80px;
+      right: -120px;
+      pointer-events: none;
+    }
 
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
+    .brand-top {
+      position: relative;
+      z-index: 1;
+    }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
 
-        .form-group input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            font-size: 1rem;
-            transition: border-color 0.2s;
-        }
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
 
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
+    .brand-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
 
-        .forgot-password {
-            display: block;
-            text-align: right;
-            font-size: 0.875rem;
-            color: var(--primary-color);
-            text-decoration: none;
-            margin-bottom: 1.5rem;
-        }
+    .brand-wordmark {
+      font-family: var(--ff-body);
+      font-weight: 600;
+      font-size: 1.05rem;
+      letter-spacing: 0.12em;
+      color: var(--text-primary);
+      text-transform: uppercase;
+    }
 
-        .forgot-password:hover {
-            text-decoration: underline;
-        }
+    .brand-middle {
+      position: relative;
+      z-index: 1;
+    }
 
-        button {
-            width: 100%;
-            background-color: var(--primary-color);
-            color: white;
-            padding: 0.75rem;
-            border: none;
-            border-radius: var(--radius);
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
+    .brand-headline {
+      font-family: var(--ff-display);
+      font-size: clamp(2.4rem, 4vw, 3.4rem);
+      line-height: 1.15;
+      color: var(--text-primary);
+      margin-bottom: 1.25rem;
+    }
 
-        button:hover {
-            background-color: var(--primary-hover);
-        }
+    .brand-headline em {
+      font-style: italic;
+      color: var(--accent);
+    }
 
-        button:disabled {
-            background-color: var(--text-muted);
-            cursor: not-allowed;
-        }
+    .brand-desc {
+      font-size: 0.95rem;
+      font-weight: 300;
+      color: var(--text-muted);
+      line-height: 1.7;
+      max-width: 28ch;
+    }
 
-        .error-message {
-            color: var(--error-color);
-            font-size: 0.875rem;
-            margin-bottom: 1rem;
-            text-align: center;
-            min-height: 1.25rem;
-        }
-    </style>
+    .brand-stats {
+      display: flex;
+      gap: 2.5rem;
+      margin-top: 3rem;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .stat-value {
+      font-family: var(--ff-display);
+      font-size: 1.8rem;
+      color: var(--text-primary);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* Decorative divider line */
+    .brand-divider {
+      width: 40px;
+      height: 2px;
+      background: var(--accent);
+      margin-bottom: 2rem;
+      border-radius: 2px;
+    }
+
+    .brand-bottom {
+      position: relative;
+      z-index: 1;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Right panel — login form ───────────────────────────────── */
+    .login-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 3.5rem;
+      background: var(--bg);
+      overflow-y: auto;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.75rem 2.5rem;
+      box-shadow: var(--shadow-card);
+      animation: fadeUp 0.45s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-header {
+      margin-bottom: 2.25rem;
+    }
+
+    .card-eyebrow {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+    }
+
+    .card-title {
+      font-family: var(--ff-display);
+      font-size: 1.9rem;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .card-subtitle {
+      margin-top: 0.5rem;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      font-weight: 300;
+    }
+
+    /* ── Form elements ─────────────────────────────────────────── */
+    .field {
+      margin-bottom: 1.25rem;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--text-label);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: var(--text-muted);
+      display: flex;
+    }
+
+    .input-icon svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-primary);
+      font-family: var(--ff-body);
+      font-size: 0.94rem;
+      font-weight: 400;
+      padding: 0.78rem 1rem 0.78rem 2.75rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+
+    input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    input::placeholder { color: var(--text-muted); opacity: 0.6; }
+
+    /* Password toggle */
+    .pw-toggle {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0;
+      display: flex;
+      transition: color 0.15s;
+    }
+    .pw-toggle:hover { color: var(--text-primary); }
+    .pw-toggle svg {
+      width: 16px; height: 16px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    /* ── Error banner ──────────────────────────────────────────── */
+    .error-banner {
+      display: none;
+      align-items: center;
+      gap: 0.65rem;
+      background: var(--error-bg);
+      border: 1px solid rgba(224,92,107,0.25);
+      border-radius: var(--radius);
+      padding: 0.8rem 1rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.86rem;
+      color: var(--error);
+      animation: shake 0.35s ease;
+    }
+
+    .error-banner.visible { display: flex; }
+
+    .error-banner svg {
+      width: 16px; height: 16px; flex-shrink: 0;
+      stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-5px); }
+      75%      { transform: translateX(5px); }
+    }
+
+    /* ── Submit button ─────────────────────────────────────────── */
+    .btn-login {
+      width: 100%;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius);
+      color: #fff;
+      font-family: var(--ff-body);
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      padding: 0.85rem 1rem;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: background 0.2s, box-shadow 0.2s, opacity 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-login::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.06);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .btn-login:hover::before { opacity: 1; }
+
+    .btn-login:hover:not(:disabled) {
+      background: var(--accent-hover);
+      box-shadow: 0 4px 20px rgba(79,106,245,0.4);
+    }
+
+    .btn-login:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: none;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+    .loading .spinner { display: block; }
+    .loading .btn-text { opacity: 0.7; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Forgot password link ──────────────────────────────────── */
+    .forgot-wrap {
+      text-align: right;
+      margin-top: -0.6rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .link-forgot {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: var(--ff-body);
+    }
+    .link-forgot:hover { color: var(--accent); }
+
+    /* ── Forgot password modal ─────────────────────────────────── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2.2rem 2rem;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 32px 72px rgba(0,0,0,0.6);
+      animation: modalIn 0.25s ease both;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.93); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-title {
+      font-family: var(--ff-display);
+      font-size: 1.4rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .modal-desc {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+
+    .btn-secondary {
+      flex: 1;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      font-family: var(--ff-body);
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.72rem 1rem;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-secondary:hover { border-color: var(--text-muted); color: var(--text-primary); }
+
+    .btn-primary {
+      flex: 2;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius);
+      color: #fff;
+      font-family: var(--ff-body);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.72rem 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .modal-feedback {
+      margin-top: 0.9rem;
+      font-size: 0.84rem;
+      padding: 0.7rem 0.9rem;
+      border-radius: 8px;
+      display: none;
+    }
+    .modal-feedback.success {
+      display: block;
+      background: rgba(62,207,142,0.1);
+      border: 1px solid rgba(62,207,142,0.2);
+      color: var(--success);
+    }
+    .modal-feedback.error {
+      display: block;
+      background: var(--error-bg);
+      border: 1px solid rgba(224,92,107,0.2);
+      color: var(--error);
+    }
+
+    /* ── Footer ────────────────────────────────────────────────── */
+    .card-footer {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ── Responsive ────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      body { grid-template-columns: 1fr; overflow-y: auto; overflow-x: hidden; }
+      .brand-panel { display: none; }
+      .login-panel { padding: 2rem 1.5rem; align-items: flex-start; padding-top: 3rem; }
+      .login-card { max-width: 100%; }
+    }
+  </style>
 </head>
 <body>
 
-    <div class="login-container">
-        <div class="logo-area">
-            <h1>ASES</h1>
-            <p>Academic Schedule Execution System</p>
+  <!-- ── Left: Branding Panel ───────────────────────────────────── -->
+  <aside class="brand-panel">
+    <div class="brand-top">
+      <div class="brand-logo">
+        <div class="brand-icon">
+          <!-- Calendar/schedule icon -->
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8"  y1="2" x2="8"  y2="6" />
+            <line x1="3"  y1="10" x2="21" y2="10" />
+            <line x1="8"  y1="14" x2="8"  y2="14" stroke-width="2.5" />
+            <line x1="12" y1="14" x2="12" y2="14" stroke-width="2.5" />
+            <line x1="16" y1="14" x2="16" y2="14" stroke-width="2.5" />
+            <line x1="8"  y1="18" x2="8"  y2="18" stroke-width="2.5" />
+            <line x1="12" y1="18" x2="12" y2="18" stroke-width="2.5" />
+          </svg>
         </div>
-
-        <div id="errorMsg" class="error-message"></div>
-
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" required autocomplete="email">
-            </div>
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" required autocomplete="current-password">
-            </div>
-
-            <a href="#" id="forgotPasswordLink" class="forgot-password">Forgot Password?</a>
-
-            <button type="submit" id="loginBtn">Log In</button>
-        </form>
+        <span class="brand-wordmark">ASES</span>
+      </div>
     </div>
 
-    <!-- ES Module Script -->
-    <script type="module">
-        import { supabase } from './js/config/supabase.js';
+    <div class="brand-middle">
+      <div class="brand-divider"></div>
+      <h1 class="brand-headline">
+        Academic<br />Schedule<br /><em>Execution</em><br />System
+      </h1>
+      <p class="brand-desc">
+        Centralised timetable management, faculty scheduling, and daily lecture execution tracking for modern colleges.
+      </p>
+      <div class="brand-stats">
+        <div class="stat-item">
+          <span class="stat-value">28+</span>
+          <span class="stat-label">Courses</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">14</span>
+          <span class="stat-label">Rooms</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">6</span>
+          <span class="stat-label">Days</span>
+        </div>
+      </div>
+    </div>
 
-        const loginForm = document.getElementById('loginForm');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const errorMsg = document.getElementById('errorMsg');
-        const loginBtn = document.getElementById('loginBtn');
-        const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    <div class="brand-bottom">
+      &copy; <span id="yr"></span> ASES &mdash; All rights reserved
+    </div>
+  </aside>
 
-        // Check if user is already logged in
-        window.addEventListener('DOMContentLoaded', async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                routeUser(session.user.id);
-            }
-        });
+  <!-- ── Right: Login Panel ─────────────────────────────────────── -->
+  <main class="login-panel">
+    <div class="login-card">
 
-        // Handle Login
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const email = emailInput.value.trim();
-            const password = passwordInput.value;
-            
-            errorMsg.textContent = '';
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'Authenticating...';
+      <div class="card-header">
+        <div class="card-eyebrow">Staff Portal</div>
+        <h2 class="card-title">Welcome back</h2>
+        <p class="card-subtitle">Sign in with your institutional credentials</p>
+      </div>
 
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
+      <!-- Error banner -->
+      <div class="error-banner" id="errorBanner" role="alert">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="errorMsg">Invalid credentials. Please try again.</span>
+      </div>
 
-            if (error) {
-                errorMsg.textContent = error.message;
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Log In';
-                return;
-            }
+      <form id="loginForm" novalidate>
+        <!-- Email -->
+        <div class="field">
+          <label for="email">Email address</label>
+          <div class="input-wrap">
+            <span class="input-icon">
+              <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,14 22,4"/></svg>
+            </span>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="you@college.edu"
+              autocomplete="email"
+              required
+            />
+          </div>
+        </div>
 
-            // Route based on role
-            await routeUser(data.user.id);
-        });
+        <!-- Password -->
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">
+              <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              required
+            />
+            <button type="button" class="pw-toggle" id="pwToggle" aria-label="Toggle password visibility">
+              <!-- Eye icon (shown when password is hidden) -->
+              <svg id="eyeShow" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <!-- Eye-off icon (shown when password is visible) -->
+              <svg id="eyeHide" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+        </div>
 
-        // Route user based on their role in the database
-        async function routeUser(userId) {
-            loginBtn.textContent = 'Loading Dashboard...';
-            
-            const { data, error } = await supabase
-                .from('users')
-                .select('role')
-                .eq('id', userId)
-                .single();
+        <!-- Forgot password link -->
+        <div class="forgot-wrap">
+          <button type="button" class="link-forgot" id="openForgot">
+            Forgot your password?
+          </button>
+        </div>
 
-            if (error || !data) {
-                errorMsg.textContent = 'Error fetching user profile. Contact Admin.';
-                await supabase.auth.signOut();
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Log In';
-                return;
-            }
+        <!-- Submit -->
+        <button type="submit" class="btn-login" id="loginBtn">
+          <div class="spinner"></div>
+          <span class="btn-text">Sign in to ASES</span>
+        </button>
+      </form>
 
-            if (data.role === 'admin') {
-                window.location.href = 'dashboard.html';
-            } else if (data.role === 'faculty') {
-                window.location.href = 'faculty-portal.html';
-            } else {
-                errorMsg.textContent = 'Unknown role assigned.';
-                await supabase.auth.signOut();
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Log In';
-            }
+      <div class="card-footer">
+        Access is restricted to authorised staff only.<br />
+        Contact your system administrator if you need assistance.
+      </div>
+    </div>
+  </main>
+
+  <!-- ── Forgot Password Modal ──────────────────────────────────── -->
+  <div class="modal-backdrop" id="forgotModal" role="dialog" aria-modal="true" aria-labelledby="forgotTitle">
+    <div class="modal">
+      <h3 class="modal-title" id="forgotTitle">Reset Password</h3>
+      <p class="modal-desc">
+        Enter your registered email address and we'll send you a link to reset your password.
+      </p>
+
+      <div class="field">
+        <label for="resetEmail">Email address</label>
+        <div class="input-wrap">
+          <span class="input-icon">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,14 22,4"/></svg>
+          </span>
+          <input
+            type="email"
+            id="resetEmail"
+            placeholder="your@email.com"
+            autocomplete="email"
+          />
+        </div>
+      </div>
+
+      <div class="modal-feedback" id="resetFeedback"></div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="closeForgot">Cancel</button>
+        <button type="button" class="btn-primary"   id="sendReset">
+          <div class="spinner" id="resetSpinner" style="display:none"></div>
+          <span id="resetBtnText">Send Reset Link</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scripts ────────────────────────────────────────────────── -->
+  <script type="module">
+    import { supabase }       from './js/config/supabase.js';
+    import { getSession, redirectByRole } from './js/auth/session.js';
+
+    // ── Year in footer ─────────────────────────────────────────
+    document.getElementById('yr').textContent = new Date().getFullYear();
+
+    // ── If already logged in, skip login screen ────────────────
+    (async () => {
+      const session = await getSession();
+      if (session) redirectByRole(session.role);
+    })();
+
+    // ── DOM refs ───────────────────────────────────────────────
+    const form        = document.getElementById('loginForm');
+    const emailInput  = document.getElementById('email');
+    const pwInput     = document.getElementById('password');
+    const loginBtn    = document.getElementById('loginBtn');
+    const errorBanner = document.getElementById('errorBanner');
+    const errorMsg    = document.getElementById('errorMsg');
+    const pwToggle    = document.getElementById('pwToggle');
+    const eyeShow     = document.getElementById('eyeShow');
+    const eyeHide     = document.getElementById('eyeHide');
+
+    // Modal refs
+    const forgotModal  = document.getElementById('forgotModal');
+    const openForgot   = document.getElementById('openForgot');
+    const closeForgot  = document.getElementById('closeForgot');
+    const resetEmailEl = document.getElementById('resetEmail');
+    const sendReset    = document.getElementById('sendReset');
+    const resetFeedback= document.getElementById('resetFeedback');
+    const resetSpinner = document.getElementById('resetSpinner');
+    const resetBtnText = document.getElementById('resetBtnText');
+
+    // ── Helpers ────────────────────────────────────────────────
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorBanner.classList.add('visible');
+    }
+
+    function hideError() {
+      errorBanner.classList.remove('visible');
+    }
+
+    function setLoading(loading) {
+      loginBtn.disabled = loading;
+      loginBtn.classList.toggle('loading', loading);
+    }
+
+    // ── Password visibility toggle ─────────────────────────────
+    pwToggle.addEventListener('click', () => {
+      const isHidden = pwInput.type === 'password';
+      pwInput.type   = isHidden ? 'text' : 'password';
+      eyeShow.style.display = isHidden ? 'none'  : 'block';
+      eyeHide.style.display = isHidden ? 'block' : 'none';
+    });
+
+    // ── Login form submit ──────────────────────────────────────
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+
+      const email    = emailInput.value.trim();
+      const password = pwInput.value;
+
+      if (!email || !password) {
+        showError('Please enter your email address and password.');
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+          // Map Supabase error messages to friendlier text
+          if (error.message.includes('Invalid login credentials') ||
+              error.message.includes('invalid_grant')) {
+            showError('Incorrect email or password. Please try again.');
+          } else if (error.message.includes('Email not confirmed')) {
+            showError('Your email address has not been confirmed. Contact your administrator.');
+          } else {
+            showError(error.message);
+          }
+          setLoading(false);
+          return;
         }
 
-        // Handle Forgot Password
-        forgotPasswordLink.addEventListener('click', async (e) => {
-            e.preventDefault();
-            const email = emailInput.value.trim();
-            
-            if (!email) {
-                errorMsg.textContent = 'Please enter your email address first.';
-                return;
-            }
+        // Fetch role from profiles table
+        const { data: profile, error: profileErr } = await supabase
+          .from('profiles')
+          .select('role, is_active')
+          .eq('id', data.user.id)
+          .single();
 
-            loginBtn.disabled = true;
-            errorMsg.textContent = '';
-            errorMsg.style.color = '#10b981'; // Green for success msg
-            errorMsg.textContent = 'Sending reset link...';
+        if (profileErr || !profile) {
+          showError('Account profile not found. Contact your administrator.');
+          await supabase.auth.signOut();
+          setLoading(false);
+          return;
+        }
 
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/index.html` 
-                // NOTE: Supabase requires you to handle the hash fragment for password resets
-                // which you can catch on load to show a "Change Password" modal/form
-            });
+        if (!profile.is_active) {
+          showError('Your account has been deactivated. Contact your administrator.');
+          await supabase.auth.signOut();
+          setLoading(false);
+          return;
+        }
 
-            if (error) {
-                errorMsg.style.color = 'var(--error-color)';
-                errorMsg.textContent = error.message;
-            } else {
-                errorMsg.textContent = 'Password reset email sent. Check your inbox.';
-            }
-            
-            loginBtn.disabled = false;
+        // All good — redirect
+        redirectByRole(profile.role);
+
+      } catch (err) {
+        console.error('[ASES] Login error:', err);
+        showError('An unexpected error occurred. Please try again.');
+        setLoading(false);
+      }
+    });
+
+    // Hide error on input change
+    emailInput.addEventListener('input', hideError);
+    pwInput.addEventListener('input', hideError);
+
+    // ── Forgot Password Modal ──────────────────────────────────
+    openForgot.addEventListener('click', () => {
+      resetFeedback.className = 'modal-feedback';
+      resetFeedback.textContent = '';
+      resetEmailEl.value = emailInput.value.trim(); // pre-fill if user already typed email
+      forgotModal.classList.add('open');
+      resetEmailEl.focus();
+    });
+
+    closeForgot.addEventListener('click', closeModal);
+
+    // Close on backdrop click
+    forgotModal.addEventListener('click', (e) => {
+      if (e.target === forgotModal) closeModal();
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && forgotModal.classList.contains('open')) closeModal();
+    });
+
+    function closeModal() {
+      forgotModal.classList.remove('open');
+    }
+
+    sendReset.addEventListener('click', async () => {
+      const email = resetEmailEl.value.trim();
+
+      if (!email) {
+        showResetFeedback('Please enter your email address.', 'error');
+        return;
+      }
+
+      sendReset.disabled = true;
+      resetSpinner.style.display = 'block';
+      resetBtnText.textContent = 'Sending…';
+      resetFeedback.className = 'modal-feedback';
+
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          // Supabase will redirect here after the user clicks the reset link.
+          // Adjust the path if you create a dedicated reset-password page.
+          redirectTo: `${window.location.origin}/index.html`,
         });
-    </script>
+
+        if (error) {
+          showResetFeedback(error.message, 'error');
+        } else {
+          showResetFeedback(
+            'Reset link sent! Check your inbox (and spam folder) for the email.',
+            'success'
+          );
+          sendReset.disabled = true; // prevent resend immediately
+          resetBtnText.textContent = 'Sent';
+        }
+      } catch (err) {
+        showResetFeedback('Failed to send reset email. Please try again.', 'error');
+      } finally {
+        resetSpinner.style.display = 'none';
+        if (resetBtnText.textContent === 'Sending…') {
+          sendReset.disabled = false;
+          resetBtnText.textContent = 'Send Reset Link';
+        }
+      }
+    });
+
+    function showResetFeedback(msg, type) {
+      resetFeedback.textContent = msg;
+      resetFeedback.className   = `modal-feedback ${type}`;
+    }
+  </script>
 </body>
 </html>
