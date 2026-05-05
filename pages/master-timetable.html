@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ASES — Master Timetable</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
+  <style>
+    :root{--bg:#0d0f14;--bg-card:#13161e;--bg-input:#1a1d27;--bg-hover:#1e2130;
+      --border:#252935;--border-focus:#4f6af5;--accent:#4f6af5;--accent-hover:#3d58e8;
+      --accent-glow:rgba(79,106,245,.22);--text-primary:#eceef5;--text-muted:#6b7089;
+      --text-label:#a0a5c0;--error:#e05c6b;--error-bg:rgba(224,92,107,.1);
+      --success:#3ecf8e;--warn:#f5a623;
+      --ff-display:'DM Serif Display',Georgia,serif;--ff-body:'DM Sans',system-ui,sans-serif;
+      --radius:10px;--sidebar-w:240px}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;font-family:var(--ff-body);background:var(--bg);color:var(--text-primary)}
+    body{display:flex;min-height:100vh}
+    /* sidebar (shared) */
+    .sidebar{width:var(--sidebar-w);background:var(--bg-card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh}
+    .sidebar-logo{display:flex;align-items:center;gap:.75rem;padding:1.5rem 1.25rem;border-bottom:1px solid var(--border)}
+    .logo-box{width:32px;height:32px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center}
+    .logo-box svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .logo-text{font-weight:600;font-size:.9rem;letter-spacing:.1em;text-transform:uppercase}
+    nav{flex:1;padding:1rem 0;overflow-y:auto}
+    .nav-section{padding:.25rem 1rem .1rem;font-size:.65rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-top:.75rem}
+    .nav-link{display:flex;align-items:center;gap:.65rem;padding:.6rem 1.25rem;font-size:.875rem;color:var(--text-muted);text-decoration:none;transition:color .15s,background .15s}
+    .nav-link svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+    .nav-link:hover{color:var(--text-primary);background:var(--bg-hover)}
+    .nav-link.active{color:var(--accent);background:rgba(79,106,245,.1);border-right:2px solid var(--accent)}
+    .sidebar-footer{padding:1rem 1.25rem;border-top:1px solid var(--border)}
+    .user-pill{display:flex;align-items:center;gap:.6rem}
+    .user-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:600;flex-shrink:0}
+    .user-info{flex:1;min-width:0}
+    .user-name{font-size:.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .user-role{font-size:.7rem;color:var(--text-muted)}
+    .btn-logout{background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;padding:4px;border-radius:5px;transition:color .15s}
+    .btn-logout:hover{color:var(--error)}
+    .btn-logout svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    /* main */
+    .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    .topbar{padding:1.25rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;gap:1rem}
+    .page-title{font-family:var(--ff-display);font-size:1.6rem}
+    .page-subtitle{font-size:.84rem;color:var(--text-muted);margin-top:.15rem}
+    .content{flex:1;overflow:auto;padding:2rem}
+    /* day-type toggle */
+    .day-toggle{display:flex;gap:.5rem;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:.3rem}
+    .day-btn{flex:1;padding:.55rem 1.25rem;border:none;border-radius:8px;font-family:var(--ff-body);font-size:.88rem;font-weight:500;cursor:pointer;background:transparent;color:var(--text-muted);transition:background .2s,color .2s}
+    .day-btn.active{background:var(--accent);color:#fff}
+    /* grid container */
+    .grid-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:700px}
+    .grid-header{display:grid;border-bottom:1px solid var(--border);background:rgba(255,255,255,.03)}
+    .gh-cell{padding:.6rem .75rem;font-size:.67rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);border-right:1px solid var(--border)}
+    .gh-cell:last-child{border-right:none}
+    .slot-row{display:grid;border-bottom:1px solid rgba(37,41,53,.5)}
+    .slot-row:last-child{border-bottom:none}
+    .slot-row.is-break{background:rgba(255,255,255,.015)}
+    .slot-time{padding:.5rem .65rem;font-size:.7rem;color:var(--text-muted);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;min-width:88px}
+    .slot-time .tl{font-weight:600;font-size:.72rem;color:var(--text-label)}
+    .slot-time .tr{font-size:.65rem}
+    .break-label{padding:.4rem .65rem;font-size:.72rem;font-style:italic;color:var(--text-muted);display:flex;align-items:center}
+    /* lecture cell */
+    .cell{padding:.45rem .5rem;border-right:1px solid var(--border);min-height:62px;cursor:pointer;position:relative;transition:background .15s}
+    .cell:last-child{border-right:none}
+    .cell:hover{background:var(--bg-hover)}
+    .cell.filled{background:rgba(79,106,245,.06)}
+    .cell.filled:hover{background:rgba(79,106,245,.12)}
+    .cell-course{font-size:.65rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)}
+    .cell-subject{font-size:.78rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .cell-faculty{font-size:.7rem;color:var(--text-muted)}
+    .cell-add{display:flex;align-items:center;justify-content:center;height:100%;color:var(--border);transition:color .15s}
+    .cell:hover .cell-add{color:var(--accent)}
+    .cell-add svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    /* placeholder */
+    .grid-placeholder{padding:4rem;text-align:center;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:1rem}
+    .grid-placeholder svg{width:36px;height:36px;stroke:var(--border);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+    /* buttons */
+    .btn{border:none;border-radius:var(--radius);font-family:var(--ff-body);font-size:.88rem;font-weight:600;padding:.68rem 1.25rem;cursor:pointer;display:inline-flex;align-items:center;gap:.45rem;transition:background .2s,opacity .2s}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-primary:hover:not(:disabled){background:var(--accent-hover)}
+    .btn-danger{background:var(--error-bg);color:var(--error);border:1px solid rgba(224,92,107,.25)}
+    .btn-danger:hover:not(:disabled){background:rgba(224,92,107,.2)}
+    .btn-ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border)}
+    .btn-ghost:hover:not(:disabled){color:var(--text-primary);border-color:var(--text-muted)}
+    .btn-sm{padding:.42rem .85rem;font-size:.8rem}
+    .btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    /* modal */
+    .modal-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);z-index:200;align-items:center;justify-content:center;padding:1.5rem}
+    .modal-back.open{display:flex}
+    .modal{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:460px;box-shadow:0 32px 72px rgba(0,0,0,.6);animation:mIn .25s ease both}
+    @keyframes mIn{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:scale(1)}}
+    .modal-header{padding:1.4rem 1.6rem 1.1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+    .modal-title{font-family:var(--ff-display);font-size:1.25rem}
+    .modal-sub{font-size:.8rem;color:var(--text-muted);margin-top:.2rem}
+    .modal-close{background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;padding:4px;border-radius:6px;transition:color .15s;flex-shrink:0}
+    .modal-close:hover{color:var(--text-primary)}
+    .modal-close svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .modal-body{padding:1.25rem 1.6rem}
+    .field{display:flex;flex-direction:column;gap:.4rem;margin-bottom:1rem}
+    .field label{font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-label)}
+    .field-hint{font-size:.75rem;color:var(--text-muted);margin-top:.2rem}
+    /* Tom Select overrides */
+    .ts-wrapper .ts-control{background:var(--bg-input)!important;border:1px solid var(--border)!important;color:var(--text-primary)!important;border-radius:var(--radius)!important;padding:.65rem .9rem!important;min-height:unset!important}
+    .ts-wrapper.focus .ts-control{border-color:var(--border-focus)!important;box-shadow:0 0 0 3px var(--accent-glow)!important}
+    .ts-dropdown{background:var(--bg-card)!important;border:1px solid var(--border)!important;color:var(--text-primary)!important}
+    .ts-dropdown .option:hover,.ts-dropdown .option.active{background:var(--bg-hover)!important}
+    select{background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-family:var(--ff-body);font-size:.9rem;padding:.68rem .9rem;outline:none;width:100%;transition:border-color .2s}
+    select:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px var(--accent-glow)}
+    .modal-footer{padding:1.1rem 1.6rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:.75rem}
+    /* toast */
+    #toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;display:flex;flex-direction:column;gap:.5rem;pointer-events:none}
+    .toast-item{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:.8rem 1.1rem;font-size:.875rem;min-width:240px;max-width:340px;animation:tIn .3s ease both;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+    .toast-item.success{border-left:3px solid var(--success)}
+    .toast-item.error{border-left:3px solid var(--error)}
+    @keyframes tIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:768px){.sidebar{display:none}.content{padding:1rem}.topbar{padding:1rem}}
+  </style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-box"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+    <span class="logo-text">ASES</span>
+  </div>
+  <nav>
+    <div class="nav-section">Admin</div>
+    <a href="/dashboard.html" class="nav-link"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+    <a href="/pages/users.html" class="nav-link"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Users</a>
+    <a href="/pages/master-timetable.html" class="nav-link active"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Master Timetable</a>
+    <a href="/pages/csf-mapping.html" class="nav-link"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/></svg>CSF Mapping</a>
+    <a href="/pages/leaves.html" class="nav-link"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Leave Management</a>
+    <a href="/pages/daily-scheduler.html" class="nav-link"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>Daily Scheduler</a>
+    <a href="/pages/execution.html" class="nav-link"><svg viewBox="0 0 24 24"><polyline points="9,11 12,14 22,4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Execution Log</a>
+    <a href="/pages/reports.html" class="nav-link"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Reports</a>
+    <div class="nav-section">Account</div>
+    <a href="/pages/change-password.html" class="nav-link"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Change Password</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-pill">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <div class="user-info"><div class="user-name" id="userName">Loading…</div><div class="user-role">admin</div></div>
+      <button class="btn-logout" id="logoutBtn"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div><h1 class="page-title">Master Timetable</h1><p class="page-subtitle">Edit the fixed weekly timetable — click any cell to assign or change</p></div>
+    <div class="day-toggle">
+      <button class="day-btn active" data-day="weekday">Weekday (Mon–Fri)</button>
+      <button class="day-btn" data-day="saturday">Saturday</button>
+    </div>
+  </div>
+  <div class="content">
+    <div id="gridContainer">
+      <div class="grid-placeholder grid-wrap">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <div>Loading timetable…</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Cell edit modal -->
+<div class="modal-back" id="cellModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">Assign Lecture</div>
+        <div class="modal-sub" id="modalSub"></div>
+      </div>
+      <button class="modal-close" id="modalClose"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Course *</label>
+        <select id="modalCourse"><option value="">— select course —</option></select>
+      </div>
+      <div class="field" id="csfField" style="display:none">
+        <label>Subject &amp; Faculty *</label>
+        <select id="modalCSF"><option value="">— select subject / faculty —</option></select>
+        <div class="field-hint">Selecting this auto-assigns subject and faculty.</div>
+      </div>
+      <div id="loadingCSF" style="display:none;font-size:.82rem;color:var(--text-muted);padding:.5rem 0">
+        Loading options…
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div>
+        <button class="btn btn-danger btn-sm" id="clearCellBtn" style="display:none">
+          <svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>Clear Cell
+        </button>
+      </div>
+      <div style="display:flex;gap:.75rem">
+        <button class="btn btn-ghost btn-sm" id="modalCancel">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="modalSave" disabled>
+          <svg viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></svg>Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+<script type="module">
+  import { requireRole, logout } from '../js/auth/session.js';
+  import {
+    getTimeSlots, getActiveRooms, getMasterTimetable,
+    upsertMasterEntry, clearMasterEntry,
+    getCSFForCourse, getAllActiveCourses
+  } from '../js/modules/masterTimetable.js';
+
+  const session = await requireRole('admin');
+  document.getElementById('userName').textContent   = session.profile.full_name;
+  document.getElementById('userAvatar').textContent = session.profile.full_name.charAt(0).toUpperCase();
+  document.getElementById('logoutBtn').addEventListener('click', logout);
+
+  function toast(msg, type='success') {
+    const c = document.getElementById('toast');
+    const el = document.createElement('div');
+    el.className = `toast-item ${type}`;
+    el.textContent = msg;
+    c.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+
+  // ── State ──────────────────────────────────────────────────────────
+  let currentDayType = 'weekday';
+  let courses = [];
+  let timeSlots = [], rooms = [], ttMap = {};
+  // Modal state
+  let modalTimeSlotId = null, modalRoomId = null, modalRoomCode = '';
+  let existingEntry = null;
+  let tsCourse = null, tsCSF = null;
+  let csfOptions = [];
+
+  // ── Day type toggle ────────────────────────────────────────────────
+  document.querySelectorAll('.day-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentDayType = btn.dataset.day;
+      loadGrid();
+    });
+  });
+
+  // ── Load & Render Grid ─────────────────────────────────────────────
+  async function loadGrid() {
+    document.getElementById('gridContainer').innerHTML =
+      '<div class="grid-placeholder grid-wrap"><div>Loading…</div></div>';
+    try {
+      [courses, timeSlots, rooms, ttMap] = await Promise.all([
+        getAllActiveCourses(),
+        getTimeSlots(currentDayType),
+        getActiveRooms(),
+        getMasterTimetable(currentDayType),
+      ]);
+      renderGrid();
+    } catch(e) {
+      toast(e.message, 'error');
+      document.getElementById('gridContainer').innerHTML =
+        '<div class="grid-placeholder grid-wrap"><div>Failed to load timetable.</div></div>';
+    }
+  }
+
+  function renderGrid() {
+    const lecSlots = timeSlots.filter(s => s.slot_type === 'lecture');
+    const colCount  = 1 + rooms.length;
+    const gridStyle = `grid-template-columns: 88px repeat(${rooms.length}, minmax(110px,1fr))`;
+
+    let html = `<div class="grid-wrap"><div class="grid-header" style="${gridStyle}">
+      <div class="gh-cell">Time</div>
+      ${rooms.map(r => `<div class="gh-cell">Room ${r.room_code}</div>`).join('')}
+    </div>`;
+
+    for (const slot of timeSlots) {
+      html += `<div class="slot-row${slot.slot_type !== 'lecture' ? ' is-break' : ''}" style="${gridStyle}">`;
+      html += `<div class="slot-time"><span class="tl">${slot.slot_label}</span><span class="tr">${slot.start_time.slice(0,5)}–${slot.end_time.slice(0,5)}</span></div>`;
+
+      if (slot.slot_type !== 'lecture') {
+        const lbl = slot.slot_type === 'lunch' ? '🍽 Lunch' : '☕ Recess';
+        html += `<div class="break-label" style="grid-column:2/${colCount+1}">${lbl}</div>`;
+      } else {
+        for (const room of rooms) {
+          const entry = ttMap[slot.id]?.[room.id];
+          if (entry) {
+            const courseLbl = entry.course
+              ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`)
+              : '—';
+            html += `<div class="cell filled" data-ts="${slot.id}" data-room="${room.id}" data-entry="${entry.id}">
+              <div class="cell-course">${courseLbl}</div>
+              <div class="cell-subject">${entry.subject?.subject_name ?? '—'}</div>
+              <div class="cell-faculty">${entry.faculty?.full_name ?? '—'}</div>
+            </div>`;
+          } else {
+            html += `<div class="cell" data-ts="${slot.id}" data-room="${room.id}">
+              <div class="cell-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+            </div>`;
+          }
+        }
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    document.getElementById('gridContainer').innerHTML = html;
+
+    // Bind cell clicks
+    document.querySelectorAll('.cell[data-ts]').forEach(cell => {
+      cell.addEventListener('click', () => openModal(cell.dataset.ts, cell.dataset.room, cell.dataset.entry));
+    });
+  }
+
+  // ── Modal ──────────────────────────────────────────────────────────
+  async function openModal(timeSlotId, roomId, entryId) {
+    modalTimeSlotId = timeSlotId;
+    modalRoomId     = roomId;
+    existingEntry   = null;
+
+    const slot = timeSlots.find(s => s.id === timeSlotId);
+    const room = rooms.find(r => r.id === roomId);
+    modalRoomCode = room?.room_code ?? '';
+
+    document.getElementById('modalTitle').textContent = entryId ? 'Edit Lecture' : 'Assign Lecture';
+    document.getElementById('modalSub').textContent   = `${slot?.start_time?.slice(0,5)}–${slot?.end_time?.slice(0,5)} · Room ${room?.room_code}`;
+    document.getElementById('clearCellBtn').style.display = entryId ? '' : 'none';
+    document.getElementById('modalSave').disabled = true;
+    document.getElementById('csfField').style.display = 'none';
+
+    // Destroy old Tom Selects
+    if (tsCourse) { tsCourse.destroy(); tsCourse = null; }
+    if (tsCSF)    { tsCSF.destroy();    tsCSF    = null; }
+
+    // Populate course dropdown
+    const cSelect = document.getElementById('modalCourse');
+    cSelect.innerHTML = '<option value="">— select course —</option>' +
+      courses.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+
+    tsCourse = new TomSelect('#modalCourse', {
+      placeholder: 'Search course…',
+      onChange: async (val) => {
+        document.getElementById('csfField').style.display  = 'none';
+        document.getElementById('loadingCSF').style.display = '';
+        document.getElementById('modalSave').disabled = true;
+        if (!val) { document.getElementById('loadingCSF').style.display = 'none'; return; }
+        try {
+          csfOptions = await getCSFForCourse(val);
+          if (tsCSF) { tsCSF.destroy(); tsCSF = null; }
+          const csfSel = document.getElementById('modalCSF');
+          csfSel.innerHTML = '<option value="">— select subject / faculty —</option>' +
+            csfOptions.map(o => `<option value="${o.csfId}">${o.label}</option>`).join('');
+          tsCSF = new TomSelect('#modalCSF', {
+            placeholder: 'Search subject / faculty…',
+            onChange: (v) => { document.getElementById('modalSave').disabled = !v; }
+          });
+          document.getElementById('csfField').style.display   = '';
+          document.getElementById('loadingCSF').style.display = 'none';
+        } catch(e) {
+          toast(e.message, 'error');
+          document.getElementById('loadingCSF').style.display = 'none';
+        }
+      }
+    });
+
+    // Pre-fill if editing
+    if (entryId) {
+      existingEntry = ttMap[timeSlotId]?.[roomId];
+      if (existingEntry?.course_id) {
+        tsCourse.setValue(existingEntry.course_id, true);
+      }
+    }
+
+    document.getElementById('cellModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('cellModal').classList.remove('open');
+    modalTimeSlotId = modalRoomId = existingEntry = null;
+  }
+
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalCancel').addEventListener('click', closeModal);
+  document.getElementById('cellModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('cellModal')) closeModal();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // ── Save ────────────────────────────────────────────────────────────
+  document.getElementById('modalSave').addEventListener('click', async () => {
+    const courseId = tsCourse?.getValue();
+    const csfId    = tsCSF?.getValue();
+    if (!courseId || !csfId) return;
+
+    const opt = csfOptions.find(o => o.csfId === csfId);
+    if (!opt) return;
+
+    const btn = document.getElementById('modalSave');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> Saving…';
+
+    try {
+      await upsertMasterEntry({
+        dayType:     currentDayType,
+        timeSlotId:  modalTimeSlotId,
+        roomId:      modalRoomId,
+        csfId,
+        courseId,
+        subjectId:   opt.subjectId,
+        facultyId:   opt.facultyId,
+      });
+      toast('Timetable cell saved.');
+      closeModal();
+      await loadGrid();
+    } catch(e) {
+      toast(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="20,6 9,17 4,12"/></svg>Save';
+    }
+  });
+
+  // ── Clear cell ──────────────────────────────────────────────────────
+  document.getElementById('clearCellBtn').addEventListener('click', async () => {
+    if (!existingEntry?.id) return;
+    const btn = document.getElementById('clearCellBtn');
+    btn.disabled = true;
+    try {
+      await clearMasterEntry(existingEntry.id);
+      toast('Cell cleared.', 'warn');
+      closeModal();
+      await loadGrid();
+    } catch(e) {
+      toast(e.message, 'error');
+    } finally { btn.disabled = false; }
+  });
+
+  // ── Bootstrap ────────────────────────────────────────────────────────
+  loadGrid();
+</script>
+</body>
+</html>
