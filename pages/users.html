@@ -72,15 +72,15 @@
         <div class="msg error" id="fErrMsg"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span id="fErrText"></span></div>
         <div class="msg success" id="fOkMsg"><svg viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></svg><span id="fOkText"></span></div>
         <div class="form-grid">
-          <div class="field"><label>Full Name *</label><input id="fName" placeholder="Dr. Anita Sharma" /></div>
+          <div class="field"><label>Full Name *</label><input type="text" id="fName" placeholder="Dr. Anita Sharma" /></div>
           <div class="field"><label>Email Address *</label><input type="email" id="fEmail" placeholder="faculty@college.edu" /></div>
-          <div class="field"><label>Employee Code *</label><input id="fEmpCode" placeholder="EMP001" /></div>
+          <div class="field"><label>Employee Code *</label><input type="text" id="fEmpCode" placeholder="EMP001" /></div>
           <div class="field"><label>Temporary Password *</label>
             <div class="pw-wrap"><input type="password" id="fPassword" placeholder="Min 8 characters" /><button class="pw-toggle" type="button" onclick="togglePw('fPassword',this)"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
             <div class="field-hint">Faculty will change this after first login.</div>
           </div>
-          <div class="field"><label>Phone</label><input id="fPhone" placeholder="+91 9876543210" /></div>
-          <div class="field"><label>Department</label><input id="fDept" placeholder="Commerce &amp; Management" /></div>
+          <div class="field"><label>Phone</label><input type="text" id="fPhone" placeholder="+91 9876543210" /></div>
+          <div class="field"><label>Department</label><input type="text" id="fDept" placeholder="Commerce &amp; Management" /></div>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:1.25rem">
           <button class="btn btn-primary" id="createFacultyBtn"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span class="spin" id="fSpin"></span>Create Faculty Account</button>
@@ -104,7 +104,7 @@
         <div class="msg error" id="aErrMsg"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span id="aErrText"></span></div>
         <div class="msg success" id="aOkMsg"><svg viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></svg><span id="aOkText"></span></div>
         <div class="form-grid">
-          <div class="field"><label>Full Name *</label><input id="aName" placeholder="Admin Name" /></div>
+          <div class="field"><label>Full Name *</label><input type="text" id="aName" placeholder="Admin Name" /></div>
           <div class="field"><label>Email Address *</label><input type="email" id="aEmail" placeholder="admin@college.edu" /></div>
           <div class="field"><label>Role *</label>
             <select id="aRole"><option value="admin">Admin</option><option value="super_admin">Super Admin</option></select>
