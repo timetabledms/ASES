@@ -10,7 +10,7 @@ import { logout } from '../auth/session.js';
 
 const COLLEGE_LOGO = 'https://i.ibb.co/Q3sckzSm/square-crop.png';
 const COLLEGE_NAME = 'B. K. Birla College of Arts, Science & Commerce';
-const COLLEGE_SUB  = 'Empowered Autonomous Status · Kalyan';
+const COLLEGE_SUB  = 'Empowered Autonomous Status';
 
 /**
  * @param {object} session  — from requireRole()
@@ -54,7 +54,8 @@ export function initSidebar(session, activePage = '') {
 
 // ── Theme logic ─────────────────────────────────────────────────
 function initTheme() {
-  const savedTheme = localStorage.getItem('ases-theme') || 'dark';
+  // Default changed to 'light' here
+  const savedTheme = localStorage.getItem('ases-theme') || 'light';
   applyTheme(savedTheme);
 
   const toggle = document.getElementById('themeToggle');
