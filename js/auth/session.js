@@ -21,7 +21,7 @@ import { supabase } from '../config/supabase.js';
 
 async function _fetchProfile(userId) {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('admin_users')
     .select('role, full_name, is_active')
     .eq('id', userId)
     .single();
