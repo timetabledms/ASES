@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ASES — Execution Log</title>
+  <link rel="stylesheet" href="/css/theme.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
+  <style>
+    /* Page-specific overrides */
+    .controls-bar{display:flex;align-items:flex-end;gap:.9rem;flex-wrap:wrap;
+      background:var(--bg-card);border:1px solid var(--border);border-radius:14px;
+      padding:1.1rem 1.35rem;margin-bottom:1.25rem;transition:background .25s,border-color .25s}
+    .controls-bar .field{min-width:160px}
+    /* Table status column */
+    .status-col{min-width:110px}
+    .modified-col{display:flex;gap:.25rem;flex-wrap:wrap}
+    /* Swap partner warning */
+    .conflict-msg{display:none;color:var(--error);font-size:.78rem;margin-top:.35rem;
+      align-items:center;gap:.35rem}
+    .conflict-msg.visible{display:flex}
+    .conflict-msg svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;
+      stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="sidebar-college" id="sidebarCollege"></div>
+  <div class="sidebar-logo">
+    <div class="logo-box"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+    <span class="logo-text">ASES</span>
+    <span class="logo-version">v1.0</span>
+  </div>
+  <nav id="sideNav"></nav>
+  <div class="sidebar-footer">
+    <div class="theme-row">
+      <span class="theme-label">
+        <span id="themeIcon"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+        <span id="themeLabel">Dark mode</span>
+      </span>
+      <label class="toggle-switch"><input type="checkbox" id="themeToggle"/><span class="toggle-track"></span></label>
+    </div>
+    <div class="user-pill">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <div class="user-info"><div class="user-name" id="userName">…</div><div class="user-role" id="userRole">admin</div></div>
+      <button class="btn-logout" id="logoutBtn" title="Sign out"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<main class="main">
+  <div class="topbar">
+    <div><h1 class="page-title">Execution Log</h1><p class="page-subtitle">Record lecture outcomes, modifications, and status for any date</p></div>
+  </div>
+  <div class="content">
+
+    <!-- Controls -->
+    <div class="controls-bar">
+      <div class="field"><label>Date</label><input type="text" id="execDatePicker" style="width:160px" readonly/></div>
+      <button class="btn btn-primary" id="loadDayBtn">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Load Day
+      </button>
+      <button class="btn btn-warn" id="autoMarkBtn" style="display:none">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12,8 12,12 14,14"/></svg>Mark All Remaining Not Marked
+      </button>
+    </div>
+
+    <!-- Stat chips -->
+    <div class="stat-chips" id="statChips" style="display:none">
+      <div class="stat-chip chip-green"><div class="stat-chip-label">On Time</div><div class="stat-chip-value green" id="cntOnTime">0</div></div>
+      <div class="stat-chip chip-amber"><div class="stat-chip-label">Late</div><div class="stat-chip-value amber" id="cntLate">0</div></div>
+      <div class="stat-chip chip-red"><div class="stat-chip-label">Not Engaged</div><div class="stat-chip-value red" id="cntNotEngaged">0</div></div>
+      <div class="stat-chip chip-grey"><div class="stat-chip-label">Not Marked</div><div class="stat-chip-value grey" id="cntNotMarked">0</div></div>
+      <div class="stat-chip chip-blue"><div class="stat-chip-label">Modified</div><div class="stat-chip-value blue" id="cntModified">0</div></div>
+    </div>
+
+    <!-- Table -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrap" style="border:none;border-radius:0">
+        <table>
+          <thead><tr>
+            <th>Time</th><th>Room</th><th>Course</th><th>Subject</th>
+            <th>Faculty</th><th>Status</th><th>Flags</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="execTableBody">
+            <tr class="empty-row"><td colspan="8">Select a date and load the day to begin.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ── Execution Modal ── -->
+<div class="modal-back" id="execModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div><div class="modal-title" id="execModalTitle">Update Execution</div><div class="modal-sub" id="execModalSub"></div></div>
+      <button class="modal-close" id="execModalClose"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" style="max-height:72vh;overflow-y:auto">
+
+      <!-- Section 1: Status -->
+      <div class="modal-section">
+        <div class="section-title">Lecture Status</div>
+        <div class="radio-group">
+          <div class="radio-pill"><input type="radio" name="execStatus" id="sOnTime" value="on_time"/><label for="sOnTime" style="border-color:rgba(62,207,142,.3)">✅ On Time</label></div>
+          <div class="radio-pill"><input type="radio" name="execStatus" id="sLate" value="late"/><label for="sLate" style="border-color:rgba(245,166,35,.3)">⏱ Late</label></div>
+          <div class="radio-pill"><input type="radio" name="execStatus" id="sNotEngaged" value="not_engaged"/><label for="sNotEngaged" style="border-color:rgba(224,92,107,.3)">🚫 Not Engaged</label></div>
+          <div class="radio-pill"><input type="radio" name="execStatus" id="sNotMarked" value="not_marked" checked/><label for="sNotMarked">◌ Not Marked</label></div>
+        </div>
+      </div>
+
+      <hr class="divider"/>
+
+      <!-- Section 2: Modifications -->
+      <div class="modal-section">
+        <div class="section-title">Modifications <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(optional — any combination)</span></div>
+
+        <!-- Time Changed -->
+        <label class="check-row" for="chkTimeChanged">
+          <input type="checkbox" id="chkTimeChanged"/>
+          <div><div class="check-label">Time Changed — swap with another lecture</div></div>
+        </label>
+        <div class="sub-field" id="subTimeChanged">
+          <div class="field"><label>Swap with lecture</label>
+            <select id="swapPartnerSelect"><option value="">— select a lecture to swap with —</option></select>
+          </div>
+          <div class="conflict-msg" id="conflictMsg">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="conflictText"></span>
+          </div>
+        </div>
+
+        <!-- Room Changed -->
+        <label class="check-row" for="chkRoomChanged">
+          <input type="checkbox" id="chkRoomChanged"/>
+          <div><div class="check-label">Room Changed</div></div>
+        </label>
+        <div class="sub-field" id="subRoomChanged">
+          <div class="field"><label>New room</label>
+            <select id="newRoomSelect"><option value="">— select room —</option></select>
+          </div>
+          <div class="warn-note" id="roomWarn">
+            <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>This room is already occupied at this time slot — check for conflicts.</span>
+          </div>
+        </div>
+
+        <!-- Replaced -->
+        <label class="check-row" for="chkReplaced">
+          <input type="checkbox" id="chkReplaced"/>
+          <div><div class="check-label">Faculty Replaced — unplanned on-the-day change</div></div>
+        </label>
+        <div class="sub-field" id="subReplaced">
+          <div class="field"><label>Replacement faculty</label>
+            <select id="replacementFacultySelect"><option value="">— select replacement —</option></select>
+          </div>
+          <div class="warn-note" id="replaceWarn">
+            <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span id="replaceWarnText"></span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider"/>
+
+      <!-- Section 3: Notes -->
+      <div class="modal-section">
+        <div class="section-title">Notes</div>
+        <div class="field" style="margin-bottom:.75rem">
+          <label>Modification Note</label>
+          <textarea id="modNote" placeholder="Reason for modification…" style="min-height:56px"></textarea>
+        </div>
+        <div class="field">
+          <label>Remarks</label>
+          <textarea id="remarksField" placeholder="Any additional remarks…" style="min-height:56px"></textarea>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" id="execModalCancel">Cancel</button>
+      <button class="btn btn-primary" id="execSaveBtn">
+        <svg viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></svg>Save Execution
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+<script type="module">
+  import { requireRole } from '/js/auth/session.js';
+  import { initSidebar } from '/js/components/sidebar.js';
+  import {
+    markExecution, swapLectureTimes, getReplacementFacultyOptions,
+    autoMarkUnmarked, getDailyExecutionSummary, getFullDayExecution,
+    getActiveFacultyForExecution, getActiveRooms
+  } from '/js/modules/executionLogger.js';
+
+  const session = await requireRole('admin');
+  initSidebar(session, 'execution');
+
+  // ── Toast ─────────────────────────────────────────────────────────
+  function toast(msg, type='success') {
+    const c = document.getElementById('toast');
+    const el = document.createElement('div');
+    el.className = `toast-item ${type}`;
+    el.textContent = msg;
+    c.appendChild(el);
+    setTimeout(() => el.remove(), 4500);
+  }
+
+  // ── State ─────────────────────────────────────────────────────────
+  let currentDate = '';
+  let dayRows     = [];   // full day schedule
+  let rooms       = [];
+  let activeRow   = null; // the schedule row being edited
+  let tsSwap = null, tsReplacement = null, tsRoom = null;
+
+  // ── Date picker ───────────────────────────────────────────────────
+  flatpickr('#execDatePicker', {
+    dateFormat: 'Y-m-d',
+    defaultDate: new Date(),
+    disableMobile: true,
+    onChange([d]) { if (d) currentDate = d.toISOString().slice(0,10); }
+  });
+  currentDate = new Date().toISOString().slice(0,10);
+
+  // ── Load day ──────────────────────────────────────────────────────
+  document.getElementById('loadDayBtn').addEventListener('click', loadDay);
+
+  async function loadDay() {
+    if (!currentDate) { toast('Select a date first.', 'error'); return; }
+    const btn = document.getElementById('loadDayBtn');
+    btn.disabled = true;
+    document.getElementById('execTableBody').innerHTML =
+      '<tr class="empty-row"><td colspan="8"><span class="spin"></span> Loading…</td></tr>';
+    try {
+      [dayRows, rooms] = await Promise.all([
+        getFullDayExecution(currentDate),
+        getActiveRooms()
+      ]);
+      renderTable();
+      await refreshStats();
+      document.getElementById('autoMarkBtn').style.display = '';
+      document.getElementById('statChips').style.display   = '';
+    } catch(e) {
+      toast(e.message, 'error');
+      document.getElementById('execTableBody').innerHTML =
+        '<tr class="empty-row"><td colspan="8">Failed to load day data.</td></tr>';
+    } finally { btn.disabled = false; }
+  }
+
+  // ── Render table ──────────────────────────────────────────────────
+  function renderTable() {
+    const tbody = document.getElementById('execTableBody');
+    if (!dayRows.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No schedule found for this date. Generate it in Daily Scheduler first.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = dayRows.map(row => {
+      const slot = row.time_slot;
+      const isBreak = slot?.slot_type !== 'lecture';
+
+      if (isBreak) {
+        const lbl = slot?.slot_type === 'lunch' ? '🍽 Lunch Break' : '☕ Recess';
+        return `<tr class="break-row"><td colspan="8">${slot?.start_time?.slice(0,5)}–${slot?.end_time?.slice(0,5)} &nbsp;·&nbsp; ${lbl}</td></tr>`;
+      }
+
+      const ex = Array.isArray(row.execution) ? row.execution[0] : row.execution;
+
+      if (row.is_cancelled) {
+        return `<tr class="cancelled-row">
+          <td>${slot?.start_time?.slice(0,5)}–${slot?.end_time?.slice(0,5)}</td>
+          <td>${row.room?.room_code ?? '—'}</td>
+          <td colspan="5" style="color:var(--text-muted)">Cancelled${row.cancel_reason ? ' — ' + row.cancel_reason : ''}</td>
+          <td><span class="badge badge-inactive">Cancelled</span></td>
+        </tr>`;
+      }
+
+      const statusBadge = ex ? statusBadgeHTML(ex.faculty_status) : `<span class="badge badge-not-marked">Not Marked</span>`;
+      const flags = ex ? modFlagsHTML(ex) : '';
+      const courseLbl = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '—';
+
+      return `<tr>
+        <td style="white-space:nowrap">${slot?.start_time?.slice(0,5)}–${slot?.end_time?.slice(0,5)}</td>
+        <td style="color:var(--accent);font-weight:600">${row.room?.room_code ?? '—'}</td>
+        <td>${courseLbl}</td>
+        <td>${row.subject?.subject_name ?? '—'}</td>
+        <td style="color:var(--text-muted)">${row.assigned_faculty?.full_name ?? '—'}</td>
+        <td class="status-col">${statusBadge}</td>
+        <td><div class="modified-col">${flags}</div></td>
+        <td><button class="btn btn-ghost btn-sm" onclick="openExecModal('${row.id}')">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Update</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function statusBadgeHTML(status) {
+    const map = { on_time:'On Time', late:'Late', not_engaged:'Not Engaged', not_marked:'Not Marked' };
+    const cls = { on_time:'badge-on-time', late:'badge-late', not_engaged:'badge-not-engaged', not_marked:'badge-not-marked' };
+    return `<span class="badge ${cls[status] ?? 'badge-not-marked'}">${map[status] ?? status}</span>`;
+  }
+
+  function modFlagsHTML(ex) {
+    let f = '';
+    if (ex?.is_time_changed) f += `<span class="badge badge-mod">⏱ Time</span>`;
+    if (ex?.is_room_changed)  f += `<span class="badge badge-mod">🚪 Room</span>`;
+    if (ex?.is_replaced)      f += `<span class="badge badge-mod">👤 Replaced</span>`;
+    return f;
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────────
+  async function refreshStats() {
+    try {
+      const s = await getDailyExecutionSummary(currentDate);
+      document.getElementById('cntOnTime').textContent    = s.on_time;
+      document.getElementById('cntLate').textContent      = s.late;
+      document.getElementById('cntNotEngaged').textContent= s.not_engaged;
+      document.getElementById('cntNotMarked').textContent = s.not_marked;
+      document.getElementById('cntModified').textContent  = s.modified;
+    } catch {}
+  }
+
+  // ── Auto-mark ──────────────────────────────────────────────────────
+  document.getElementById('autoMarkBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('autoMarkBtn');
+    btn.disabled = true;
+    try {
+      const n = await autoMarkUnmarked(currentDate, session.user.id);
+      toast(n > 0 ? `${n} slot${n>1?'s':''} marked as Not Marked.` : 'All slots already have an execution record.', 'success');
+      await loadDay();
+    } catch(e) { toast(e.message, 'error'); }
+    finally { btn.disabled = false; }
+  });
+
+  // ── Open execution modal ──────────────────────────────────────────
+  window.openExecModal = async function(scheduleId) {
+    activeRow = dayRows.find(r => r.id === scheduleId);
+    if (!activeRow) return;
+
+    const slot = activeRow.time_slot;
+    const ex   = Array.isArray(activeRow.execution) ? activeRow.execution[0] : activeRow.execution;
+    const courseLbl = activeRow.course
+      ? (activeRow.course.division ? `${activeRow.course.year} ${activeRow.course.program} ${activeRow.course.division}` : `${activeRow.course.year} ${activeRow.course.program}`)
+      : '—';
+
+    document.getElementById('execModalTitle').textContent = 'Update Execution';
+    document.getElementById('execModalSub').textContent   =
+      `${slot?.start_time?.slice(0,5)}–${slot?.end_time?.slice(0,5)}  ·  Room ${activeRow.room?.room_code}  ·  ${courseLbl}`;
+
+    // Reset form
+    document.querySelectorAll('input[name=execStatus]').forEach(r => r.checked = r.value === (ex?.faculty_status ?? 'not_marked'));
+    ['chkTimeChanged','chkRoomChanged','chkReplaced'].forEach(id => {
+      document.getElementById(id).checked = false;
+    });
+    ['subTimeChanged','subRoomChanged','subReplaced'].forEach(id => {
+      document.getElementById(id).classList.remove('visible');
+    });
+    document.getElementById('conflictMsg').classList.remove('visible');
+    document.getElementById('roomWarn').classList.remove('visible');
+    document.getElementById('replaceWarn').classList.remove('visible');
+    document.getElementById('modNote').value     = ex?.modification_note ?? '';
+    document.getElementById('remarksField').value= ex?.remarks ?? '';
+
+    // Pre-fill checkboxes if editing existing
+    if (ex) {
+      if (ex.is_time_changed) { document.getElementById('chkTimeChanged').checked = true; document.getElementById('subTimeChanged').classList.add('visible'); }
+      if (ex.is_room_changed) { document.getElementById('chkRoomChanged').checked = true; document.getElementById('subRoomChanged').classList.add('visible'); }
+      if (ex.is_replaced)     { document.getElementById('chkReplaced').checked = true; document.getElementById('subReplaced').classList.add('visible'); }
+    }
+
+    // Build swap partner dropdown
+    if (tsSwap) { tsSwap.destroy(); tsSwap = null; }
+    const swapSel = document.getElementById('swapPartnerSelect');
+    const otherLectures = dayRows.filter(r =>
+      r.id !== scheduleId &&
+      r.time_slot?.slot_type === 'lecture' &&
+      !r.is_cancelled
+    );
+    swapSel.innerHTML = '<option value="">— select a lecture —</option>' +
+      otherLectures.map(r => {
+        const c = r.course ? (r.course.division ? `${r.course.year} ${r.course.program} ${r.course.division}` : `${r.course.year} ${r.course.program}`) : '';
+        return `<option value="${r.id}">${r.time_slot?.start_time?.slice(0,5)}–${r.time_slot?.end_time?.slice(0,5)} · Rm ${r.room?.room_code} · ${c} — ${r.subject?.subject_name ?? ''}`;
+      }).join('');
+
+    if (ex?.time_swap_partner_id) swapSel.value = ex.time_swap_partner_id;
+    tsSwap = new TomSelect('#swapPartnerSelect', { placeholder: 'Search lectures…' });
+
+    // Room dropdown
+    if (tsRoom) { tsRoom.destroy(); tsRoom = null; }
+    const roomSel = document.getElementById('newRoomSelect');
+    roomSel.innerHTML = '<option value="">— select room —</option>' +
+      rooms.map(r => `<option value="${r.id}">${r.room_code}</option>`).join('');
+    if (ex?.actual_room_id) roomSel.value = ex.actual_room_id;
+    tsRoom = new TomSelect('#newRoomSelect', {
+      placeholder: 'Search rooms…',
+      onChange(val) { checkRoomOccupied(val); }
+    });
+
+    // Replacement faculty dropdown
+    await buildReplacementDropdown();
+
+    document.getElementById('execModal').classList.add('open');
+  };
+
+  async function buildReplacementDropdown() {
+    if (tsReplacement) { tsReplacement.destroy(); tsReplacement = null; }
+    const ex = Array.isArray(activeRow?.execution) ? activeRow?.execution[0] : activeRow?.execution;
+    const sel = document.getElementById('replacementFacultySelect');
+    sel.innerHTML = '<option value="">— select faculty —</option>';
+
+    try {
+      const opts = await getReplacementFacultyOptions(
+        activeRow.course_id, currentDate,
+        activeRow.time_slot_id, activeRow.assigned_faculty?.id
+      );
+      sel.innerHTML = '<option value="">— select faculty —</option>' +
+        opts.map(o => {
+          let warns = '';
+          if (o.warnAbsent) warns += ' ⚠ABSENT';
+          if (o.warnBusy)   warns += ' ⚠BUSY';
+          return `<option value="${o.facultyId}" data-absent="${o.warnAbsent}" data-busy="${o.warnBusy}">${o.label}${warns}</option>`;
+        }).join('');
+
+      tsReplacement = new TomSelect('#replacementFacultySelect', {
+        placeholder: 'Search faculty…',
+        onChange(val) {
+          const opt = opts.find(o => o.facultyId === val);
+          const warnEl   = document.getElementById('replaceWarn');
+          const warnText = document.getElementById('replaceWarnText');
+          if (opt?.warnAbsent || opt?.warnBusy) {
+            warnText.textContent = opt.warnAbsent
+              ? `⚠ This faculty is on approved leave today.`
+              : `⚠ This faculty is already scheduled at this time slot.`;
+            warnEl.classList.add('visible');
+          } else {
+            warnEl.classList.remove('visible');
+          }
+        }
+      });
+      if (ex?.replacement_faculty_id) tsReplacement.setValue(ex.replacement_faculty_id, true);
+    } catch(e) {
+      sel.innerHTML = `<option value="">Error loading options</option>`;
+    }
+  }
+
+  async function checkRoomOccupied(roomId) {
+    if (!roomId) { document.getElementById('roomWarn').classList.remove('visible'); return; }
+    // Check if room is occupied at this time slot today
+    try {
+      const { data } = await import('/js/config/supabase.js').then(m =>
+        m.supabase.from('daily_schedule')
+          .select('id')
+          .eq('schedule_date', currentDate)
+          .eq('time_slot_id', activeRow.time_slot_id)
+          .eq('room_id', roomId)
+          .eq('is_cancelled', false)
+          .neq('id', activeRow.id)
+          .limit(1)
+      );
+      document.getElementById('roomWarn').classList.toggle('visible', data?.length > 0);
+    } catch {}
+  }
+
+  // ── Checkbox toggles ──────────────────────────────────────────────
+  document.getElementById('chkTimeChanged').addEventListener('change', function() {
+    document.getElementById('subTimeChanged').classList.toggle('visible', this.checked);
+    if (!this.checked) document.getElementById('conflictMsg').classList.remove('visible');
+  });
+  document.getElementById('chkRoomChanged').addEventListener('change', function() {
+    document.getElementById('subRoomChanged').classList.toggle('visible', this.checked);
+    if (!this.checked) document.getElementById('roomWarn').classList.remove('visible');
+  });
+  document.getElementById('chkReplaced').addEventListener('change', function() {
+    document.getElementById('subReplaced').classList.toggle('visible', this.checked);
+    if (!this.checked) document.getElementById('replaceWarn').classList.remove('visible');
+  });
+
+  // ── Save ─────────────────────────────────────────────────────────
+  document.getElementById('execSaveBtn').addEventListener('click', async () => {
+    if (!activeRow) return;
+
+    const status         = document.querySelector('input[name=execStatus]:checked')?.value ?? 'not_marked';
+    const isTimeChanged  = document.getElementById('chkTimeChanged').checked;
+    const isRoomChanged  = document.getElementById('chkRoomChanged').checked;
+    const isReplaced     = document.getElementById('chkReplaced').checked;
+    const swapPartnerId  = tsSwap?.getValue() || null;
+    const newRoomId      = tsRoom?.getValue() || null;
+    const replaceFacId   = tsReplacement?.getValue() || null;
+    const modNote        = document.getElementById('modNote').value.trim();
+    const remarks        = document.getElementById('remarksField').value.trim();
+
+    document.getElementById('conflictMsg').classList.remove('visible');
+
+    // If time swap — handle separately
+    if (isTimeChanged && swapPartnerId) {
+      const saveBtn = document.getElementById('execSaveBtn');
+      saveBtn.disabled = true;
+      try {
+        await swapLectureTimes(activeRow.id, swapPartnerId, currentDate, session.user.id);
+        toast('Times swapped successfully.', 'success');
+        closeModal();
+        await loadDay();
+        return;
+      } catch(e) {
+        document.getElementById('conflictText').textContent = e.message;
+        document.getElementById('conflictMsg').classList.add('visible');
+        saveBtn.disabled = false;
+        return;
+      }
+    }
+
+    const payload = {
+      schedule_date:          currentDate,
+      actual_faculty_id:      activeRow.assigned_faculty?.id,
+      faculty_status:         status,
+      is_time_changed:        isTimeChanged,
+      is_room_changed:        isRoomChanged,
+      is_replaced:            isReplaced,
+      actual_room_id:         isRoomChanged ? newRoomId : null,
+      replacement_faculty_id: isReplaced    ? replaceFacId : null,
+      modification_note:      modNote || null,
+      remarks:                remarks || null,
+    };
+
+    const saveBtn = document.getElementById('execSaveBtn');
+    saveBtn.disabled = true;
+    try {
+      await markExecution(activeRow.id, payload, session.user.id);
+      toast('Execution saved.', 'success');
+      closeModal();
+      await loadDay();
+    } catch(e) {
+      toast(e.message, 'error');
+    } finally { saveBtn.disabled = false; }
+  });
+
+  // ── Close modal ───────────────────────────────────────────────────
+  function closeModal() { document.getElementById('execModal').classList.remove('open'); activeRow = null; }
+  document.getElementById('execModalClose').addEventListener('click', closeModal);
+  document.getElementById('execModalCancel').addEventListener('click', closeModal);
+  document.getElementById('execModal').addEventListener('click', e => { if (e.target === document.getElementById('execModal')) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // Load today on start
+  loadDay();
+</script>
+</body>
+</html>
