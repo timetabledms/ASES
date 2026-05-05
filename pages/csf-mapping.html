@@ -12,6 +12,9 @@
     /* Page-specific overrides */
     .form-row { display:flex; align-items:flex-end; gap:1rem; flex-wrap:wrap; }
     
+    /* Force fields in the row to expand and fill the empty space */
+    .form-row .field { flex: 1; min-width: 180px; } 
+    
     /* Prevent Tom Select from wrapping text to the next line */
     .ts-wrapper.single .ts-control {
       display: flex !important;
@@ -31,7 +34,7 @@
     }
     
     .filters { display:flex; align-items:flex-end; gap:.75rem; flex-wrap:wrap; margin-bottom:1.25rem; }
-    .filters .field { min-width:180px; }
+    .filters .field { min-width:180px; flex: 1; max-width: 300px; }
     
     .new-subject-row { display:none; align-items:flex-end; gap:.75rem; flex-wrap:wrap; margin-top:.75rem; padding:.85rem; background:var(--bg-input); border:1px dashed var(--border-focus); border-radius:var(--radius); }
     .new-subject-row.visible { display:flex; }
