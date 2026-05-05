@@ -819,29 +819,19 @@
           return;
         }
 
-        // Fetch role from profiles table
-        const { data: profile, error: profileErr } = await supabase
-          .from('profiles')
-          .select('role, is_active')
-          .eq('id', data.user.id)
-          .single();
+        // Fetch role using the updated getSession helper
+        // This will automatically check admin_users first, then faculty
+        const session = await getSession();
 
-        if (profileErr || !profile) {
-          showError('Account profile not found. Contact your administrator.');
-          await supabase.auth.signOut();
+        if (!session) {
+          showError('Account profile not found or inactive. Contact your administrator.');
+          await supabase.auth.signOut(); // Ensure we don't leave a dead session active
           setLoading(false);
           return;
         }
 
-        if (!profile.is_active) {
-          showError('Your account has been deactivated. Contact your administrator.');
-          await supabase.auth.signOut();
-          setLoading(false);
-          return;
-        }
-
-        // All good — redirect
-        redirectByRole(profile.role);
+        // All good — redirect to their specific dashboard
+        redirectByRole(session.role);
 
       } catch (err) {
         console.error('[ASES] Login error:', err);
@@ -894,8 +884,6 @@
 
       try {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          // Supabase will redirect here after the user clicks the reset link.
-          // Adjust the path if you create a dedicated reset-password page.
           redirectTo: `${window.location.origin}/index.html`,
         });
 
@@ -906,7 +894,7 @@
             'Reset link sent! Check your inbox (and spam folder) for the email.',
             'success'
           );
-          sendReset.disabled = true; // prevent resend immediately
+          sendReset.disabled = true; 
           resetBtnText.textContent = 'Sent';
         }
       } catch (err) {
