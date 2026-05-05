@@ -7,8 +7,9 @@
  *   redirectByRole()      → send user to the right landing page after login
  *   logout()              → sign out and go to login
  *
- * Role is stored in the `profiles` table:
- *   profiles (id uuid FK → auth.users, role text CHECK ('admin','faculty'), full_name text, is_active bool)
+ * Role is stored across two tables:
+ *   admin_users (id uuid FK → auth.users, role text, full_name text, is_active bool)
+ *   faculty     (supabase_uid uuid FK → auth.users, full_name text, is_active bool)
  *
  * Call requireRole('admin')   at the top of every admin page.
  * Call requireRole('faculty') at the top of faculty-portal.html.
@@ -20,17 +21,42 @@ import { supabase } from '../config/supabase.js';
 // ─── Internal: fetch user's profile row ───────────────────────────────────────
 
 async function _fetchProfile(userId) {
-  const { data, error } = await supabase
+  // 1. Check if the user is an Admin
+  const { data: adminData, error: adminError } = await supabase
     .from('admin_users')
     .select('role, full_name, is_active')
     .eq('id', userId)
-    .single();
+    .maybeSingle(); // maybeSingle returns null if no row is found, instead of throwing an error
 
-  if (error) {
-    console.error('[ASES] Failed to fetch profile:', error.message);
-    return null;
+  if (adminError) {
+    console.error('[ASES] Error fetching admin profile:', adminError.message);
   }
-  return data;
+
+  if (adminData) {
+    return adminData; // Returns { role, full_name, is_active }
+  }
+
+  // 2. If not an Admin, check if the user is Faculty
+  const { data: facultyData, error: facultyError } = await supabase
+    .from('faculty')
+    .select('full_name, is_active')
+    .eq('supabase_uid', userId)
+    .maybeSingle();
+
+  if (facultyError) {
+    console.error('[ASES] Error fetching faculty profile:', facultyError.message);
+  }
+
+  if (facultyData) {
+    return {
+      role: 'faculty', // Hardcode 'faculty' since it's implied by the table
+      full_name: facultyData.full_name,
+      is_active: facultyData.is_active
+    };
+  }
+
+  console.error('[ASES] Profile not found in either admin_users or faculty tables.');
+  return null;
 }
 
 // ─── getSession ───────────────────────────────────────────────────────────────
@@ -62,7 +88,7 @@ export async function getSession() {
 
   return {
     user: session.user,
-    role: profile.role,        // 'admin' | 'faculty'
+    role: profile.role,        // 'admin' | 'super_admin' | 'viewer' | 'faculty'
     profile,                   // { role, full_name, is_active }
   };
 }
@@ -94,9 +120,21 @@ export async function requireRole(requiredRole) {
   }
 
   // Logged in but wrong role — redirect to their correct page
-  if (requiredRole && session.role !== requiredRole) {
-    window.location.href = _landingFor(session.role);
-    return;
+  // Note: If you have granular admin roles ('super_admin', 'viewer'), 
+  // you might need to adjust this logic depending on how you group them.
+  if (requiredRole) {
+    const isFacultyRole = session.role === 'faculty';
+    const isAdminRole = ['admin', 'super_admin', 'viewer'].includes(session.role);
+
+    if (requiredRole === 'faculty' && !isFacultyRole) {
+      window.location.href = _landingFor(session.role);
+      return;
+    }
+
+    if (requiredRole === 'admin' && !isAdminRole) {
+      window.location.href = _landingFor(session.role);
+      return;
+    }
   }
 
   return session;
@@ -107,7 +145,7 @@ export async function requireRole(requiredRole) {
  * After a successful login, send the user to their role-appropriate landing page.
  * Call this from login.js once auth is confirmed.
  *
- * @param {'admin'|'faculty'} role
+ * @param {string} role ('admin', 'super_admin', 'viewer', 'faculty')
  */
 export function redirectByRole(role) {
   window.location.href = _landingFor(role);
@@ -125,9 +163,11 @@ export async function logout() {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function _landingFor(role) {
-  // Works whether the app is served from root or a sub-directory.
-  // Adjust paths if your deployment differs.
-  return role === 'admin' ? '/dashboard.html' : '/faculty-portal.html';
+  // Group all admin-type roles into the dashboard route
+  if (['admin', 'super_admin', 'viewer'].includes(role)) {
+    return '/dashboard.html';
+  }
+  return '/faculty-portal.html';
 }
 
 function _loginPath() {
