@@ -12,6 +12,24 @@
     /* Page-specific overrides */
     .form-row { display:flex; align-items:flex-end; gap:1rem; flex-wrap:wrap; }
     
+    /* Prevent Tom Select from wrapping text to the next line */
+    .ts-wrapper.single .ts-control {
+      display: flex !important;
+      flex-wrap: nowrap !important;
+      align-items: center;
+      overflow: hidden !important;
+    }
+    .ts-wrapper.single .ts-control .item {
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      max-width: 95% !important;
+      pointer-events: none;
+    }
+    .ts-wrapper.single .ts-control input {
+      min-width: 0 !important;
+    }
+    
     .filters { display:flex; align-items:flex-end; gap:.75rem; flex-wrap:wrap; margin-bottom:1.25rem; }
     .filters .field { min-width:180px; }
     
