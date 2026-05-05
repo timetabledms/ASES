@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ASES — CSF Mapping</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
+  <style>
+    :root{--bg:#0d0f14;--bg-card:#13161e;--bg-input:#1a1d27;--bg-hover:#1e2130;
+      --border:#252935;--border-focus:#4f6af5;--accent:#4f6af5;--accent-hover:#3d58e8;
+      --accent-glow:rgba(79,106,245,.22);--text-primary:#eceef5;--text-muted:#6b7089;
+      --text-label:#a0a5c0;--error:#e05c6b;--error-bg:rgba(224,92,107,.1);
+      --success:#3ecf8e;--warn:#f5a623;--warn-bg:rgba(245,166,35,.1);
+      --ff-display:'DM Serif Display',Georgia,serif;--ff-body:'DM Sans',system-ui,sans-serif;
+      --radius:10px;--sidebar-w:240px}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;font-family:var(--ff-body);background:var(--bg);color:var(--text-primary)}
+    body{display:flex;min-height:100vh}
+    .sidebar{width:var(--sidebar-w);background:var(--bg-card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh}
+    .sidebar-logo{display:flex;align-items:center;gap:.75rem;padding:1.5rem 1.25rem;border-bottom:1px solid var(--border)}
+    .logo-box{width:32px;height:32px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center}
+    .logo-box svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .logo-text{font-weight:600;font-size:.9rem;letter-spacing:.1em;text-transform:uppercase}
+    nav{flex:1;padding:1rem 0;overflow-y:auto}
+    .nav-section{padding:.25rem 1rem .1rem;font-size:.65rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-top:.75rem}
+    .nav-link{display:flex;align-items:center;gap:.65rem;padding:.6rem 1.25rem;font-size:.875rem;color:var(--text-muted);text-decoration:none;transition:color .15s,background .15s}
+    .nav-link svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+    .nav-link:hover{color:var(--text-primary);background:var(--bg-hover)}
+    .nav-link.active{color:var(--accent);background:rgba(79,106,245,.1);border-right:2px solid var(--accent)}
+    .sidebar-footer{padding:1rem 1.25rem;border-top:1px solid var(--border)}
+    .user-pill{display:flex;align-items:center;gap:.6rem}
+    .user-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:600;flex-shrink:0}
+    .user-info{flex:1;min-width:0}
+    .user-name{font-size:.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .user-role{font-size:.7rem;color:var(--text-muted)}
+    .btn-logout{background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;padding:4px;border-radius:5px;transition:color .15s}
+    .btn-logout:hover{color:var(--error)}
+    .btn-logout svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    .topbar{padding:1.25rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .page-title{font-family:var(--ff-display);font-size:1.6rem}
+    .page-subtitle{font-size:.84rem;color:var(--text-muted);margin-top:.15rem}
+    .content{flex:1;overflow-y:auto;padding:2rem}
+    .card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.75rem;margin-bottom:1.5rem}
+    .card-title{font-size:1rem;font-weight:600;margin-bottom:1.25rem;display:flex;align-items:center;gap:.6rem}
+    .card-title svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .form-row{display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap}
+    .field{display:flex;flex-direction:column;gap:.4rem;flex:1;min-width:160px}
+    .field label{font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-label)}
+    /* Tom Select overrides */
+    .ts-wrapper .ts-control{background:var(--bg-input)!important;border:1px solid var(--border)!important;color:var(--text-primary)!important;border-radius:var(--radius)!important;padding:.65rem .9rem!important;min-height:unset!important}
+    .ts-wrapper.focus .ts-control{border-color:var(--border-focus)!important;box-shadow:0 0 0 3px var(--accent-glow)!important}
+    .ts-dropdown{background:var(--bg-card)!important;border:1px solid var(--border)!important;color:var(--text-primary)!important}
+    .ts-dropdown .option:hover,.ts-dropdown .option.active{background:var(--bg-hover)!important}
+    /* new subject inline */
+    input[type=text]{background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-family:var(--ff-body);font-size:.9rem;padding:.68rem .9rem;outline:none;width:100%;transition:border-color .2s,box-shadow .2s}
+    input:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px var(--accent-glow)}
+    input::placeholder{color:var(--text-muted);opacity:.6}
+    .btn{border:none;border-radius:var(--radius);font-family:var(--ff-body);font-size:.88rem;font-weight:600;padding:.68rem 1.25rem;cursor:pointer;display:inline-flex;align-items:center;gap:.45rem;transition:background .2s,opacity .2s;white-space:nowrap}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-primary:hover:not(:disabled){background:var(--accent-hover)}
+    .btn-ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border)}
+    .btn-ghost:hover:not(:disabled){color:var(--text-primary);border-color:var(--text-muted)}
+    .btn-warn{background:var(--warn-bg);color:var(--warn);border:1px solid rgba(245,166,35,.25)}
+    .btn-warn:hover:not(:disabled){background:rgba(245,166,35,.2)}
+    .btn-success{background:rgba(62,207,142,.12);color:var(--success);border:1px solid rgba(62,207,142,.2)}
+    .btn-success:hover:not(:disabled){background:rgba(62,207,142,.2)}
+    .btn-sm{padding:.4rem .8rem;font-size:.78rem}
+    .btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .filters{display:flex;align-items:flex-end;gap:.75rem;flex-wrap:wrap;margin-bottom:1.25rem}
+    .filters .field{min-width:180px}
+    .table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+    table{width:100%;border-collapse:collapse;font-size:.875rem}
+    thead tr{background:rgba(255,255,255,.03);border-bottom:1px solid var(--border)}
+    th{padding:.75rem 1rem;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap}
+    td{padding:.8rem 1rem;border-bottom:1px solid rgba(37,41,53,.7);vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(255,255,255,.015)}
+    .empty-row td{text-align:center;color:var(--text-muted);padding:3rem}
+    .badge{display:inline-flex;align-items:center;padding:.18rem .55rem;border-radius:20px;font-size:.7rem;font-weight:600}
+    .badge-active{background:rgba(62,207,142,.12);color:var(--success)}
+    .badge-inactive{background:rgba(107,112,137,.15);color:var(--text-muted)}
+    #toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;display:flex;flex-direction:column;gap:.5rem;pointer-events:none}
+    .toast-item{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:.8rem 1.1rem;font-size:.875rem;min-width:260px;max-width:360px;animation:tIn .3s ease both;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+    .toast-item.success{border-left:3px solid var(--success)}
+    .toast-item.error{border-left:3px solid var(--error)}
+    @keyframes tIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .new-subject-row{display:none;align-items:flex-end;gap:.75rem;flex-wrap:wrap;margin-top:.75rem;padding:.85rem;background:var(--bg-input);border:1px dashed var(--border-focus);border-radius:var(--radius)}
+    .new-subject-row.visible{display:flex}
+    @media(max-width:768px){.sidebar{display:none}.content{padding:1rem}.topbar{padding:1rem}}
+  </style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-box"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+    <span class="logo-text">ASES</span>
+  </div>
+  <nav>
+    <div class="nav-section">Admin</div>
+    <a href="/dashboard.html" class="nav-link"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+    <a href="/pages/users.html" class="nav-link"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Users</a>
+    <a href="/pages/master-timetable.html" class="nav-link"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Master Timetable</a>
+    <a href="/pages/csf-mapping.html" class="nav-link active"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/></svg>CSF Mapping</a>
+    <a href="/pages/leaves.html" class="nav-link"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Leave Management</a>
+    <a href="/pages/daily-scheduler.html" class="nav-link"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>Daily Scheduler</a>
+    <a href="/pages/execution.html" class="nav-link"><svg viewBox="0 0 24 24"><polyline points="9,11 12,14 22,4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Execution Log</a>
+    <a href="/pages/reports.html" class="nav-link"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Reports</a>
+    <div class="nav-section">Account</div>
+    <a href="/pages/change-password.html" class="nav-link"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Change Password</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-pill">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <div class="user-info"><div class="user-name" id="userName">Loading…</div><div class="user-role">admin</div></div>
+      <button class="btn-logout" id="logoutBtn"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div><h1 class="page-title">CSF Mapping</h1><p class="page-subtitle">Course → Subject → Faculty — drives all scheduling dropdowns</p></div>
+  </div>
+  <div class="content">
+    <!-- Add mapping form -->
+    <div class="card">
+      <div class="card-title"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add New Mapping</div>
+      <div class="form-row">
+        <div class="field"><label>Course *</label><select id="csfCourse"><option value="">— select course —</option></select></div>
+        <div class="field"><label>Subject *</label><select id="csfSubject"><option value="">— select subject —</option></select></div>
+        <div class="field"><label>Faculty *</label><select id="csfFaculty"><option value="">— select faculty —</option></select></div>
+        <button class="btn btn-primary" id="addCsfBtn" style="flex-shrink:0">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Mapping
+        </button>
+      </div>
+      <!-- New subject inline form -->
+      <div style="margin-top:.75rem">
+        <button class="btn btn-ghost btn-sm" id="toggleNewSubject">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add New Subject
+        </button>
+        <div class="new-subject-row" id="newSubjectRow">
+          <div class="field" style="min-width:140px"><label>Subject Code *</label><input id="newSubCode" placeholder="FIN-301" /></div>
+          <div class="field" style="flex:2"><label>Subject Name *</label><input id="newSubName" placeholder="Financial Management" /></div>
+          <button class="btn btn-primary btn-sm" id="saveSubjectBtn">Save Subject</button>
+          <button class="btn btn-ghost btn-sm" id="cancelSubjectBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSF Records -->
+    <div class="card">
+      <div class="card-title"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg>All Mappings</div>
+      <div class="filters">
+        <div class="field"><label>Filter by Course</label><select id="filterCourse"><option value="">All Courses</option></select></div>
+        <div class="field"><label>Filter by Status</label>
+          <select id="filterStatus"><option value="">All</option><option value="active">Active Only</option><option value="inactive">Inactive Only</option></select>
+        </div>
+        <button class="btn btn-primary btn-sm" id="applyFilter">Apply</button>
+        <button class="btn btn-ghost btn-sm" id="clearFilter">Clear</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="csfTableBody"><tr class="empty-row"><td colspan="5">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+<script type="module">
+  import { requireRole, logout } from '../js/auth/session.js';
+  import {
+    getAllCSF, addCSF, deactivateCSF, reactivateCSF,
+    getAllCourses, getAllSubjects, getActiveFacultyList,
+    addSubject, courseLabel
+  } from '../js/modules/csfManager.js';
+
+  const session = await requireRole('admin');
+  document.getElementById('userName').textContent   = session.profile.full_name;
+  document.getElementById('userAvatar').textContent = session.profile.full_name.charAt(0).toUpperCase();
+  document.getElementById('logoutBtn').addEventListener('click', logout);
+
+  function toast(msg, type='success') {
+    const c = document.getElementById('toast');
+    const el = document.createElement('div');
+    el.className = `toast-item ${type}`;
+    el.textContent = msg;
+    c.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+
+  // ── Load master data ─────────────────────────────────────────────
+  let courses = [], subjects = [], faculty = [], csfData = [];
+  let tsCourse, tsSubject, tsFaculty, tsFilter;
+
+  async function loadMasterData() {
+    [courses, subjects, faculty] = await Promise.all([getAllCourses(), getAllSubjects(), getActiveFacultyList()]);
+
+    const courseOpts = courses.map(c => `<option value="${c.id}">${courseLabel(c)}</option>`).join('');
+    const subOpts    = subjects.map(s => `<option value="${s.id}">${s.subject_name}</option>`).join('');
+    const facOpts    = faculty.map(f => `<option value="${f.id}">Prof. ${f.full_name}</option>`).join('');
+
+    document.getElementById('csfCourse').innerHTML  = '<option value="">— select course —</option>' + courseOpts;
+    document.getElementById('csfSubject').innerHTML = '<option value="">— select subject —</option>' + subOpts;
+    document.getElementById('csfFaculty').innerHTML = '<option value="">— select faculty —</option>' + facOpts;
+    document.getElementById('filterCourse').innerHTML = '<option value="">All Courses</option>' + courseOpts;
+
+    tsCourse  = new TomSelect('#csfCourse',  { placeholder: 'Search course…' });
+    tsSubject = new TomSelect('#csfSubject', { placeholder: 'Search subject…' });
+    tsFaculty = new TomSelect('#csfFaculty', { placeholder: 'Search faculty…' });
+    tsFilter  = new TomSelect('#filterCourse', { placeholder: 'All Courses' });
+  }
+
+  async function refreshSubjectDropdown() {
+    subjects = await getAllSubjects();
+    if (tsSubject) tsSubject.destroy();
+    document.getElementById('csfSubject').innerHTML =
+      '<option value="">— select subject —</option>' +
+      subjects.map(s => `<option value="${s.id}">${s.subject_name}</option>`).join('');
+    tsSubject = new TomSelect('#csfSubject', { placeholder: 'Search subject…' });
+  }
+
+  // ── CSF Table ────────────────────────────────────────────────────
+  async function loadCSF(courseId = null, statusFilter = null) {
+    const tbody = document.getElementById('csfTableBody');
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Loading…</td></tr>';
+    try {
+      csfData = await getAllCSF(courseId || null);
+      let rows = csfData;
+      if (statusFilter === 'active')   rows = rows.filter(r => r.is_active);
+      if (statusFilter === 'inactive') rows = rows.filter(r => !r.is_active);
+      renderCSF(rows);
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  function renderCSF(rows) {
+    const tbody = document.getElementById('csfTableBody');
+    if (!rows.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No mappings found.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(r => `<tr>
+      <td><strong>${r.course ? courseLabel(r.course) : '—'}</strong></td>
+      <td>${r.subject?.subject_name ?? '—'}</td>
+      <td>Prof. ${r.faculty?.full_name ?? '—'}</td>
+      <td><span class="badge ${r.is_active ? 'badge-active' : 'badge-inactive'}">${r.is_active ? 'Active' : 'Inactive'}</span></td>
+      <td>
+        ${r.is_active
+          ? `<button class="btn btn-warn btn-sm" onclick="toggleCSF('${r.id}',false)">Deactivate</button>`
+          : `<button class="btn btn-success btn-sm" onclick="toggleCSF('${r.id}',true)">Reactivate</button>`}
+      </td>
+    </tr>`).join('');
+  }
+
+  window.toggleCSF = async (id, active) => {
+    try {
+      active ? await reactivateCSF(id) : await deactivateCSF(id);
+      toast(active ? 'Mapping reactivated.' : 'Mapping deactivated.', active ? 'success' : 'warn');
+      loadCSF();
+    } catch(e) { toast(e.message, 'error'); }
+  };
+
+  // ── Add CSF ──────────────────────────────────────────────────────
+  document.getElementById('addCsfBtn').addEventListener('click', async () => {
+    const courseId  = tsCourse.getValue();
+    const subjectId = tsSubject.getValue();
+    const facultyId = tsFaculty.getValue();
+    if (!courseId || !subjectId || !facultyId) { toast('Please select course, subject, and faculty.', 'error'); return; }
+    const btn = document.getElementById('addCsfBtn');
+    btn.disabled = true;
+    try {
+      await addCSF(courseId, subjectId, facultyId);
+      toast('Mapping added successfully.', 'success');
+      tsCourse.clear(); tsSubject.clear(); tsFaculty.clear();
+      loadCSF();
+    } catch(e) { toast(e.message, 'error'); }
+    finally { btn.disabled = false; }
+  });
+
+  // ── New Subject inline ────────────────────────────────────────────
+  document.getElementById('toggleNewSubject').addEventListener('click', () => {
+    document.getElementById('newSubjectRow').classList.toggle('visible');
+  });
+  document.getElementById('cancelSubjectBtn').addEventListener('click', () => {
+    document.getElementById('newSubjectRow').classList.remove('visible');
+    document.getElementById('newSubCode').value = '';
+    document.getElementById('newSubName').value = '';
+  });
+  document.getElementById('saveSubjectBtn').addEventListener('click', async () => {
+    const code = document.getElementById('newSubCode').value.trim();
+    const name = document.getElementById('newSubName').value.trim();
+    if (!code || !name) { toast('Subject code and name are required.', 'error'); return; }
+    try {
+      await addSubject(code, name);
+      toast(`Subject "${name}" added.`, 'success');
+      document.getElementById('newSubjectRow').classList.remove('visible');
+      document.getElementById('newSubCode').value = '';
+      document.getElementById('newSubName').value = '';
+      await refreshSubjectDropdown();
+    } catch(e) { toast(e.message, 'error'); }
+  });
+
+  // ── Filters ──────────────────────────────────────────────────────
+  document.getElementById('applyFilter').addEventListener('click', () => {
+    loadCSF(tsFilter.getValue() || null, document.getElementById('filterStatus').value || null);
+  });
+  document.getElementById('clearFilter').addEventListener('click', () => {
+    tsFilter.clear();
+    document.getElementById('filterStatus').value = '';
+    loadCSF();
+  });
+
+  await loadMasterData();
+  await loadCSF();
+</script>
+</body>
+</html>
