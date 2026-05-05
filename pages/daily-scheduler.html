@@ -1,94 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ASES — Daily Scheduler</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  
+  <!-- Shared Theme CSS -->
+  <link rel="stylesheet" href="/css/theme.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  
   <style>
-    :root {
-      --bg:#0d0f14;--bg-card:#13161e;--bg-input:#1a1d27;--bg-hover:#1e2130;
-      --border:#252935;--border-focus:#4f6af5;--accent:#4f6af5;--accent-hover:#3d58e8;
-      --accent-glow:rgba(79,106,245,.22);--text-primary:#eceef5;--text-muted:#6b7089;
-      --text-label:#a0a5c0;--error:#e05c6b;--error-bg:rgba(224,92,107,.10);
-      --success:#3ecf8e;--success-bg:rgba(62,207,142,.10);
-      --warn:#f5a623;--warn-bg:rgba(245,166,35,.10);
-      --cell-absent:rgba(224,92,107,.15);--cell-absent-border:#e05c6b;
-      --cell-resolved:rgba(62,207,142,.1);--cell-resolved-border:#3ecf8e;
-      --cell-cancelled:rgba(107,112,137,.12);--cell-cancelled-border:#3d4256;
-      --cell-break:rgba(255,255,255,.02);
-      --ff-display:'DM Serif Display',Georgia,serif;--ff-body:'DM Sans',system-ui,sans-serif;
-      --radius:10px;--sidebar-w:240px;
-    }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%;font-family:var(--ff-body);background:var(--bg);color:var(--text-primary)}
-    body{display:flex;min-height:100vh}
-
-    /* ── Sidebar (same as leaves.html) ── */
-    .sidebar{width:var(--sidebar-w);background:var(--bg-card);border-right:1px solid var(--border);
-      display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh}
-    .sidebar-logo{display:flex;align-items:center;gap:.75rem;padding:1.5rem 1.25rem;
-      border-bottom:1px solid var(--border)}
-    .logo-box{width:32px;height:32px;background:var(--accent);border-radius:7px;
-      display:flex;align-items:center;justify-content:center}
-    .logo-box svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2;
-      stroke-linecap:round;stroke-linejoin:round}
-    .logo-text{font-weight:600;font-size:.9rem;letter-spacing:.1em;text-transform:uppercase}
-    nav{flex:1;padding:1rem 0;overflow-y:auto}
-    .nav-section{padding:.25rem 1rem .1rem;font-size:.65rem;font-weight:600;
-      letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-top:.75rem}
-    .nav-link{display:flex;align-items:center;gap:.65rem;padding:.6rem 1.25rem;
-      font-size:.875rem;color:var(--text-muted);text-decoration:none;
-      transition:color .15s,background .15s}
-    .nav-link svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;
-      stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
-    .nav-link:hover{color:var(--text-primary);background:var(--bg-hover)}
-    .nav-link.active{color:var(--accent);background:rgba(79,106,245,.1);
-      border-right:2px solid var(--accent)}
-    .sidebar-footer{padding:1rem 1.25rem;border-top:1px solid var(--border)}
-    .user-pill{display:flex;align-items:center;gap:.6rem}
-    .user-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);
-      display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:600;flex-shrink:0}
-    .user-info{flex:1;min-width:0}
-    .user-name{font-size:.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .user-role{font-size:.7rem;color:var(--text-muted)}
-    .btn-logout{background:none;border:none;cursor:pointer;color:var(--text-muted);
-      display:flex;padding:4px;border-radius:5px;transition:color .15s}
-    .btn-logout:hover{color:var(--error)}
-    .btn-logout svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;
-      stroke-linecap:round;stroke-linejoin:round}
-
-    /* ── Main ── */
-    .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-    .topbar{padding:1.25rem 2rem;border-bottom:1px solid var(--border);
-      display:flex;align-items:center;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;gap:1rem}
-    .page-title{font-family:var(--ff-display);font-size:1.6rem}
-    .page-subtitle{font-size:.84rem;color:var(--text-muted);margin-top:.15rem}
-    .content{flex:1;overflow-y:auto;padding:2rem}
-
+    /* Page-specific overrides */
+    
     /* ── Date picker + generate row ── */
     .controls-bar{display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap;
       background:var(--bg-card);border:1px solid var(--border);border-radius:14px;
-      padding:1.25rem 1.5rem;margin-bottom:1.5rem}
-    .field{display:flex;flex-direction:column;gap:.4rem}
-    .field label{font-size:.72rem;font-weight:600;letter-spacing:.08em;
-      text-transform:uppercase;color:var(--text-label)}
-    input[type=text]{background:var(--bg-input);border:1px solid var(--border);
-      border-radius:var(--radius);color:var(--text-primary);font-family:var(--ff-body);
-      font-size:.9rem;padding:.68rem .9rem;outline:none;width:100%;
-      transition:border-color .2s,box-shadow .2s}
-    input:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px var(--accent-glow)}
+      padding:1.25rem 1.5rem;margin-bottom:1.5rem; transition: background .25s, border-color .25s;}
 
     /* ── Status bar ── */
     .status-bar{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem}
     .stat-chip{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
-      padding:.6rem 1rem;display:flex;align-items:center;gap:.5rem;font-size:.85rem}
+      padding:.6rem 1rem;display:flex;align-items:center;gap:.5rem;font-size:.85rem; transition: background .25s, border-color .25s;}
     .stat-chip .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-    .dot-absent{background:var(--cell-absent-border)}
-    .dot-resolved{background:var(--cell-resolved-border)}
-    .dot-cancelled{background:var(--cell-cancelled-border)}
+    .dot-absent{background:var(--error)}
+    .dot-resolved{background:var(--success)}
+    .dot-cancelled{background:var(--text-muted)}
     .dot-normal{background:var(--accent)}
     .stat-chip strong{font-weight:700;margin-right:.15rem}
 
@@ -100,43 +36,44 @@
 
     /* ── Schedule grid ── */
     .schedule-grid{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;
-      overflow:hidden}
+      overflow:hidden; transition: background .25s, border-color .25s;}
     .grid-header{display:grid;border-bottom:1px solid var(--border);
-      background:rgba(255,255,255,.03)}
+      background:rgba(127,127,200,.04); transition: border-color .25s;}
     .grid-header-cell{padding:.65rem .75rem;font-size:.68rem;font-weight:600;
       letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);
-      border-right:1px solid var(--border)}
+      border-right:1px solid var(--border); transition: border-color .25s;}
     .grid-header-cell:last-child{border-right:none}
 
     /* Time slot row */
     .slot-row{display:grid;border-bottom:1px solid rgba(37,41,53,.5)}
+    [data-theme="light"] .slot-row { border-bottom-color: rgba(200,210,230,.4); }
     .slot-row:last-child{border-bottom:none}
-    .slot-row.is-break{background:var(--cell-break)}
+    .slot-row.is-break{background:rgba(127,127,200,.03)}
 
     .slot-time{padding:.5rem .75rem;font-size:.72rem;color:var(--text-muted);
       border-right:1px solid var(--border);display:flex;flex-direction:column;
-      justify-content:center;white-space:nowrap;min-width:90px}
+      justify-content:center;white-space:nowrap;min-width:90px; transition: border-color .25s;}
     .slot-time .time-label{font-weight:600;font-size:.75rem;color:var(--text-label)}
     .slot-time .time-range{font-size:.68rem}
 
     /* Break row cell */
     .break-cell{padding:.45rem .75rem;font-size:.72rem;color:var(--text-muted);
-      font-style:italic;letter-spacing:.05em;border-right:1px solid var(--border)}
+      font-style:italic;letter-spacing:.05em;border-right:1px solid var(--border); transition: border-color .25s;}
     .break-cell:last-child{border-right:none}
 
     /* Lecture cell */
     .lecture-cell{padding:.5rem .6rem;border-right:1px solid var(--border);
-      min-height:64px;position:relative;cursor:default}
+      min-height:64px;position:relative;cursor:default; transition: background .15s, border-color .25s;}
     .lecture-cell:last-child{border-right:none}
 
     /* Cell states */
-    .lecture-cell.state-absent{background:var(--cell-absent);
-      border-left:3px solid var(--cell-absent-border);cursor:pointer}
-    .lecture-cell.state-absent:hover{background:rgba(224,92,107,.22)}
-    .lecture-cell.state-resolved{background:var(--cell-resolved);
-      border-left:3px solid var(--cell-resolved-border);cursor:pointer}
-    .lecture-cell.state-cancelled{background:var(--cell-cancelled);
-      border-left:3px solid var(--cell-cancelled-border);opacity:.65}
+    .lecture-cell.state-absent{background:var(--error-bg);
+      border-left:3px solid var(--error);cursor:pointer}
+    .lecture-cell.state-absent:hover{background:rgba(224,92,107,.18)}
+    .lecture-cell.state-resolved{background:var(--success-bg);
+      border-left:3px solid var(--success);cursor:pointer}
+    .lecture-cell.state-cancelled{background:rgba(107,112,137,.1);
+      border-left:3px solid var(--text-muted);opacity:.65}
     .lecture-cell.state-normal{cursor:pointer}
     .lecture-cell.state-normal:hover{background:var(--bg-hover)}
     .lecture-cell.state-empty{cursor:default;background:transparent}
@@ -144,64 +81,27 @@
     .cell-course{font-size:.7rem;font-weight:700;letter-spacing:.05em;
       text-transform:uppercase;color:var(--text-muted);margin-bottom:.15rem}
     .cell-subject{font-size:.8rem;font-weight:600;color:var(--text-primary);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.15rem}
-    .cell-faculty{font-size:.72rem;color:var(--text-muted)}
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.15rem; transition: color .25s;}
+    .cell-faculty{font-size:.72rem;color:var(--text-muted); transition: color .25s;}
     .cell-room{font-size:.68rem;color:var(--accent);font-weight:500;
       position:absolute;bottom:.35rem;right:.5rem}
-    .cell-status-icon{position:absolute;top:.35rem;right:.4rem;font-size:.75rem}
 
     .absent-badge{display:inline-block;background:var(--error-bg);color:var(--error);
       border-radius:4px;padding:.08rem .35rem;font-size:.65rem;font-weight:700;margin-top:.1rem}
     .resolved-badge{display:inline-block;background:var(--success-bg);color:var(--success);
       border-radius:4px;padding:.08rem .35rem;font-size:.65rem;font-weight:700;margin-top:.1rem}
-    .cancelled-badge{display:inline-block;background:rgba(107,112,137,.2);color:var(--text-muted);
+    .cancelled-badge{display:inline-block;background:rgba(107,112,137,.15);color:var(--text-muted);
       border-radius:4px;padding:.08rem .35rem;font-size:.65rem;font-weight:700;margin-top:.1rem}
 
-    /* ── Buttons ── */
-    .btn{border:none;border-radius:var(--radius);font-family:var(--ff-body);font-size:.88rem;
-      font-weight:600;padding:.68rem 1.25rem;cursor:pointer;
-      display:inline-flex;align-items:center;gap:.45rem;transition:background .2s,opacity .2s}
-    .btn:disabled{opacity:.5;cursor:not-allowed}
-    .btn-primary{background:var(--accent);color:#fff}
-    .btn-primary:hover:not(:disabled){background:var(--accent-hover)}
-    .btn-danger{background:var(--error-bg);color:var(--error);border:1px solid rgba(224,92,107,.25)}
-    .btn-danger:hover:not(:disabled){background:rgba(224,92,107,.2)}
-    .btn-ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border)}
-    .btn-ghost:hover:not(:disabled){color:var(--text-primary);border-color:var(--text-muted)}
-    .btn-sm{padding:.42rem .85rem;font-size:.8rem}
-    .btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;
-      stroke-linecap:round;stroke-linejoin:round}
-
-    /* ── Resolution Modal ── */
-    .modal-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);
-      backdrop-filter:blur(8px);z-index:200;align-items:flex-start;justify-content:center;
-      padding:2rem 1rem;overflow-y:auto}
-    .modal-back.open{display:flex}
-    .modal{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
-      width:100%;max-width:520px;box-shadow:0 32px 72px rgba(0,0,0,.6);
-      animation:mIn .25s ease both;margin:auto}
-    @keyframes mIn{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:scale(1)}}
-
-    .modal-header{padding:1.5rem 1.75rem 1.25rem;border-bottom:1px solid var(--border);
-      display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
-    .modal-title{font-family:var(--ff-display);font-size:1.3rem}
-    .modal-close{background:none;border:none;cursor:pointer;color:var(--text-muted);
-      display:flex;padding:4px;border-radius:6px;transition:color .15s;flex-shrink:0}
-    .modal-close:hover{color:var(--text-primary)}
-    .modal-close svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;
-      stroke-linecap:round;stroke-linejoin:round}
-
-    .modal-body{padding:1.25rem 1.75rem}
+    /* ── Modal Specifics ── */
     .slot-info-box{background:var(--bg-input);border:1px solid var(--border);
-      border-radius:10px;padding:1rem;margin-bottom:1.25rem;font-size:.875rem}
+      border-radius:10px;padding:1rem;margin-bottom:1.25rem;font-size:.875rem; transition: background .25s, border-color .25s;}
     .slot-info-row{display:flex;justify-content:space-between;gap:1rem;
       padding:.25rem 0;border-bottom:1px solid rgba(37,41,53,.5)}
+    [data-theme="light"] .slot-info-row { border-bottom-color: rgba(200,210,230,.4); }
     .slot-info-row:last-child{border-bottom:none}
     .slot-info-label{color:var(--text-muted);font-size:.78rem;font-weight:500;
       text-transform:uppercase;letter-spacing:.05em}
-
-    .section-label{font-size:.72rem;font-weight:600;text-transform:uppercase;
-      letter-spacing:.1em;color:var(--text-label);margin-bottom:.75rem}
 
     /* Replacement options list */
     .options-list{display:flex;flex-direction:column;gap:.5rem;max-height:280px;overflow-y:auto}
@@ -209,7 +109,7 @@
       background:var(--bg-input);border:1px solid var(--border);border-radius:10px;
       cursor:pointer;transition:border-color .2s,background .2s}
     .option-item:hover{border-color:var(--border-focus);background:var(--bg-hover)}
-    .option-item.selected{border-color:var(--accent);background:rgba(79,106,245,.08)}
+    .option-item.selected{border-color:var(--accent);background:var(--accent-glow)}
     .option-radio{width:16px;height:16px;border:2px solid var(--border);
       border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
       transition:border-color .2s}
@@ -218,8 +118,8 @@
       display:none}
     .option-item.selected .option-radio-dot{display:block}
     .option-text{flex:1;min-width:0}
-    .option-subject{font-size:.88rem;font-weight:600;color:var(--text-primary)}
-    .option-faculty{font-size:.78rem;color:var(--text-muted)}
+    .option-subject{font-size:.88rem;font-weight:600;color:var(--text-primary); transition: color .25s;}
+    .option-faculty{font-size:.78rem;color:var(--text-muted); transition: color .25s;}
     .option-badges{display:flex;gap:.35rem;flex-shrink:0}
     .warn-badge{display:inline-flex;align-items:center;gap:.2rem;
       background:var(--warn-bg);color:var(--warn);border:1px solid rgba(245,166,35,.2);
@@ -227,100 +127,39 @@
     .warn-badge svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;
       stroke-linecap:round;stroke-linejoin:round}
 
-    .modal-footer{padding:1.25rem 1.75rem;border-top:1px solid var(--border);
-      display:flex;gap:.75rem;justify-content:space-between;align-items:center;flex-wrap:wrap}
-
-    /* ── Toast ── */
-    #toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;
-      display:flex;flex-direction:column;gap:.5rem;pointer-events:none}
-    .toast-item{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
-      padding:.8rem 1.1rem;font-size:.875rem;display:flex;align-items:center;gap:.6rem;
-      pointer-events:all;min-width:260px;max-width:360px;
-      animation:toastIn .3s ease both;box-shadow:0 8px 24px rgba(0,0,0,.4)}
-    .toast-item.success{border-left:3px solid var(--success)}
-    .toast-item.error{border-left:3px solid var(--error)}
-    .toast-item.warn{border-left:3px solid var(--warn)}
-    @keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-
-    /* ── Spinner ── */
-    .spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.25);
-      border-top-color:currentColor;border-radius:50%;animation:spin .65s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
     /* ── Empty/loading states ── */
     .grid-placeholder{padding:4rem;text-align:center;color:var(--text-muted);
       display:flex;flex-direction:column;align-items:center;gap:1rem}
     .grid-placeholder svg{width:40px;height:40px;stroke:var(--border);fill:none;stroke-width:1.5;
       stroke-linecap:round;stroke-linejoin:round}
 
-    .cancel-section{margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)}
+    .cancel-section{margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border); transition: border-color .25s;}
     .cancel-reason-input{width:100%;background:var(--bg-input);border:1px solid var(--border);
       border-radius:var(--radius);color:var(--text-primary);font-family:var(--ff-body);
       font-size:.88rem;padding:.65rem .9rem;outline:none;margin-top:.5rem;
-      transition:border-color .2s}
+      transition:border-color .2s, box-shadow .2s, background .25s;}
     .cancel-reason-input:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px var(--accent-glow)}
-
-    @media(max-width:768px){
-      .sidebar{display:none}
-      .content{padding:1rem}
-      .topbar{padding:1rem}
-    }
   </style>
 </head>
 <body>
 
 <!-- ── Sidebar ── -->
 <aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-box">
-      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/>
-        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-        <line x1="3" y1="10" x2="21" y2="10"/></svg>
-    </div>
-    <span class="logo-text">ASES</span>
-  </div>
-  <nav>
-    <div class="nav-section">Admin</div>
-    <a href="/dashboard.html" class="nav-link">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-        <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
-    <a href="/pages/users.html" class="nav-link">
-      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-        <circle cx="9" cy="7" r="4"/></svg>Users</a>
-    <a href="/pages/master-timetable.html" class="nav-link">
-      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/>
-        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-        <line x1="3" y1="10" x2="21" y2="10"/></svg>Master Timetable</a>
-    <a href="/pages/csf-mapping.html" class="nav-link">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/>
-        <line x1="2" y1="12" x2="22" y2="12"/></svg>CSF Mapping</a>
-    <a href="/pages/leaves.html" class="nav-link">
-      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14,2 14,8 20,8"/></svg>Leave Management</a>
-    <a href="/pages/daily-scheduler.html" class="nav-link active">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/>
-        <polyline points="12,6 12,12 16,14"/></svg>Daily Scheduler</a>
-    <a href="/pages/execution.html" class="nav-link">
-      <svg viewBox="0 0 24 24"><polyline points="9,11 12,14 22,4"/>
-        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Execution Log</a>
-    <a href="/pages/reports.html" class="nav-link">
-      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/>
-        <line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Reports</a>
-    <div class="nav-section">Account</div>
-    <a href="/pages/change-password.html" class="nav-link">
-      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Change Password</a>
-  </nav>
+  <div class="sidebar-college" id="sidebarCollege"></div>
+  <nav id="sideNav"></nav>
   <div class="sidebar-footer">
+    <div class="theme-row">
+      <span class="theme-label">
+        <span id="themeIcon"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+        <span id="themeLabel">Light mode</span>
+      </span>
+      <label class="toggle-switch"><input type="checkbox" id="themeToggle"/><span class="toggle-track"></span></label>
+    </div>
     <div class="user-pill">
       <div class="user-avatar" id="userAvatar">?</div>
-      <div class="user-info">
-        <div class="user-name" id="userName">Loading…</div>
-        <div class="user-role">admin</div>
-      </div>
+      <div class="user-info"><div class="user-name" id="userName">…</div><div class="user-role" id="userRole">admin</div></div>
       <button class="btn-logout" id="logoutBtn" title="Sign out">
-        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-          <polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       </button>
     </div>
   </div>
@@ -346,6 +185,7 @@
       <button class="btn btn-primary" id="generateBtn">
         <svg viewBox="0 0 24 24"><polyline points="23,4 23,10 17,10"/>
           <path d="M20.49 15a9 9 0 1 1-.08-6.07"/></svg>
+        <span class="spin" style="display:none; border-color:rgba(255,255,255,.3); border-top-color:#fff;"></span>
         Generate Schedule
       </button>
       <button class="btn btn-ghost" id="reloadBtn" style="display:none">
@@ -366,19 +206,19 @@
     <!-- Legend -->
     <div class="legend" id="legendRow" style="display:none">
       <div class="legend-item">
-        <div class="legend-swatch" style="background:var(--cell-absent);border-color:var(--cell-absent-border)"></div>Needs resolution
+        <div class="legend-swatch" style="background:var(--error-bg);border-color:var(--error)"></div>Needs resolution
       </div>
       <div class="legend-item">
-        <div class="legend-swatch" style="background:var(--cell-resolved);border-color:var(--cell-resolved-border)"></div>Resolved / rescheduled
+        <div class="legend-swatch" style="background:var(--success-bg);border-color:var(--success)"></div>Resolved / rescheduled
       </div>
       <div class="legend-item">
-        <div class="legend-swatch" style="background:var(--cell-cancelled);border-color:var(--cell-cancelled-border)"></div>Cancelled
+        <div class="legend-swatch" style="background:rgba(107,112,137,.15);border-color:var(--text-muted)"></div>Cancelled
       </div>
       <div class="legend-item">
         <div class="legend-swatch" style="background:var(--bg-card);border-color:var(--border)"></div>Normal
       </div>
       <div class="legend-item">
-        <div class="legend-swatch" style="background:var(--cell-break);border-color:var(--border);opacity:.5"></div>Break / Recess
+        <div class="legend-swatch" style="background:rgba(127,127,200,.03);border-color:var(--border);opacity:.5"></div>Break / Recess
       </div>
     </div>
 
@@ -416,7 +256,7 @@
         <div class="section-label">Choose Replacement Lecture</div>
         <div class="options-list" id="optionsList">
           <div style="text-align:center;padding:1.5rem;color:var(--text-muted)">
-            <span class="spin"></span> Loading options…
+            <span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading options…
           </div>
         </div>
       </div>
@@ -438,6 +278,7 @@
         <button class="btn btn-ghost btn-sm" id="modalCancelBtn">Close</button>
         <button class="btn btn-primary btn-sm" id="resolveConfirmBtn" disabled>
           <svg viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></svg>
+          <span class="spin" style="display:none; border-color:rgba(255,255,255,.3); border-top-color:#fff;"></span>
           Confirm Replacement
         </button>
       </div>
@@ -449,7 +290,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script type="module">
-  import { requireRole, logout } from '../js/auth/session.js';
+  import { requireRole } from '../js/auth/session.js';
+  import { initSidebar } from '../js/components/sidebar.js';
   import {
     getDayType, generateDailySchedule, loadDailySchedule,
     resolveAbsentSlot, cancelSlot, uncancelSlot,
@@ -458,9 +300,9 @@
 
   // ── Auth guard ──────────────────────────────────────────────────
   const session = await requireRole('admin');
-  document.getElementById('userName').textContent   = session.profile.full_name;
-  document.getElementById('userAvatar').textContent = session.profile.full_name.charAt(0).toUpperCase();
-  document.getElementById('logoutBtn').addEventListener('click', logout);
+  
+  // Initialize shared sidebar component
+  initSidebar(session, 'scheduler');
 
   // ── Toast ────────────────────────────────────────────────────────
   function toast(msg, type = 'success') {
@@ -504,9 +346,11 @@
   async function doGenerate() {
     const btn = document.getElementById('generateBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spin"></span> Generating…';
+    btn.querySelector('.spin').style.display = 'inline-block';
+    
     document.getElementById('scheduleGrid').innerHTML =
-      '<div class="grid-placeholder"><span class="spin"></span><div>Building schedule…</div></div>';
+      '<div class="grid-placeholder"><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span><div>Building schedule…</div></div>';
+    
     try {
       scheduleData = await generateDailySchedule(selectedDate, session.user.id);
       renderGrid();
@@ -517,7 +361,7 @@
         '<div class="grid-placeholder"><div>Failed to generate schedule.</div></div>';
     } finally {
       btn.disabled = false;
-      btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-.08-6.07"/></svg> Generate Schedule`;
+      btn.querySelector('.spin').style.display = 'none';
     }
   }
 
@@ -674,7 +518,7 @@
     document.getElementById('cancelReasonInput').value = row.cancel_reason ?? '';
     document.getElementById('resolveConfirmBtn').disabled = true;
     document.getElementById('optionsList').innerHTML =
-      '<div style="text-align:center;padding:1.5rem;color:var(--text-muted)"><span class="spin"></span></div>';
+      '<div style="text-align:center;padding:1.5rem;color:var(--text-muted)"><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading options…</div>';
 
     document.getElementById('resolveModal').classList.add('open');
 
@@ -731,7 +575,8 @@
     if (!selectedOption || !activeSlotId) return;
     const btn = document.getElementById('resolveConfirmBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spin"></span> Saving…';
+    btn.querySelector('.spin').style.display = 'inline-block';
+    
     try {
       await resolveAbsentSlot(activeSlotId, {
         csfId:     selectedOption.csfId,
@@ -746,7 +591,7 @@
     } catch(e) {
       toast(e.message, 'error');
       btn.disabled = false;
-      btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="20,6 9,17 4,12"/></svg> Confirm Replacement`;
+      btn.querySelector('.spin').style.display = 'none';
     }
   });
 
@@ -772,6 +617,9 @@
     document.getElementById('resolveModal').classList.remove('open');
     activeSlotId = null;
     selectedOption = null;
+    
+    // reset button spin state
+    document.getElementById('resolveConfirmBtn').querySelector('.spin').style.display = 'none';
   }
 
   document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
