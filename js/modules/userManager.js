@@ -20,7 +20,7 @@ import { supabase } from '../config/supabase.js';
 // ── Edge Function endpoint ────────────────────────────────────────────────────
 // Deploy the Edge Function from /functions/admin-create-user/index.ts
 // then set this to your project's functions URL.
-const EDGE_FN_URL = '/functions/v1/admin-create-user';
+const EDGE_FN_URL = 'https://jpmijvxdmfdmtkvfdvdq.supabase.co/functions/v1/admin-create-user';
 
 // ── createAdmin ───────────────────────────────────────────────────────────────
 /**
