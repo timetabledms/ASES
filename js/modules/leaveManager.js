@@ -113,8 +113,8 @@ export async function getLeavesByDate(date) {
       leave_type,
       reason,
       status,
-      faculty:profiles!faculty_id (id, full_name),
-      entered_by_profile:profiles!entered_by (full_name)
+      faculty:faculty!faculty_id           (id, full_name),
+      entered_by_profile:admin_users!entered_by (full_name)
     `)
     .eq('leave_date', date)
     .eq('status', 'approved')
@@ -137,7 +137,7 @@ export async function getLeavesByFaculty(facultyId, fromDate, toDate) {
       leave_type,
       reason,
       status,
-      entered_by_profile:profiles!entered_by (full_name)
+      entered_by_profile:admin_users!entered_by (full_name)
     `)
     .eq('faculty_id', facultyId)
     .order('leave_date', { ascending: false });
@@ -163,8 +163,8 @@ export async function getAllLeaves(fromDate, toDate) {
       leave_type,
       reason,
       status,
-      faculty:profiles!faculty_id (id, full_name),
-      entered_by_profile:profiles!entered_by (full_name)
+      faculty:faculty!faculty_id           (id, full_name),
+      entered_by_profile:admin_users!entered_by (full_name)
     `)
     .order('leave_date', { ascending: false });
 
@@ -182,9 +182,8 @@ export async function getAllLeaves(fromDate, toDate) {
  */
 export async function getActiveFaculty() {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('faculty')
     .select('id, full_name')
-    .eq('role', 'faculty')
     .eq('is_active', true)
     .order('full_name');
 
