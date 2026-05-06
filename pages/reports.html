@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ASES — Reports</title>
+  <link rel="stylesheet" href="/css/theme.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
+  <style>
+    /* Report-specific styles */
+    .report-nav{display:flex;flex-direction:column;gap:.2rem;width:200px;flex-shrink:0}
+    .report-nav-btn{text-align:left;background:transparent;border:none;border-radius:8px;
+      padding:.55rem .9rem;font-family:var(--ff-body);font-size:.82rem;font-weight:500;
+      color:var(--text-muted);cursor:pointer;transition:background .15s,color .15s;width:100%}
+    .report-nav-btn:hover{background:var(--bg-hover);color:var(--text-primary)}
+    .report-nav-btn.active{background:rgba(79,106,245,.15);color:var(--accent);font-weight:600}
+    .report-nav-label{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--text-muted);padding:.4rem .9rem .15rem;margin-top:.3rem}
+    .report-layout{display:flex;gap:1.25rem;align-items:flex-start}
+    .report-panel{flex:1;min-width:0}
+    .report-section{display:none}
+    .report-section.active{display:block}
+    .report-header{display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:1rem;flex-wrap:wrap;gap:.75rem}
+    .report-title{font-family:var(--ff-display);font-size:1.2rem;color:var(--text-primary)}
+    .export-btns{display:flex;gap:.5rem}
+    .filter-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
+      padding:1rem 1.25rem;margin-bottom:1rem;
+      display:flex;align-items:flex-end;gap:.75rem;flex-wrap:wrap;
+      transition:background .25s,border-color .25s}
+    .filter-card .field{min-width:140px;flex:1}
+    .result-count{font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem}
+    /* Summary counts */
+    .mini-stats{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem}
+    .mini-stat{background:var(--bg-card);border:1px solid var(--border);border-radius:9px;
+      padding:.5rem .9rem;min-width:80px;text-align:center;transition:background .25s,border-color .25s}
+    .mini-stat-val{font-size:1.3rem;font-family:var(--ff-display);font-weight:400;line-height:1}
+    .mini-stat-lbl{font-size:.62rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+      color:var(--text-muted);margin-top:.1rem}
+    /* Leave type count table */
+    .leave-summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+      gap:.6rem;margin-top:.75rem}
+    .leave-type-chip{background:var(--bg-input);border:1px solid var(--border);border-radius:8px;
+      padding:.55rem .85rem;display:flex;justify-content:space-between;align-items:center;font-size:.82rem}
+    .leave-type-chip strong{color:var(--accent)}
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-college" id="sidebarCollege"></div>
+  <div class="sidebar-logo">
+    <div class="logo-box"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+    <span class="logo-text">ASES</span><span class="logo-version">v1.0</span>
+  </div>
+  <nav id="sideNav"></nav>
+  <div class="sidebar-footer">
+    <div class="theme-row">
+      <span class="theme-label"><span id="themeIcon"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span><span id="themeLabel">Dark mode</span></span>
+      <label class="toggle-switch"><input type="checkbox" id="themeToggle"/><span class="toggle-track"></span></label>
+    </div>
+    <div class="user-pill">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <div class="user-info"><div class="user-name" id="userName">…</div><div class="user-role" id="userRole"></div></div>
+      <button class="btn-logout" id="logoutBtn"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <div class="topbar">
+    <div><h1 class="page-title">Reports</h1><p class="page-subtitle">Analyse lecture execution, attendance, leaves, and modifications</p></div>
+  </div>
+  <div class="content">
+    <div class="report-layout">
+
+      <!-- Report navigation -->
+      <div class="report-nav" id="reportNav">
+        <div class="report-nav-label">Execution</div>
+        <button class="report-nav-btn active" data-report="r1">1. Daily Summary</button>
+        <button class="report-nav-btn" data-report="r2">2. Faculty Lectures</button>
+        <button class="report-nav-btn" data-report="r7">3. Modifications Log</button>
+        <button class="report-nav-btn" data-report="r8">4. Not Engaged / Unmarked</button>
+        <div class="report-nav-label">Academics</div>
+        <button class="report-nav-btn" data-report="r4">5. By Course</button>
+        <button class="report-nav-btn" data-report="r5">6. By Subject</button>
+        <button class="report-nav-btn" data-report="r6">7. By Room</button>
+        <button class="report-nav-btn" data-report="r9">8. Rescheduled Slots</button>
+        <div class="report-nav-label">Leave</div>
+        <button class="report-nav-btn" data-report="r3">9. Leave Summary</button>
+      </div>
+
+      <!-- Report panels -->
+      <div class="report-panel">
+
+        <!-- R1: Daily Summary -->
+        <div class="report-section active" id="r1">
+          <div class="report-header">
+            <div class="report-title">Daily Summary</div>
+            <div class="export-btns">
+              <button class="btn btn-ghost btn-sm" id="r1ExportPdf"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>PDF</button>
+              <button class="btn btn-ghost btn-sm" id="r1ExportXls"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>Excel</button>
+            </div>
+          </div>
+          <div class="filter-card">
+            <div class="field"><label>Date</label><input type="text" id="r1Date" placeholder="Pick date" readonly/></div>
+            <button class="btn btn-primary btn-sm" id="r1Run">Run Report</button>
+          </div>
+          <div class="stat-chips" id="r1Stats" style="display:none"></div>
+          <div class="result-count" id="r1Count"></div>
+          <div class="table-wrap"><table><thead><tr><th>Time</th><th>Room</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th><th>Flags</th></tr></thead><tbody id="r1Body"><tr class="empty-row"><td colspan="7">Select a date and run report.</td></tr></tbody></table></div>
+        </div>
+
+        <!-- R2: Faculty Lectures -->
+        <div class="report-section" id="r2">
+          <div class="report-header">
+            <div class="report-title">Faculty Lectures</div>
+            <div class="export-btns">
+              <button class="btn btn-ghost btn-sm" id="r2ExportPdf">PDF</button>
+              <button class="btn btn-ghost btn-sm" id="r2ExportXls">Excel</button>
+            </div>
+          </div>
+          <div class="filter-card">
+            <div class="field"><label>Faculty</label><select id="r2Faculty"><option value="">All Faculty</option></select></div>
+            <div class="field"><label>From</label><input type="text" id="r2From" placeholder="From" readonly/></div>
+            <div class="field"><label>To</label><input type="text" id="r2To" placeholder="To" readonly/></div>
+            <div class="field"><label>Status</label>
+              <select id="r2Status"><option value="">All</option><option value="on_time">On Time</option><option value="late">Late</option><option value="not_engaged">Not Engaged</option><option value="not_marked">Not Marked</option></select>
+            </div>
+            <button class="btn btn-primary btn-sm" id="r2Run">Run</button>
+          </div>
+          <div class="mini-stats" id="r2MiniStats" style="display:none"></div>
+          <div class="result-count" id="r2Count"></div>
+          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Status</th><th>Flags</th><th>Remarks</th></tr></thead><tbody id="r2Body"><tr class="empty-row"><td colspan="7">Set filters and run.</td></tr></tbody></table></div>
+        </div>
+
+        <!-- R3: Leave Summary -->
+        <div class="report-section" id="r3">
+          <div class="report-header">
+            <div class="report-title">Faculty Leave Summary</div>
+            <div class="export-btns">
+              <button class="btn btn-ghost btn-sm" id="r3ExportPdf">PDF</button>
+              <button class="btn btn-ghost btn-sm" id="r3ExportXls">Excel</button>
+            </div>
+          </div>
+          <div class="filter-card">
+            <div class="field"><label>Faculty</label><select id="r3Faculty"><option value="">All Faculty</option></select></div>
+            <div class="field"><label>From</label><input type="text" id="r3From" readonly/></div>
+            <div class="field"><label>To</label><input type="text" id="r3To" readonly/></div>
+            <button class="btn btn-primary btn-sm" id="r3Run">Run</button>
+          </div>
+          <div class="result-count" id="r3Count"></div>
+          <div class="table-wrap"><table><thead><tr><th>Faculty</th><th>Date</th><th>Leave Type</th><th>Reason</th><th>Status</th></tr></thead><tbody id="r3Body"><tr class="empty-row"><td colspan="5">Set filters and run.</td></tr></tbody></table></div>
+          <div id="r3Summary" style="margin-top:1rem"></div>
+        </div>
+
+        <!-- R4: By Course -->
+        <div class="report-section" id="r4">
+          <div class="report-header">
+            <div class="report-title">By Course</div>
+            <div class="export-btns">
+              <button class="btn btn-ghost btn-sm" id="r4ExportPdf">PDF</button>
+              <button class="btn btn-ghost btn-sm" id="r4ExportXls">Excel</button>
+            </div>
+          </div>
+          <div class="filter-card">
+            <div class="field"><label>Course *</label><select id="r4Course"><option value="">— select course —</option></select></div>
+            <div class="field"><label>From</label><input type="text" id="r4From" readonly/></div>
+            <div class="field"><label>To</label><input type="text" id="r4To" readonly/></div>
+            <div class="field"><label>Status</label><select id="r4Status"><option value="">All</option><option value="on_time">On Time</option><option value="late">Late</option><option value="not_engaged">Not Engaged</option><option value="not_marked">Not Marked</option></select></div>
+            <button class="btn btn-primary btn-sm" id="r4Run">Run</button>
+          </div>
+          <div class="result-count" id="r4Count"></div>
+          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Subject</th><th>Faculty</th><th>Room</th><th>Status</th><th>Flags</th></tr></thead><tbody id="r4Body"><tr class="empty-row"><td colspan="7">Select course and run.</td></tr></tbody></table></div>
+        </div>
+
+        <!-- R5: By Subject -->
+        <div class="report-section" id="r5">
+          <div class="report-header">
+            <div class="report-title">By Subject</div>
+            <div class="export-btns">
+              <button class="btn btn-ghost btn-sm" id="r5ExportPdf">PDF</button>
+              <button class="btn btn-ghost btn-sm" id="r5ExportXls">Excel</button>
+            </div>
+          </div>
+          <div class="filter-card">
+            <div class="field"><label>Subject *</label><select id="r5Subject"><option value="">— select subject —</option></select></div>
+            <div class="field"><label>From</label><input type="text" id="r5From" readonly/></div>
+            <div class="field"><label>To</label><input type="text" id="r5To" readonly/></div>
+            <div class="field"><label>Faculty</label><select id="r5Faculty"><option value="">All</option></select></div>
+            <div class="field"><label>Status</label><select id="r5Status"><option value="">All</option><option value="on_time">On Time</option><option value="late">Late</option><option value="not_engaged">Not Engaged</option><option value="not_marked">Not Marked</option></select></div>
+            <button class="btn btn-primary btn-sm" id="r5Run">Run</button>
+          </div>
+          <div class="result-count" id="r5Count"></div>
+          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Faculty</th><th>Room</th><th>Status</th></tr></thead><tbody id="r5Body"><tr class="empty-row"><td colspan="6">Select subject and run.</td></tr></tbody></table></div>
+        </div>
+
+        <!-- R6: By Room -->
+        <div class="report-section" id="r6">
+          <div class="report-header">
+            <div class="report-title">By Room</div>
+            <div class="export-btns">
+              <button class="btn btn-ghost btn-sm" id="r6ExportPdf">PDF</button>
+              <button class="btn btn-ghost btn-sm" id="r6ExportXls">Excel</button>
+            </div>
+          </div>
+          <div class="filter-card">
+            <div class="field"><label>Room *</label><select id="r6Room"><option value="">— select room —</option></select></div>
+            <div class="field"><label>From</label><input type="text" id="r6From" readonly/></div>
+            <div class="field"><label>To</label><input type="text" id="r6To" readonly/></div>
+            <button class="btn btn-primary btn-sm" id="r6Run">Run</button>
+          </div>
+          <div class="result-count" id="r6Count"></div>
+          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th></tr></thead><tbody id="r6Body"><tr class="empty-row"><td colspan="6">Select room and run.</td></tr></tbody></table></div>
+        </div>
+
+        <!-- R7: Modifications Log -->
+        <div class="report-section" id="r7">
+          <div class="report-header">
+            <div class="report-title">Modifications Log</div>
+            <div class="export-btns">
+              <button class="btn btn-ghost btn-sm" id="r7ExportPdf">PDF</button>
+              <button class="btn btn-ghost btn-sm" id="r7ExportXls">Excel</button>
+            </div>
+          </div>
+          <div class="filter-card">
+            <div class="field"><label>From</label><input type="text" id="r7From" readonly/></div>
+            <div class="field"><label>To</label><input type="text" id="r7To" readonly/></div>
+            <div class="field"><label>Modification Type</label>
+              <select id="r7ModType">
+                <option value="any">Any Modification</option>
+                <option value="time">Time Changed</option>
+                <option value="room">Room Changed</option>
+                <option value="replaced">Replaced</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-sm" id="r7Run">Run</button>
+          </div>
+          <div class="result-count" id="r7Count"></div>
+          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Flags</th><th>Note</th></tr></thead><tbody id="r7Body"><tr class="empty-row"><td colspan="7">Set date range and run.</td></tr></tbody></table></div>
+        </div>
+
+        <!-- R8: Not Engaged / Not Marked -->
+        <div class="report-section" id="r8">
+          <div class="report-header">
+            <div class="report-title">Not Engaged / Not Marked</div>
+            <div class="export-btns">
+              <button class="btn btn-ghost btn-sm" id="r8ExportPdf">PDF</button>
+              <button class="btn btn-ghost btn-sm" id="r8ExportXls">Excel</button>
+            </div>
+          </div>
+          <div class="filter-card">
+            <div class="field"><label>From</label><input type="text" id="r8From" readonly/></div>
+            <div class="field"><label>To</label><input type="text" id="r8To" readonly/></div>
+            <div class="field"><label>Faculty</label><select id="r8Faculty"><option value="">All</option></select></div>
+            <div class="field"><label>Course</label><select id="r8Course"><option value="">All</option></select></div>
+            <div class="field"><label>Status</label>
+              <select id="r8Status"><option value="">Both</option><option value="not_engaged">Not Engaged only</option><option value="not_marked">Not Marked only</option></select>
+            </div>
+            <button class="btn btn-primary btn-sm" id="r8Run">Run</button>
+          </div>
+          <div class="result-count" id="r8Count"></div>
+          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th><th>Remarks</th></tr></thead><tbody id="r8Body"><tr class="empty-row"><td colspan="7">Set filters and run.</td></tr></tbody></table></div>
+        </div>
+
+        <!-- R9: Rescheduled Slots -->
+        <div class="report-section" id="r9">
+          <div class="report-header">
+            <div class="report-title">Rescheduled Slots</div>
+            <div class="export-btns">
+              <button class="btn btn-ghost btn-sm" id="r9ExportPdf">PDF</button>
+              <button class="btn btn-ghost btn-sm" id="r9ExportXls">Excel</button>
+            </div>
+          </div>
+          <div class="filter-card">
+            <div class="field"><label>From</label><input type="text" id="r9From" readonly/></div>
+            <div class="field"><label>To</label><input type="text" id="r9To" readonly/></div>
+            <button class="btn btn-primary btn-sm" id="r9Run">Run</button>
+          </div>
+          <div class="result-count" id="r9Count"></div>
+          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Room</th><th>Course</th><th>New Subject</th><th>New Faculty</th></tr></thead><tbody id="r9Body"><tr class="empty-row"><td colspan="6">Set date range and run.</td></tr></tbody></table></div>
+        </div>
+
+      </div><!-- /report-panel -->
+    </div><!-- /report-layout -->
+  </div>
+</main>
+<div id="toast"></div>
+
+<!-- CDN libs -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable/dist/jspdf.plugin.autotable.min.js"></script>
+
+<script type="module">
+  import { requireRole } from '/js/auth/session.js';
+  import { initSidebar } from '/js/components/sidebar.js';
+  import { toast } from '/js/components/toast.js';
+  import {
+    getFilteredReport, getFacultyLeaveSummary, getDailyStats,
+    getDailyFullTable, getRescheduledSlots, getReportDropdowns,
+    courseLbl, fmtDate, fmtTime, STATUS_LABELS, LEAVE_TYPE_LABELS
+  } from '/js/modules/reports.js';
+  import { exportToExcel, exportToPDF } from '/js/utils/exportHelpers.js';
+
+  // ── Auth ──────────────────────────────────────────────────────────
+  const session = await requireRole(); // any authenticated user
+  initSidebar(session, 'reports');
+  const isAdmin     = session.role === 'admin' || session.role === 'super_admin';
+  const myFacultyId = session.profile?.faculty_id ?? null;
+
+  // ── Report nav ────────────────────────────────────────────────────
+  document.querySelectorAll('.report-nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.report-nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.report).classList.add('active');
+    });
+  });
+
+  // ── Load dropdowns ────────────────────────────────────────────────
+  const { faculty, courses, subjects, rooms } = await getReportDropdowns();
+
+  function populateSelect(selId, items, labelFn, valueFn, placeholder='All') {
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    const hasBlank = sel.options.length && sel.options[0].value === '';
+    if (!hasBlank) sel.innerHTML = `<option value="">${placeholder}</option>`;
+    items.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = valueFn(item);
+      opt.textContent = labelFn(item);
+      sel.appendChild(opt);
+    });
+  }
+
+  const facultyOpts = f => `Prof. ${f.full_name}`;
+  ['r2Faculty','r3Faculty','r5Faculty','r8Faculty'].forEach(id =>
+    populateSelect(id, faculty, facultyOpts, f => f.id));
+
+  const courseOpts = c => courseLbl(c);
+  ['r4Course','r8Course'].forEach(id =>
+    populateSelect(id, courses, courseOpts, c => c.id, '— select course —'));
+
+  populateSelect('r5Subject', subjects, s => s.subject_name, s => s.id, '— select subject —');
+  populateSelect('r6Room',    rooms,    r => `Room ${r.room_code}`, r => r.id, '— select room —');
+
+  // ── Flatpickr init ────────────────────────────────────────────────
+  const fpOpts = { dateFormat:'Y-m-d', disableMobile:true };
+  const today  = new Date().toISOString().slice(0,10);
+  flatpickr('#r1Date',  { ...fpOpts, defaultDate: today });
+  ['r2From','r2To','r3From','r3To','r4From','r4To','r5From','r5To',
+   'r6From','r6To','r7From','r7To','r8From','r8To','r9From','r9To']
+    .forEach(id => flatpickr('#'+id, fpOpts));
+
+  // ── Tom Select inits ──────────────────────────────────────────────
+  ['r2Faculty','r3Faculty','r4Course','r5Subject','r5Faculty',
+   'r6Room','r8Faculty','r8Course'].forEach(id => {
+    try { new TomSelect('#'+id, { allowEmptyOption:true }); } catch {}
+  });
+
+  // ── Helpers ───────────────────────────────────────────────────────
+  function sBadge(status) {
+    const cls = { on_time:'badge-on-time', late:'badge-late', not_engaged:'badge-not-engaged', not_marked:'badge-not-marked' };
+    return `<span class="badge ${cls[status]??'badge-not-marked'}">${STATUS_LABELS[status]??status}</span>`;
+  }
+
+  function modFlags(r) {
+    const f = [];
+    if (r.is_time_changed) f.push('⏱Time');
+    if (r.is_room_changed)  f.push('🚪Room');
+    if (r.is_replaced)      f.push('👤Repl');
+    return f.length ? f.map(x=>`<span class="badge badge-mod">${x}</span>`).join(' ') : '—';
+  }
+
+  function setCount(id, n, label='records') {
+    const el = document.getElementById(id);
+    if (el) el.textContent = `${n} ${label} found`;
+  }
+
+  function emptyRow(id, cols, msg) {
+    document.getElementById(id).innerHTML =
+      `<tr class="empty-row"><td colspan="${cols}">${msg}</td></tr>`;
+  }
+
+  function loadingRow(id, cols) {
+    document.getElementById(id).innerHTML =
+      `<tr class="empty-row"><td colspan="${cols}"><span class="spin"></span> Loading…</td></tr>`;
+  }
+
+  // ── R1: Daily Summary ─────────────────────────────────────────────
+  let r1Data = [];
+  document.getElementById('r1Run').addEventListener('click', async () => {
+    const date = document.getElementById('r1Date').value;
+    if (!date) { toast('Pick a date.', 'warn'); return; }
+    loadingRow('r1Body', 7);
+    try {
+      const [stats, rows] = await Promise.all([getDailyStats(date), getDailyFullTable(date)]);
+      r1Data = rows;
+
+      // Stat chips
+      const sc = document.getElementById('r1Stats');
+      sc.style.display = '';
+      sc.innerHTML = [
+        ['On Time', stats.on_time, 'chip-green', 'green'],
+        ['Late', stats.late, 'chip-amber', 'amber'],
+        ['Not Engaged', stats.not_engaged, 'chip-red', 'red'],
+        ['Not Marked', stats.not_marked, 'chip-grey', 'grey'],
+        ['Modified', stats.modified, 'chip-blue', 'blue'],
+        ['Cancelled', stats.cancelled, 'chip-grey', 'grey'],
+      ].map(([lbl,val,chip,col]) =>
+        `<div class="stat-chip ${chip}"><div class="stat-chip-label">${lbl}</div><div class="stat-chip-value ${col}">${val}</div></div>`
+      ).join('');
+
+      setCount('r1Count', rows.length, 'lecture slots');
+      if (!rows.length) { emptyRow('r1Body', 7, 'No schedule found for this date.'); return; }
+      document.getElementById('r1Body').innerHTML = rows.map(r => {
+        const ex = Array.isArray(r.execution) ? r.execution[0] : r.execution;
+        return `<tr>
+          <td>${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}</td>
+          <td style="color:var(--accent)">${r.room?.room_code??'—'}</td>
+          <td>${courseLbl(r.course)}</td>
+          <td>${r.subject?.subject_name??'—'}</td>
+          <td>${r.assigned_faculty?.full_name??'—'}</td>
+          <td>${sBadge(ex?.faculty_status??'not_marked')}</td>
+          <td>${modFlags(ex??{})}</td>
+        </tr>`;
+      }).join('');
+    } catch(e) { toast(e.message, 'error'); emptyRow('r1Body',7,'Error loading data.'); }
+  });
+
+  document.getElementById('r1ExportPdf').addEventListener('click', () => {
+    const date = document.getElementById('r1Date').value;
+    exportToPDF(r1Data,
+      [{header:'Time',key:'_time'},{header:'Room',key:'room.room_code'},{header:'Course',key:'_course'},
+       {header:'Subject',key:'subject.subject_name'},{header:'Faculty',key:'assigned_faculty.full_name'},
+       {header:'Status',key:'_status'}],
+      `Daily Summary — ${fmtDate(date)}`, `Daily_Summary_${date}`, date
+    );
+    // custom flatten since nested paths are complex
+    const flat = r1Data.map(r => {
+      const ex = Array.isArray(r.execution) ? r.execution[0] : r.execution;
+      return {
+        _time:`${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}`,
+        'room.room_code': r.room?.room_code??'—',
+        _course: courseLbl(r.course),
+        'subject.subject_name': r.subject?.subject_name??'—',
+        'assigned_faculty.full_name': r.assigned_faculty?.full_name??'—',
+        _status: STATUS_LABELS[ex?.faculty_status??'not_marked']??'—',
+      };
+    });
+    exportToPDF(flat,
+      [{header:'Time',key:'_time'},{header:'Room',key:'room.room_code'},{header:'Course',key:'_course'},
+       {header:'Subject',key:'subject.subject_name'},{header:'Faculty',key:'assigned_faculty.full_name'},
+       {header:'Status',key:'_status'}],
+      `Daily Summary — ${fmtDate(date)}`, `Daily_Summary_${date}`, date
+    );
+  });
+  document.getElementById('r1ExportXls').addEventListener('click', () => {
+    const date = document.getElementById('r1Date').value;
+    const flat = r1Data.map(r => {
+      const ex = Array.isArray(r.execution) ? r.execution[0] : r.execution;
+      return {time:`${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}`,
+        room:r.room?.room_code??'—', course:courseLbl(r.course),
+        subject:r.subject?.subject_name??'—', faculty:r.assigned_faculty?.full_name??'—',
+        status:STATUS_LABELS[ex?.faculty_status??'not_marked']??'—',
+        timeChanged:ex?.is_time_changed?'Yes':'No', roomChanged:ex?.is_room_changed?'Yes':'No',
+        replaced:ex?.is_replaced?'Yes':'No'};
+    });
+    exportToExcel(flat,
+      [{header:'Time',key:'time'},{header:'Room',key:'room'},{header:'Course',key:'course'},
+       {header:'Subject',key:'subject',width:24},{header:'Faculty',key:'faculty',width:22},
+       {header:'Status',key:'status'},{header:'Time Changed',key:'timeChanged'},
+       {header:'Room Changed',key:'roomChanged'},{header:'Replaced',key:'replaced'}],
+      `Daily_Summary_${date}`);
+  });
+
+  // ── R2: Faculty Lectures ──────────────────────────────────────────
+  let r2Data = [];
+  document.getElementById('r2Run').addEventListener('click', async () => {
+    const fId    = document.getElementById('r2Faculty').value;
+    const from   = document.getElementById('r2From').value;
+    const to     = document.getElementById('r2To').value;
+    const status = document.getElementById('r2Status').value;
+    loadingRow('r2Body', 7);
+    try {
+      const rows = await getFilteredReport(
+        { fromDate:from||null, toDate:to||null, facultyId:fId||null, faculty_status:status||null },
+        session.role, myFacultyId
+      );
+      r2Data = rows;
+      setCount('r2Count', rows.length);
+      // mini stats
+      const ms = document.getElementById('r2MiniStats');
+      if (rows.length) {
+        ms.style.display='';
+        const cnt = (s) => rows.filter(r=>r.faculty_status===s).length;
+        ms.innerHTML = [['On Time',cnt('on_time'),'green'],['Late',cnt('late'),'amber'],
+          ['Not Engaged',cnt('not_engaged'),'red'],['Not Marked',cnt('not_marked'),'grey']]
+          .map(([l,v,c])=>`<div class="mini-stat"><div class="mini-stat-val" style="color:var(--status-${c==='green'?'on-time':c==='amber'?'late':c==='red'?'not-engaged':'not-marked'})">${v}</div><div class="mini-stat-lbl">${l}</div></div>`).join('');
+      }
+      if (!rows.length) { emptyRow('r2Body',7,'No records found.'); return; }
+      document.getElementById('r2Body').innerHTML = rows.map(r => `<tr>
+        <td>${fmtDate(r.schedule_date)}</td>
+        <td>${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}</td>
+        <td>${courseLbl(r.daily_schedule?.course)}</td>
+        <td>${r.daily_schedule?.subject?.subject_name??'—'}</td>
+        <td>${sBadge(r.faculty_status)}</td>
+        <td>${modFlags(r)}</td>
+        <td style="color:var(--text-muted);font-size:.8rem">${r.remarks??'—'}</td>
+      </tr>`).join('');
+    } catch(e) { toast(e.message,'error'); emptyRow('r2Body',7,'Error.'); }
+  });
+  document.getElementById('r2ExportPdf').addEventListener('click', () => {
+    const flat = r2Data.map(r => ({date:fmtDate(r.schedule_date),
+      time:`${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}`,
+      course:courseLbl(r.daily_schedule?.course), subject:r.daily_schedule?.subject?.subject_name??'—',
+      status:STATUS_LABELS[r.faculty_status]??'—', remarks:r.remarks??'—'}));
+    exportToPDF(flat,[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Course',key:'course'},
+      {header:'Subject',key:'subject',pdfWidth:40},{header:'Status',key:'status'},{header:'Remarks',key:'remarks',pdfWidth:50}],
+      'Faculty Lectures Report','Faculty_Lectures');
+  });
+  document.getElementById('r2ExportXls').addEventListener('click', () => {
+    const flat = r2Data.map(r => ({date:fmtDate(r.schedule_date),
+      time:`${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}`,
+      course:courseLbl(r.daily_schedule?.course), subject:r.daily_schedule?.subject?.subject_name??'—',
+      status:STATUS_LABELS[r.faculty_status]??'—', remarks:r.remarks??'—'}));
+    exportToExcel(flat,[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Course',key:'course'},
+      {header:'Subject',key:'subject',width:28},{header:'Status',key:'status'},{header:'Remarks',key:'remarks',width:32}],
+      'Faculty_Lectures');
+  });
+
+  // ── R3: Leave Summary ─────────────────────────────────────────────
+  let r3Data = [];
+  document.getElementById('r3Run').addEventListener('click', async () => {
+    const fId  = document.getElementById('r3Faculty').value;
+    const from = document.getElementById('r3From').value;
+    const to   = document.getElementById('r3To').value;
+    loadingRow('r3Body', 5);
+    try {
+      const { rows, summary } = await getFacultyLeaveSummary(fId||null, from||null, to||null);
+      r3Data = rows;
+      setCount('r3Count', rows.length, 'leave records');
+      if (!rows.length) { emptyRow('r3Body',5,'No leave records found.'); document.getElementById('r3Summary').innerHTML=''; return; }
+      document.getElementById('r3Body').innerHTML = rows.map(r => `<tr>
+        <td><strong>${r.faculty?.full_name??'—'}</strong></td>
+        <td>${fmtDate(r.leave_date)}</td>
+        <td>${LEAVE_TYPE_LABELS[r.leave_type]??r.leave_type}</td>
+        <td style="color:var(--text-muted)">${r.reason??'—'}</td>
+        <td><span class="badge ${r.status==='approved'?'badge-active':'badge-inactive'}">${r.status}</span></td>
+      </tr>`).join('');
+      // Summary by faculty
+      const sumEl = document.getElementById('r3Summary');
+      sumEl.innerHTML = summary.map(s => `
+        <div style="margin-bottom:.85rem">
+          <div style="font-weight:600;font-size:.88rem;margin-bottom:.4rem">${s.faculty.full_name} — ${s.total} day(s)</div>
+          <div class="leave-summary-grid">
+            ${Object.entries(s.counts).map(([type,cnt]) =>
+              `<div class="leave-type-chip">${LEAVE_TYPE_LABELS[type]??type}<strong>${cnt}</strong></div>`).join('')}
+          </div>
+        </div>`).join('');
+    } catch(e) { toast(e.message,'error'); emptyRow('r3Body',5,'Error.'); }
+  });
+  document.getElementById('r3ExportPdf').addEventListener('click', () => {
+    const flat = r3Data.map(r=>({faculty:r.faculty?.full_name??'—',date:fmtDate(r.leave_date),
+      type:LEAVE_TYPE_LABELS[r.leave_type]??r.leave_type,reason:r.reason??'—',status:r.status}));
+    exportToPDF(flat,[{header:'Faculty',key:'faculty'},{header:'Date',key:'date'},
+      {header:'Leave Type',key:'type'},{header:'Reason',key:'reason',pdfWidth:60},{header:'Status',key:'status'}],
+      'Faculty Leave Summary','Leave_Summary');
+  });
+  document.getElementById('r3ExportXls').addEventListener('click', () => {
+    const flat = r3Data.map(r=>({faculty:r.faculty?.full_name??'—',date:fmtDate(r.leave_date),
+      type:LEAVE_TYPE_LABELS[r.leave_type]??r.leave_type,reason:r.reason??'—',status:r.status}));
+    exportToExcel(flat,[{header:'Faculty',key:'faculty',width:24},{header:'Date',key:'date'},
+      {header:'Leave Type',key:'type',width:20},{header:'Reason',key:'reason',width:35},{header:'Status',key:'status'}],
+      'Leave_Summary');
+  });
+
+  // ── R4: By Course ─────────────────────────────────────────────────
+  let r4Data = [];
+  document.getElementById('r4Run').addEventListener('click', async () => {
+    const courseId = document.getElementById('r4Course').value;
+    if (!courseId) { toast('Select a course.','warn'); return; }
+    loadingRow('r4Body',7);
+    try {
+      r4Data = await getFilteredReport({courseId, fromDate:document.getElementById('r4From').value||null,
+        toDate:document.getElementById('r4To').value||null, faculty_status:document.getElementById('r4Status').value||null},
+        session.role, myFacultyId);
+      setCount('r4Count',r4Data.length);
+      if(!r4Data.length){emptyRow('r4Body',7,'No records.');return;}
+      document.getElementById('r4Body').innerHTML = r4Data.map(r=>`<tr>
+        <td>${fmtDate(r.schedule_date)}</td>
+        <td>${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}</td>
+        <td>${r.daily_schedule?.subject?.subject_name??'—'}</td>
+        <td>${r.actual_faculty?.full_name??'—'}</td>
+        <td>${r.daily_schedule?.room?.room_code??'—'}</td>
+        <td>${sBadge(r.faculty_status)}</td>
+        <td>${modFlags(r)}</td>
+      </tr>`).join('');
+    } catch(e){toast(e.message,'error');emptyRow('r4Body',7,'Error.');}
+  });
+  ['r4ExportPdf','r4ExportXls'].forEach(id => document.getElementById(id).addEventListener('click', () => {
+    const flat = r4Data.map(r=>({date:fmtDate(r.schedule_date),
+      time:`${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}`,
+      subject:r.daily_schedule?.subject?.subject_name??'—',faculty:r.actual_faculty?.full_name??'—',
+      room:r.daily_schedule?.room?.room_code??'—',status:STATUS_LABELS[r.faculty_status]??'—'}));
+    const cols=[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Subject',key:'subject',width:28},
+      {header:'Faculty',key:'faculty',width:22},{header:'Room',key:'room'},{header:'Status',key:'status'}];
+    if(id.includes('Pdf')) exportToPDF(flat,cols,'By Course Report','Report_By_Course');
+    else exportToExcel(flat,cols,'Report_By_Course');
+  }));
+
+  // ── R5: By Subject ────────────────────────────────────────────────
+  let r5Data = [];
+  document.getElementById('r5Run').addEventListener('click', async () => {
+    const subjectId = document.getElementById('r5Subject').value;
+    if(!subjectId){toast('Select a subject.','warn');return;}
+    loadingRow('r5Body',6);
+    try {
+      r5Data = await getFilteredReport({subjectId, fromDate:document.getElementById('r5From').value||null,
+        toDate:document.getElementById('r5To').value||null, facultyId:document.getElementById('r5Faculty').value||null,
+        faculty_status:document.getElementById('r5Status').value||null}, session.role, myFacultyId);
+      setCount('r5Count',r5Data.length);
+      if(!r5Data.length){emptyRow('r5Body',6,'No records.');return;}
+      document.getElementById('r5Body').innerHTML = r5Data.map(r=>`<tr>
+        <td>${fmtDate(r.schedule_date)}</td>
+        <td>${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}</td>
+        <td>${courseLbl(r.daily_schedule?.course)}</td>
+        <td>${r.actual_faculty?.full_name??'—'}</td>
+        <td>${r.daily_schedule?.room?.room_code??'—'}</td>
+        <td>${sBadge(r.faculty_status)}</td>
+      </tr>`).join('');
+    } catch(e){toast(e.message,'error');emptyRow('r5Body',6,'Error.');}
+  });
+  ['r5ExportPdf','r5ExportXls'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{
+    const flat=r5Data.map(r=>({date:fmtDate(r.schedule_date),
+      time:`${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}`,
+      course:courseLbl(r.daily_schedule?.course),faculty:r.actual_faculty?.full_name??'—',
+      room:r.daily_schedule?.room?.room_code??'—',status:STATUS_LABELS[r.faculty_status]??'—'}));
+    const cols=[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Course',key:'course',width:18},
+      {header:'Faculty',key:'faculty',width:22},{header:'Room',key:'room'},{header:'Status',key:'status'}];
+    if(id.includes('Pdf')) exportToPDF(flat,cols,'By Subject Report','Report_By_Subject');
+    else exportToExcel(flat,cols,'Report_By_Subject');
+  }));
+
+  // ── R6: By Room ───────────────────────────────────────────────────
+  let r6Data = [];
+  document.getElementById('r6Run').addEventListener('click', async () => {
+    const roomId=document.getElementById('r6Room').value;
+    if(!roomId){toast('Select a room.','warn');return;}
+    loadingRow('r6Body',6);
+    try {
+      r6Data = await getFilteredReport({roomId, fromDate:document.getElementById('r6From').value||null,
+        toDate:document.getElementById('r6To').value||null}, session.role, myFacultyId);
+      setCount('r6Count',r6Data.length);
+      if(!r6Data.length){emptyRow('r6Body',6,'No records.');return;}
+      document.getElementById('r6Body').innerHTML = r6Data.map(r=>`<tr>
+        <td>${fmtDate(r.schedule_date)}</td>
+        <td>${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}</td>
+        <td>${courseLbl(r.daily_schedule?.course)}</td>
+        <td>${r.daily_schedule?.subject?.subject_name??'—'}</td>
+        <td>${r.actual_faculty?.full_name??'—'}</td>
+        <td>${sBadge(r.faculty_status)}</td>
+      </tr>`).join('');
+    } catch(e){toast(e.message,'error');emptyRow('r6Body',6,'Error.');}
+  });
+  ['r6ExportPdf','r6ExportXls'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{
+    const flat=r6Data.map(r=>({date:fmtDate(r.schedule_date),
+      time:`${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}`,
+      course:courseLbl(r.daily_schedule?.course),subject:r.daily_schedule?.subject?.subject_name??'—',
+      faculty:r.actual_faculty?.full_name??'—',status:STATUS_LABELS[r.faculty_status]??'—'}));
+    const cols=[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Course',key:'course'},
+      {header:'Subject',key:'subject',width:26},{header:'Faculty',key:'faculty',width:22},{header:'Status',key:'status'}];
+    if(id.includes('Pdf')) exportToPDF(flat,cols,'By Room Report','Report_By_Room');
+    else exportToExcel(flat,cols,'Report_By_Room');
+  }));
+
+  // ── R7: Modifications Log ─────────────────────────────────────────
+  let r7Data = [];
+  document.getElementById('r7Run').addEventListener('click', async () => {
+    const modType=document.getElementById('r7ModType').value;
+    const filters={fromDate:document.getElementById('r7From').value||null,
+      toDate:document.getElementById('r7To').value||null};
+    if(modType==='any')      filters.isModified=true;
+    if(modType==='time')     filters.isTimeChanged=true;
+    if(modType==='room')     filters.isRoomChanged=true;
+    if(modType==='replaced') filters.isReplaced=true;
+    loadingRow('r7Body',7);
+    try {
+      r7Data = await getFilteredReport(filters, session.role, myFacultyId);
+      setCount('r7Count',r7Data.length);
+      if(!r7Data.length){emptyRow('r7Body',7,'No modified lectures found.');return;}
+      document.getElementById('r7Body').innerHTML = r7Data.map(r=>`<tr>
+        <td>${fmtDate(r.schedule_date)}</td>
+        <td>${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}</td>
+        <td>${courseLbl(r.daily_schedule?.course)}</td>
+        <td>${r.daily_schedule?.subject?.subject_name??'—'}</td>
+        <td>${r.actual_faculty?.full_name??'—'}</td>
+        <td>${modFlags(r)}</td>
+        <td style="color:var(--text-muted);font-size:.8rem">${r.modification_note??'—'}</td>
+      </tr>`).join('');
+    } catch(e){toast(e.message,'error');emptyRow('r7Body',7,'Error.');}
+  });
+  ['r7ExportPdf','r7ExportXls'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{
+    const flat=r7Data.map(r=>({date:fmtDate(r.schedule_date),
+      time:`${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}`,
+      course:courseLbl(r.daily_schedule?.course),subject:r.daily_schedule?.subject?.subject_name??'—',
+      faculty:r.actual_faculty?.full_name??'—',
+      timeChanged:r.is_time_changed?'Yes':'No',roomChanged:r.is_room_changed?'Yes':'No',
+      replaced:r.is_replaced?'Yes':'No',note:r.modification_note??'—'}));
+    const cols=[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Course',key:'course'},
+      {header:'Subject',key:'subject',width:26},{header:'Faculty',key:'faculty',width:22},
+      {header:'Time Changed',key:'timeChanged'},{header:'Room Changed',key:'roomChanged'},
+      {header:'Replaced',key:'replaced'},{header:'Note',key:'note',width:30}];
+    if(id.includes('Pdf')) exportToPDF(flat,cols,'Modifications Log','Modifications_Log');
+    else exportToExcel(flat,cols,'Modifications_Log');
+  }));
+
+  // ── R8: Not Engaged / Not Marked ─────────────────────────────────
+  let r8Data = [];
+  document.getElementById('r8Run').addEventListener('click', async () => {
+    const statusSel=document.getElementById('r8Status').value;
+    const filters={fromDate:document.getElementById('r8From').value||null,
+      toDate:document.getElementById('r8To').value||null,
+      facultyId:document.getElementById('r8Faculty').value||null,
+      courseId:document.getElementById('r8Course').value||null};
+    loadingRow('r8Body',7);
+    try {
+      let rows = await getFilteredReport(filters, session.role, myFacultyId);
+      if(statusSel) rows=rows.filter(r=>r.faculty_status===statusSel);
+      else rows=rows.filter(r=>r.faculty_status==='not_engaged'||r.faculty_status==='not_marked');
+      r8Data=rows;
+      setCount('r8Count',rows.length);
+      if(!rows.length){emptyRow('r8Body',7,'No records found.');return;}
+      document.getElementById('r8Body').innerHTML=rows.map(r=>`<tr>
+        <td>${fmtDate(r.schedule_date)}</td>
+        <td>${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}</td>
+        <td>${courseLbl(r.daily_schedule?.course)}</td>
+        <td>${r.daily_schedule?.subject?.subject_name??'—'}</td>
+        <td>${r.actual_faculty?.full_name??'—'}</td>
+        <td>${sBadge(r.faculty_status)}</td>
+        <td style="color:var(--text-muted);font-size:.8rem">${r.remarks??'—'}</td>
+      </tr>`).join('');
+    } catch(e){toast(e.message,'error');emptyRow('r8Body',7,'Error.');}
+  });
+  ['r8ExportPdf','r8ExportXls'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{
+    const flat=r8Data.map(r=>({date:fmtDate(r.schedule_date),
+      time:`${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}`,
+      course:courseLbl(r.daily_schedule?.course),subject:r.daily_schedule?.subject?.subject_name??'—',
+      faculty:r.actual_faculty?.full_name??'—',status:STATUS_LABELS[r.faculty_status]??'—',
+      remarks:r.remarks??'—'}));
+    const cols=[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Course',key:'course'},
+      {header:'Subject',key:'subject',width:26},{header:'Faculty',key:'faculty',width:22},
+      {header:'Status',key:'status'},{header:'Remarks',key:'remarks',width:30}];
+    if(id.includes('Pdf')) exportToPDF(flat,cols,'Not Engaged / Not Marked','Not_Engaged_Report');
+    else exportToExcel(flat,cols,'Not_Engaged_Report');
+  }));
+
+  // ── R9: Rescheduled Slots ─────────────────────────────────────────
+  let r9Data = [];
+  document.getElementById('r9Run').addEventListener('click', async () => {
+    loadingRow('r9Body',6);
+    try {
+      r9Data = await getRescheduledSlots(
+        document.getElementById('r9From').value||null,
+        document.getElementById('r9To').value||null
+      );
+      setCount('r9Count',r9Data.length,'rescheduled slots');
+      if(!r9Data.length){emptyRow('r9Body',6,'No rescheduled slots found.');return;}
+      document.getElementById('r9Body').innerHTML=r9Data.map(r=>`<tr>
+        <td>${fmtDate(r.schedule_date)}</td>
+        <td>${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}</td>
+        <td>${r.room?.room_code??'—'}</td>
+        <td>${courseLbl(r.course)}</td>
+        <td>${r.subject?.subject_name??'—'}</td>
+        <td>${r.assigned_faculty?.full_name??'—'}</td>
+      </tr>`).join('');
+    } catch(e){toast(e.message,'error');emptyRow('r9Body',6,'Error.');}
+  });
+  ['r9ExportPdf','r9ExportXls'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{
+    const flat=r9Data.map(r=>({date:fmtDate(r.schedule_date),
+      time:`${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}`,
+      room:r.room?.room_code??'—',course:courseLbl(r.course),
+      subject:r.subject?.subject_name??'—',faculty:r.assigned_faculty?.full_name??'—'}));
+    const cols=[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Room',key:'room'},
+      {header:'Course',key:'course'},{header:'New Subject',key:'subject',width:28},
+      {header:'New Faculty',key:'faculty',width:22}];
+    if(id.includes('Pdf')) exportToPDF(flat,cols,'Rescheduled Slots','Rescheduled_Slots');
+    else exportToExcel(flat,cols,'Rescheduled_Slots');
+  }));
+
+</script>
+</body>
+</html>
