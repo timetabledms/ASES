@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ASES — Dashboard</title>
+  <link rel="stylesheet" href="/css/theme.css"/>
+  <style>
+    /* Dashboard-specific */
+    .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:1.5rem}
+    .dash-stat{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;
+      padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.35rem;
+      transition:background .25s,border-color .25s;position:relative;overflow:hidden}
+    .dash-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent-color,var(--accent));border-radius:14px 14px 0 0}
+    .dash-stat-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+    .dash-stat-value{font-family:var(--ff-display);font-size:2.2rem;line-height:1;color:var(--text-primary)}
+    .dash-stat-sub{font-size:.76rem;color:var(--text-muted)}
+    .dash-stat.green{--accent-color:var(--success)}.dash-stat.amber{--accent-color:var(--warn)}
+    .dash-stat.red{--accent-color:var(--error)}.dash-stat.blue{--accent-color:var(--accent)}
+    .dash-stat.grey{--accent-color:var(--text-muted)}
+
+    /* Quick actions */
+    .quick-actions{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem}
+    .quick-action{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
+      padding:1rem 1.25rem;display:flex;align-items:center;gap:.75rem;text-decoration:none;
+      color:var(--text-primary);font-size:.88rem;font-weight:500;transition:background .2s,border-color .2s,transform .15s;
+      flex:1;min-width:160px}
+    .quick-action:hover{background:var(--bg-hover);border-color:var(--accent);transform:translateY(-1px)}
+    .qa-icon{width:36px;height:36px;border-radius:9px;background:rgba(79,106,245,.15);
+      display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .qa-icon svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .qa-text{flex:1}
+    .qa-label{font-weight:600;font-size:.85rem}
+    .qa-sub{font-size:.72rem;color:var(--text-muted);margin-top:.1rem}
+
+    /* Two-column lower layout */
+    .lower-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+    @media(max-width:900px){.lower-grid{grid-template-columns:1fr}}
+
+    /* Activity list */
+    .activity-list{display:flex;flex-direction:column;gap:0}
+    .activity-item{display:flex;align-items:flex-start;gap:.75rem;padding:.7rem 0;
+      border-bottom:1px solid var(--border)}
+    .activity-item:last-child{border-bottom:none}
+    .activity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:.35rem}
+    .activity-dot.green{background:var(--success)}.activity-dot.amber{background:var(--warn)}
+    .activity-dot.blue{background:var(--accent)}.activity-dot.grey{background:var(--text-muted)}
+    .activity-text{flex:1;font-size:.83rem;line-height:1.45}
+    .activity-time{font-size:.72rem;color:var(--text-muted);white-space:nowrap;margin-top:.1rem}
+
+    /* Date header */
+    .dash-header{margin-bottom:1.5rem}
+    .dash-date{font-family:var(--ff-display);font-size:1.8rem}
+    .dash-daytype{display:inline-flex;align-items:center;gap:.35rem;
+      background:rgba(79,106,245,.1);border:1px solid rgba(79,106,245,.2);
+      border-radius:20px;padding:.2rem .75rem;font-size:.78rem;font-weight:600;
+      color:var(--accent);margin-top:.25rem}
+
+    .card-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem}
+    .card-title-sm{font-size:.88rem;font-weight:600;color:var(--text-primary)}
+    .view-all{font-size:.76rem;color:var(--accent);text-decoration:none;transition:opacity .15s}
+    .view-all:hover{opacity:.7}
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-college" id="sidebarCollege"></div>
+  <div class="sidebar-logo">
+    <div class="logo-box"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+    <span class="logo-text">ASES</span><span class="logo-version">v1.0</span>
+  </div>
+  <nav id="sideNav"></nav>
+  <div class="sidebar-footer">
+    <div class="theme-row">
+      <span class="theme-label"><span id="themeIcon"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span><span id="themeLabel">Dark mode</span></span>
+      <label class="toggle-switch"><input type="checkbox" id="themeToggle"/><span class="toggle-track"></span></label>
+    </div>
+    <div class="user-pill">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <div class="user-info"><div class="user-name" id="userName">…</div><div class="user-role" id="userRole">admin</div></div>
+      <button class="btn-logout" id="logoutBtn"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <div class="topbar">
+    <div><h1 class="page-title">Dashboard</h1><p class="page-subtitle">Academic Schedule Execution System — Admin Overview</p></div>
+  </div>
+  <div class="content">
+
+    <!-- Date header -->
+    <div class="dash-header">
+      <div class="dash-date" id="dashDate">—</div>
+      <div><span class="dash-daytype" id="dashDayType">Weekday</span></div>
+    </div>
+
+    <!-- Today stats -->
+    <div class="dash-grid" id="dashStats">
+      <div class="dash-stat blue"><div class="dash-stat-label">Scheduled Today</div><div class="dash-stat-value" id="dTotal">—</div><div class="dash-stat-sub">lecture slots</div></div>
+      <div class="dash-stat green"><div class="dash-stat-label">Marked</div><div class="dash-stat-value" id="dMarked">—</div><div class="dash-stat-sub">execution records</div></div>
+      <div class="dash-stat grey"><div class="dash-stat-label">Pending / Unmarked</div><div class="dash-stat-value" id="dPending">—</div><div class="dash-stat-sub">not yet marked</div></div>
+      <div class="dash-stat amber"><div class="dash-stat-label">Absent Faculty</div><div class="dash-stat-value" id="dAbsent">—</div><div class="dash-stat-sub">today</div></div>
+      <div class="dash-stat red"><div class="dash-stat-label">Not Engaged</div><div class="dash-stat-value" id="dNotEngaged">—</div><div class="dash-stat-sub">today</div></div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="quick-actions">
+      <a class="quick-action" href="/pages/leaves.html">
+        <div class="qa-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg></div>
+        <div class="qa-text"><div class="qa-label">Leave Management</div><div class="qa-sub">Record absences &amp; leaves</div></div>
+      </a>
+      <a class="quick-action" href="/pages/daily-scheduler.html">
+        <div class="qa-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg></div>
+        <div class="qa-text"><div class="qa-label">Daily Scheduler</div><div class="qa-sub">Generate today's schedule</div></div>
+      </a>
+      <a class="quick-action" href="/pages/execution.html">
+        <div class="qa-icon"><svg viewBox="0 0 24 24"><polyline points="9,11 12,14 22,4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <div class="qa-text"><div class="qa-label">Execution Log</div><div class="qa-sub">Mark lecture outcomes</div></div>
+      </a>
+      <a class="quick-action" href="/pages/reports.html">
+        <div class="qa-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        <div class="qa-text"><div class="qa-label">Reports</div><div class="qa-sub">View &amp; export all reports</div></div>
+      </a>
+    </div>
+
+    <!-- Lower two-column grid -->
+    <div class="lower-grid">
+
+      <!-- Recent leaves -->
+      <div class="card">
+        <div class="card-header-row">
+          <div class="card-title-sm">Recent Leave Entries</div>
+          <a class="view-all" href="/pages/leaves.html">View all →</a>
+        </div>
+        <div class="activity-list" id="recentLeaves">
+          <div style="color:var(--text-muted);font-size:.83rem;padding:.5rem 0"><span class="spin"></span> Loading…</div>
+        </div>
+      </div>
+
+      <!-- Recent execution updates -->
+      <div class="card">
+        <div class="card-header-row">
+          <div class="card-title-sm">Recent Execution Updates</div>
+          <a class="view-all" href="/pages/execution.html">View all →</a>
+        </div>
+        <div class="activity-list" id="recentExecution">
+          <div style="color:var(--text-muted);font-size:.83rem;padding:.5rem 0"><span class="spin"></span> Loading…</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<div id="toast"></div>
+
+<script type="module">
+  import { requireRole } from '/js/auth/session.js';
+  import { initSidebar } from '/js/components/sidebar.js';
+  import { toast } from '/js/components/toast.js';
+  import { supabase } from '/js/config/supabase.js';
+  import { getDailyStats } from '/js/modules/reports.js';
+  import { getDayType } from '/js/modules/dailyScheduler.js';
+
+  const session = await requireRole('admin');
+  initSidebar(session, 'dashboard');
+
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0,10);
+
+  // Date display
+  document.getElementById('dashDate').textContent = today.toLocaleDateString('en-IN',
+    { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+  const dt = getDayType(todayStr);
+  document.getElementById('dashDayType').textContent = dt === 'saturday' ? '📅 Saturday' : '📋 Weekday';
+
+  // ── Today stats ───────────────────────────────────────────────────
+  async function loadTodayStats() {
+    try {
+      const [stats, leavesRes] = await Promise.all([
+        getDailyStats(todayStr),
+        supabase.from('faculty_leaves').select('id').eq('leave_date', todayStr).eq('status','approved'),
+      ]);
+      document.getElementById('dTotal').textContent      = stats.total;
+      document.getElementById('dMarked').textContent     = stats.marked;
+      document.getElementById('dPending').textContent    = stats.not_marked;
+      document.getElementById('dAbsent').textContent     = leavesRes.data?.length ?? '—';
+      document.getElementById('dNotEngaged').textContent = stats.not_engaged;
+    } catch(e) { toast('Could not load today\'s stats.', 'warn'); }
+  }
+
+  // ── Recent leaves ─────────────────────────────────────────────────
+  async function loadRecentLeaves() {
+    const { data, error } = await supabase
+      .from('faculty_leaves')
+      .select(`leave_date, leave_type, status, faculty:faculty!faculty_id(full_name), created_at`)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    const el = document.getElementById('recentLeaves');
+    if (error || !data?.length) {
+      el.innerHTML = '<div style="color:var(--text-muted);font-size:.83rem;padding:.5rem 0">No recent leave entries.</div>';
+      return;
+    }
+
+    const leaveLabels = { casual:'Casual', medical:'Medical', earned:'Earned', duty:'Duty',
+      half_day_morning:'Half Day AM', half_day_afternoon:'Half Day PM', compensatory:'Compensatory', other:'Other' };
+
+    el.innerHTML = data.map(r => `
+      <div class="activity-item">
+        <div class="activity-dot ${r.status==='approved'?'green':'grey'}"></div>
+        <div class="activity-text">
+          <strong>${r.faculty?.full_name??'Unknown'}</strong> — ${leaveLabels[r.leave_type]??r.leave_type}
+          <div style="font-size:.73rem;color:var(--text-muted);margin-top:.1rem">${fmtDate(r.leave_date)}</div>
+        </div>
+        <div class="activity-time">${timeAgo(r.created_at)}</div>
+      </div>`).join('');
+  }
+
+  // ── Recent execution ──────────────────────────────────────────────
+  async function loadRecentExecution() {
+    const { data, error } = await supabase
+      .from('lecture_execution')
+      .select(`faculty_status, schedule_date, updated_at,
+        actual_faculty:faculty!actual_faculty_id(full_name),
+        daily_schedule:daily_schedule!daily_schedule_id(
+          subject:subjects!subject_id(subject_name))`)
+      .order('updated_at', { ascending: false })
+      .limit(5);
+
+    const el = document.getElementById('recentExecution');
+    if (error || !data?.length) {
+      el.innerHTML = '<div style="color:var(--text-muted);font-size:.83rem;padding:.5rem 0">No execution updates yet.</div>';
+      return;
+    }
+
+    const statusDot = { on_time:'green', late:'amber', not_engaged:'red', not_marked:'grey' };
+    const statusLabel = { on_time:'On Time', late:'Late', not_engaged:'Not Engaged', not_marked:'Not Marked' };
+
+    el.innerHTML = data.map(r => `
+      <div class="activity-item">
+        <div class="activity-dot ${statusDot[r.faculty_status]??'grey'}"></div>
+        <div class="activity-text">
+          <strong>${r.actual_faculty?.full_name??'—'}</strong> — ${r.daily_schedule?.subject?.subject_name??'—'}
+          <div style="font-size:.73rem;color:var(--text-muted);margin-top:.1rem">${fmtDate(r.schedule_date)} · ${statusLabel[r.faculty_status]??'—'}</div>
+        </div>
+        <div class="activity-time">${timeAgo(r.updated_at)}</div>
+      </div>`).join('');
+  }
+
+  function fmtDate(d) {
+    if (!d) return '—';
+    return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  }
+
+  function timeAgo(ts) {
+    if (!ts) return '';
+    const diff = Date.now() - new Date(ts).getTime();
+    const m = Math.floor(diff/60000);
+    if (m < 1)  return 'just now';
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m/60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h/24)}d ago`;
+  }
+
+  loadTodayStats();
+  loadRecentLeaves();
+  loadRecentExecution();
+</script>
+</body>
+</html>
