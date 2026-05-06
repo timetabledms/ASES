@@ -321,15 +321,26 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable/dist/jspdf.plugin.autotable.min.js"></script>
 
 <script type="module">
-  import { requireRole } from '/js/auth/session.js';
-  import { initSidebar } from '/js/components/sidebar.js';
-  import { toast } from '/js/components/toast.js';
+  // Changed to relative paths to match other working pages
+  import { requireRole } from '../js/auth/session.js';
+  import { initSidebar } from '../js/components/sidebar.js';
   import {
     getFilteredReport, getFacultyLeaveSummary, getDailyStats,
     getDailyFullTable, getRescheduledSlots, getReportDropdowns,
     courseLbl, fmtDate, fmtTime, STATUS_LABELS, LEAVE_TYPE_LABELS
-  } from '/js/modules/reports.js';
-  import { exportToExcel, exportToPDF } from '/js/utils/exportHelpers.js';
+  } from '../js/modules/reports.js';
+  import { exportToExcel, exportToPDF } from '../js/utils/exportHelpers.js';
+
+  // Embedded toast function like in csf-mapping.html to prevent missing module crashes
+  function toast(msg, type='success') {
+    const c = document.getElementById('toast');
+    if (!c) return;
+    const el = document.createElement('div');
+    el.className = `toast-item ${type}`;
+    el.textContent = msg;
+    c.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
 
   // ── Auth ──────────────────────────────────────────────────────────
   const session = await requireRole(); // any authenticated user
