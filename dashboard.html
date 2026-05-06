@@ -161,13 +161,23 @@
 <div id="toast"></div>
 
 <script type="module">
-  // Fixed relative paths for a file placed in the root directory
+  // 1. Removed the missing toast.js import to prevent 404 crashes
   import { requireRole } from './js/auth/session.js';
   import { initSidebar } from './js/components/sidebar.js';
-  import { toast } from './js/components/toast.js';
   import { supabase } from './js/config/supabase.js';
   import { getDailyStats } from './js/modules/reports.js';
   import { getDayType } from './js/modules/dailyScheduler.js';
+
+  // 2. Embedded the toast function natively
+  function toast(msg, type='success') {
+    const c = document.getElementById('toast');
+    if (!c) return;
+    const el = document.createElement('div');
+    el.className = `toast-item ${type}`;
+    el.textContent = msg;
+    c.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
 
   const session = await requireRole('admin');
   initSidebar(session, 'dashboard');
