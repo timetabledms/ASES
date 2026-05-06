@@ -132,13 +132,15 @@ export async function loadDailySchedule(date) {
         cancel_reason,
         original_faculty_id,
         time_slot:time_slots!time_slot_id (
-          id, label, start_time, end_time, slot_type, sort_order
+          id, slot_label, start_time, end_time, slot_type, sort_order
         ),
-        room:rooms!room_id (id, name),
-        course:courses!course_id (id, name, short_name),
-        subject:subjects!subject_id (id, name),
-        assigned_faculty:profiles!assigned_faculty_id (id, full_name),
-        csf_id
+        room:rooms!room_id (id, room_code),
+        course:courses!course_id (id, course_code, year, program, division),
+        subject:subjects!subject_id (id, subject_name),
+        assigned_faculty:faculty!assigned_faculty_id (id, full_name),
+        csf_id,
+        course_id,
+        time_slot_id
       `)
       .eq('schedule_date', date)
       .order('time_slot_id'),
@@ -242,8 +244,8 @@ export async function getAvailableReplacementOptions(courseId, date, timeSlotId)
     .select(`
       id,
       faculty_id,
-      subject:subjects!subject_id (id, name),
-      faculty:profiles!faculty_id (id, full_name)
+      subject:subjects!subject_id (id, subject_name),
+      faculty:faculty!faculty_id (id, full_name)
     `)
     .eq('course_id', courseId)
     .eq('is_active', true);
@@ -274,7 +276,7 @@ export async function getAvailableReplacementOptions(courseId, date, timeSlotId)
   return csfRows.map(row => ({
     csfId:       row.id,
     subjectId:   row.subject.id,
-    subjectName: row.subject.name,
+    subjectName: row.subject.subject_name,
     facultyId:   row.faculty_id,
     facultyName: row.faculty.full_name,
     warnAbsent:  absentIds.has(row.faculty_id),
