@@ -92,7 +92,6 @@ export async function generateDailySchedule(date, adminId) {
   // 4. Build daily_schedule insert payload
   const insertRows = masterRows.map(row => ({
     schedule_date:       date,
-    master_timetable_id: row.id,
     time_slot_id:        row.time_slot_id,
     room_id:             row.room_id,
     course_id:           row.course_id,
