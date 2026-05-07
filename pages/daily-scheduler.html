@@ -1,287 +1,200 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>ASES — Daily Scheduler</title>
-  
-  <!-- Shared Theme CSS -->
-  <link rel="stylesheet" href="/css/theme.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-  
+  <link rel="stylesheet" href="/css/theme.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
   <style>
-    /* Page-specific overrides */
-    
-    /* ── Date picker + generate row ── */
-    .controls-bar{display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap;
-      background:var(--bg-card);border:1px solid var(--border);border-radius:14px;
-      padding:1.25rem 1.5rem;margin-bottom:1.5rem; transition: background .25s, border-color .25s;}
-
-    /* ── Status bar ── */
-    .status-bar{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem}
-    .stat-chip{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
-      padding:.6rem 1rem;display:flex;align-items:center;gap:.5rem;font-size:.85rem; transition: background .25s, border-color .25s;}
-    .stat-chip .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-    .dot-absent{background:var(--error)}
-    .dot-resolved{background:var(--success)}
-    .dot-cancelled{background:var(--text-muted)}
-    .dot-normal{background:var(--accent)}
-    .stat-chip strong{font-weight:700;margin-right:.15rem}
-
-    /* ── Legend ── */
-    .legend{display:flex;gap:1.25rem;flex-wrap:wrap;margin-bottom:1.25rem;
-      font-size:.78rem;color:var(--text-muted)}
-    .legend-item{display:flex;align-items:center;gap:.4rem}
-    .legend-swatch{width:14px;height:14px;border-radius:3px;border-width:2px;border-style:solid}
-
-    /* ── Schedule grid ── */
-    .schedule-grid{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;
-      overflow:hidden; transition: background .25s, border-color .25s;}
-    .grid-header{display:grid;border-bottom:1px solid var(--border);
-      background:rgba(127,127,200,.04); transition: border-color .25s;}
-    .grid-header-cell{padding:.65rem .75rem;font-size:.68rem;font-weight:600;
-      letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);
-      border-right:1px solid var(--border); transition: border-color .25s;}
-    .grid-header-cell:last-child{border-right:none}
-
-    /* Time slot row */
-    .slot-row{display:grid;border-bottom:1px solid rgba(37,41,53,.5)}
-    [data-theme="light"] .slot-row { border-bottom-color: rgba(200,210,230,.4); }
-    .slot-row:last-child{border-bottom:none}
-    .slot-row.is-break{background:rgba(127,127,200,.03)}
-
-    .slot-time{padding:.5rem .75rem;font-size:.72rem;color:var(--text-muted);
-      border-right:1px solid var(--border);display:flex;flex-direction:column;
-      justify-content:center;white-space:nowrap;min-width:90px; transition: border-color .25s;}
-    .slot-time .time-label{font-weight:600;font-size:.75rem;color:var(--text-label)}
-    .slot-time .time-range{font-size:.68rem}
-
-    /* Break row cell */
-    .break-cell{padding:.45rem .75rem;font-size:.72rem;color:var(--text-muted);
-      font-style:italic;letter-spacing:.05em;border-right:1px solid var(--border); transition: border-color .25s;}
-    .break-cell:last-child{border-right:none}
-
-    /* Lecture cell */
-    .lecture-cell{padding:.5rem .6rem;border-right:1px solid var(--border);
-      min-height:64px;position:relative;cursor:default; transition: background .15s, border-color .25s;}
-    .lecture-cell:last-child{border-right:none}
-
-    /* Cell states */
-    .lecture-cell.state-absent{background:var(--error-bg);
-      border-left:3px solid var(--error);cursor:pointer}
-    .lecture-cell.state-absent:hover{background:rgba(224,92,107,.18)}
-    .lecture-cell.state-resolved{background:var(--success-bg);
-      border-left:3px solid var(--success);cursor:pointer}
-    .lecture-cell.state-cancelled{background:rgba(107,112,137,.1);
-      border-left:3px solid var(--text-muted);opacity:.65}
-    .lecture-cell.state-normal{cursor:pointer}
-    .lecture-cell.state-normal:hover{background:var(--bg-hover)}
-    .lecture-cell.state-empty{cursor:default;background:transparent}
-
-    .cell-course{font-size:.7rem;font-weight:700;letter-spacing:.05em;
-      text-transform:uppercase;color:var(--text-muted);margin-bottom:.15rem}
-    .cell-subject{font-size:.8rem;font-weight:600;color:var(--text-primary);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.15rem; transition: color .25s;}
-    .cell-faculty{font-size:.72rem;color:var(--text-muted); transition: color .25s;}
-    .cell-room{font-size:.68rem;color:var(--accent);font-weight:500;
-      position:absolute;bottom:.35rem;right:.5rem}
-
-    .absent-badge{display:inline-block;background:var(--error-bg);color:var(--error);
-      border-radius:4px;padding:.08rem .35rem;font-size:.65rem;font-weight:700;margin-top:.1rem}
-    .resolved-badge{display:inline-block;background:var(--success-bg);color:var(--success);
-      border-radius:4px;padding:.08rem .35rem;font-size:.65rem;font-weight:700;margin-top:.1rem}
-    .cancelled-badge{display:inline-block;background:rgba(107,112,137,.15);color:var(--text-muted);
-      border-radius:4px;padding:.08rem .35rem;font-size:.65rem;font-weight:700;margin-top:.1rem}
-
-    /* ── Modal Specifics ── */
-    .slot-info-box{background:var(--bg-input);border:1px solid var(--border);
-      border-radius:10px;padding:1rem;margin-bottom:1.25rem;font-size:.875rem; transition: background .25s, border-color .25s;}
-    .slot-info-row{display:flex;justify-content:space-between;gap:1rem;
-      padding:.25rem 0;border-bottom:1px solid rgba(37,41,53,.5)}
-    [data-theme="light"] .slot-info-row { border-bottom-color: rgba(200,210,230,.4); }
-    .slot-info-row:last-child{border-bottom:none}
-    .slot-info-label{color:var(--text-muted);font-size:.78rem;font-weight:500;
-      text-transform:uppercase;letter-spacing:.05em}
-
-    /* Replacement options list */
-    .options-list{display:flex;flex-direction:column;gap:.5rem;max-height:280px;overflow-y:auto}
-    .option-item{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;
-      background:var(--bg-input);border:1px solid var(--border);border-radius:10px;
-      cursor:pointer;transition:border-color .2s,background .2s}
-    .option-item:hover{border-color:var(--border-focus);background:var(--bg-hover)}
-    .option-item.selected{border-color:var(--accent);background:var(--accent-glow)}
-    .option-radio{width:16px;height:16px;border:2px solid var(--border);
-      border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-      transition:border-color .2s}
-    .option-item.selected .option-radio{border-color:var(--accent)}
-    .option-radio-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);
-      display:none}
-    .option-item.selected .option-radio-dot{display:block}
-    .option-text{flex:1;min-width:0}
-    .option-subject{font-size:.88rem;font-weight:600;color:var(--text-primary); transition: color .25s;}
-    .option-faculty{font-size:.78rem;color:var(--text-muted); transition: color .25s;}
-    .option-badges{display:flex;gap:.35rem;flex-shrink:0}
-    .warn-badge{display:inline-flex;align-items:center;gap:.2rem;
-      background:var(--warn-bg);color:var(--warn);border:1px solid rgba(245,166,35,.2);
-      border-radius:4px;padding:.1rem .4rem;font-size:.65rem;font-weight:700}
-    .warn-badge svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;
-      stroke-linecap:round;stroke-linejoin:round}
-
-    /* ── Empty/loading states ── */
-    .grid-placeholder{padding:4rem;text-align:center;color:var(--text-muted);
-      display:flex;flex-direction:column;align-items:center;gap:1rem}
-    .grid-placeholder svg{width:40px;height:40px;stroke:var(--border);fill:none;stroke-width:1.5;
-      stroke-linecap:round;stroke-linejoin:round}
-
-    .cancel-section{margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border); transition: border-color .25s;}
-    .cancel-reason-input{width:100%;background:var(--bg-input);border:1px solid var(--border);
-      border-radius:var(--radius);color:var(--text-primary);font-family:var(--ff-body);
-      font-size:.88rem;padding:.65rem .9rem;outline:none;margin-top:.5rem;
-      transition:border-color .2s, box-shadow .2s, background .25s;}
-    .cancel-reason-input:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px var(--accent-glow)}
+    .controls-bar{display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.35rem;margin-bottom:1.25rem;transition:background .25s,border-color .25s}
+    .stat-chips{display:flex;gap:.65rem;flex-wrap:wrap;margin-bottom:1.1rem}
+    .stat-chip{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:.5rem .9rem;display:flex;align-items:center;gap:.5rem;font-size:.82rem;transition:background .25s,border-color .25s}
+    .chip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .legend{display:flex;gap:1.1rem;flex-wrap:wrap;margin-bottom:1rem;font-size:.75rem;color:var(--text-muted)}
+    .leg-item{display:flex;align-items:center;gap:.35rem}
+    .leg-sw{width:12px;height:12px;border-radius:3px;border:2px solid}
+    .tt-grid{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:700px;transition:background .25s,border-color .25s}
+    .tt-head{display:grid;border-bottom:1px solid var(--border);background:rgba(127,127,200,.04)}
+    .th-cell{padding:.6rem .7rem;font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);border-right:1px solid var(--border)}
+    .th-cell:last-child{border-right:none}
+    .tt-row{display:grid;border-bottom:1px solid rgba(200,210,230,.4)}
+    [data-theme="dark"] .tt-row{border-bottom-color:rgba(37,41,53,.5)}
+    .tt-row:last-child{border-bottom:none}
+    .tt-row.is-break{background:var(--bg-input)}
+    .time-cell{padding:.45rem .65rem;font-size:.7rem;color:var(--text-muted);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;min-width:86px;flex-shrink:0}
+    .time-cell .tl{font-weight:700;font-size:.72rem;color:var(--text-label)}
+    .time-cell .tr{font-size:.65rem;margin-top:.05rem}
+    .break-span{padding:.38rem .7rem;font-size:.72rem;font-style:italic;color:var(--text-muted);display:flex;align-items:center;border-right:1px solid var(--border)}
+    .break-span:last-child{border-right:none}
+    .lc{padding:.42rem .5rem;border-right:1px solid var(--border);min-height:66px;position:relative;transition:background .15s;cursor:pointer;display:flex;flex-direction:column;gap:.1rem}
+    .lc:last-child{border-right:none}
+    .lc:hover{background:var(--bg-hover)}
+    .lc.s-absent{background:rgba(224,92,107,.12)!important;border-left:3px solid var(--error)!important}
+    .lc.s-absent:hover{background:rgba(224,92,107,.2)!important}
+    .lc.s-resolved{background:rgba(62,207,142,.08)!important;border-left:3px solid var(--success)!important}
+    .lc.s-cancelled{background:rgba(107,112,137,.08)!important;border-left:3px solid var(--text-muted)!important;opacity:.6}
+    .lc.s-warn{background:rgba(245,166,35,.1)!important;border-left:3px solid var(--warn)!important}
+    .lc.s-empty:hover{background:rgba(79,106,245,.06)}
+    .lc-course{font-size:.62rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted)}
+    .lc-subject{font-size:.77rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .lc-faculty{font-size:.7rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .lc-badge{display:inline-block;font-size:.6rem;font-weight:700;padding:.05rem .35rem;border-radius:3px;margin-top:.1rem;width:fit-content}
+    .lc-badge.absent{background:rgba(224,92,107,.2);color:var(--error)}
+    .lc-badge.warn{background:rgba(245,166,35,.15);color:var(--warn)}
+    .lc-badge.resolved{background:rgba(62,207,142,.15);color:var(--success)}
+    .lc-badge.cancelled{background:rgba(107,112,137,.15);color:var(--text-muted)}
+    .lc-add{height:100%;display:flex;align-items:center;justify-content:center;color:var(--border);transition:color .15s}
+    .lc:hover .lc-add{color:var(--accent)}
+    .lc-add svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .grid-placeholder{padding:3.5rem;text-align:center;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:.75rem}
+    .grid-placeholder svg{width:36px;height:36px;stroke:var(--border);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+    .danger-bar{background:rgba(224,92,107,.07);border:1px solid rgba(224,92,107,.2);border-radius:10px;padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem;font-size:.83rem;color:var(--error);flex-wrap:wrap}
+    .modal-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(7px);z-index:200;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto}
+    .modal-back.open{display:flex}
+    .modal{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:500px;margin:auto;box-shadow:var(--shadow-modal);animation:mIn .22s ease both;transition:background .25s,border-color .25s}
+    @keyframes mIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+    .modal-header{padding:1.25rem 1.5rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start}
+    .modal-title{font-family:var(--ff-display);font-size:1.2rem;color:var(--text-primary)}
+    .modal-sub{font-size:.78rem;color:var(--text-muted);margin-top:.18rem}
+    .modal-xbtn{background:none;border:none;cursor:pointer;color:var(--text-muted);padding:3px;border-radius:5px;transition:color .15s;display:flex}
+    .modal-xbtn:hover{color:var(--text-primary)}
+    .modal-xbtn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .modal-body{padding:1.1rem 1.5rem}
+    .modal-footer{padding:.9rem 1.5rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap}
+    .msec-title{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-label);margin-bottom:.65rem}
+    .info-box{background:var(--bg-input);border:1px solid var(--border);border-radius:9px;padding:.85rem 1rem;margin-bottom:1rem;font-size:.84rem;display:grid;grid-template-columns:auto 1fr;gap:.3rem .75rem}
+    .info-lbl{color:var(--text-muted);font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+    .info-val{color:var(--text-primary)}
+    .option-list{display:flex;flex-direction:column;gap:.4rem;max-height:250px;overflow-y:auto}
+    .opt-item{display:flex;align-items:center;gap:.65rem;padding:.65rem .85rem;background:var(--bg-input);border:1px solid var(--border);border-radius:9px;cursor:pointer;transition:border-color .15s,background .15s}
+    .opt-item:hover{border-color:var(--border-focus);background:var(--bg-hover)}
+    .opt-item.selected{border-color:var(--accent);background:rgba(79,106,245,.07)}
+    .opt-radio{width:15px;height:15px;border:2px solid var(--border);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:border-color .15s}
+    .opt-item.selected .opt-radio{border-color:var(--accent)}
+    .opt-dot{width:7px;height:7px;background:var(--accent);border-radius:50%;display:none}
+    .opt-item.selected .opt-dot{display:block}
+    .opt-text{flex:1;min-width:0}
+    .opt-subject{font-size:.86rem;font-weight:600;color:var(--text-primary)}
+    .opt-faculty{font-size:.75rem;color:var(--text-muted)}
+    .opt-warns{display:flex;gap:.25rem;flex-shrink:0}
+    .warn-tag{font-size:.6rem;font-weight:700;padding:.1rem .35rem;border-radius:3px;background:rgba(245,166,35,.15);color:var(--warn)}
+    .absent-tag{background:rgba(224,92,107,.15)!important;color:var(--error)!important}
+    .cancel-area{margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--border)}
+    @media(max-width:768px){.sidebar{display:none}.content{padding:1rem}.topbar{padding:1rem}}
   </style>
 </head>
 <body>
-
-<!-- ── Sidebar ── -->
 <aside class="sidebar">
   <div class="sidebar-college" id="sidebarCollege"></div>
   <nav id="sideNav"></nav>
   <div class="sidebar-footer">
     <div class="theme-row">
-      <span class="theme-label">
-        <span id="themeIcon"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
-        <span id="themeLabel">Light mode</span>
-      </span>
+      <span class="theme-label"><span id="themeIcon"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span><span id="themeLabel">Light mode</span></span>
       <label class="toggle-switch"><input type="checkbox" id="themeToggle"/><span class="toggle-track"></span></label>
     </div>
     <div class="user-pill">
       <div class="user-avatar" id="userAvatar">?</div>
       <div class="user-info"><div class="user-name" id="userName">…</div><div class="user-role" id="userRole">admin</div></div>
-      <button class="btn-logout" id="logoutBtn" title="Sign out">
-        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      </button>
+      <button class="btn-logout" id="logoutBtn"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
     </div>
   </div>
 </aside>
 
-<!-- ── Main ── -->
 <main class="main">
   <div class="topbar">
-    <div>
-      <h1 class="page-title">Daily Scheduler</h1>
-      <p class="page-subtitle">Generate and manage the working schedule for any date</p>
-    </div>
+    <div><h1 class="page-title">Daily Scheduler</h1><p class="page-subtitle">Generate and manage the working schedule for any date</p></div>
   </div>
-
   <div class="content">
-
-    <!-- Controls -->
     <div class="controls-bar">
-      <div class="field">
-        <label>Schedule Date</label>
-        <input type="text" id="scheduleDatePicker" placeholder="Select date" style="width:180px" readonly />
-      </div>
+      <div class="field"><label>Schedule Date</label><input type="text" id="datePicker" style="width:160px" readonly/></div>
       <button class="btn btn-primary" id="generateBtn">
-        <svg viewBox="0 0 24 24"><polyline points="23,4 23,10 17,10"/>
-          <path d="M20.49 15a9 9 0 1 1-.08-6.07"/></svg>
-        <span class="spin" style="display:none; border-color:rgba(255,255,255,.3); border-top-color:#fff;"></span>
-        Generate Schedule
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-.08-6.07"/></svg>
+        Create Schedule
       </button>
       <button class="btn btn-ghost" id="reloadBtn" style="display:none">
-        <svg viewBox="0 0 24 24"><polyline points="1,4 1,10 7,10"/>
-          <path d="M3.51 15a9 9 0 1 0 .08-6.07"/></svg>
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="1,4 1,10 7,10"/><path d="M3.51 15a9 9 0 1 0 .08-6.07"/></svg>
         Reload
       </button>
     </div>
 
-    <!-- Status chips -->
-    <div class="status-bar" id="statusBar" style="display:none">
-      <div class="stat-chip"><span class="dot dot-absent"></span><strong id="countAbsent">0</strong> need attention</div>
-      <div class="stat-chip"><span class="dot dot-resolved"></span><strong id="countResolved">0</strong> resolved</div>
-      <div class="stat-chip"><span class="dot dot-cancelled"></span><strong id="countCancelled">0</strong> cancelled</div>
-      <div class="stat-chip"><span class="dot dot-normal"></span><strong id="countTotal">0</strong> total slots</div>
+    <div class="danger-bar" id="dangerBar" style="display:none">
+      <span>⚠ Schedule already exists for this date. Regenerating will delete all edits and rebuild from master.</span>
+      <button class="btn btn-danger btn-sm" id="regenerateBtn">Delete &amp; Regenerate</button>
     </div>
 
-    <!-- Legend -->
+    <div class="stat-chips" id="statChips" style="display:none">
+      <div class="stat-chip"><span class="chip-dot" style="background:var(--error)"></span><strong id="cntAbsent">0</strong>&nbsp;absent</div>
+      <div class="stat-chip"><span class="chip-dot" style="background:var(--warn)"></span><strong id="cntWarn">0</strong>&nbsp;double-booked</div>
+      <div class="stat-chip"><span class="chip-dot" style="background:var(--success)"></span><strong id="cntResolved">0</strong>&nbsp;resolved</div>
+      <div class="stat-chip"><span class="chip-dot" style="background:var(--text-muted)"></span><strong id="cntCancelled">0</strong>&nbsp;cancelled</div>
+      <div class="stat-chip"><span class="chip-dot" style="background:var(--accent)"></span><strong id="cntTotal">0</strong>&nbsp;total</div>
+    </div>
+
     <div class="legend" id="legendRow" style="display:none">
-      <div class="legend-item">
-        <div class="legend-swatch" style="background:var(--error-bg);border-color:var(--error)"></div>Needs resolution
-      </div>
-      <div class="legend-item">
-        <div class="legend-swatch" style="background:var(--success-bg);border-color:var(--success)"></div>Resolved / rescheduled
-      </div>
-      <div class="legend-item">
-        <div class="legend-swatch" style="background:rgba(107,112,137,.15);border-color:var(--text-muted)"></div>Cancelled
-      </div>
-      <div class="legend-item">
-        <div class="legend-swatch" style="background:var(--bg-card);border-color:var(--border)"></div>Normal
-      </div>
-      <div class="legend-item">
-        <div class="legend-swatch" style="background:rgba(127,127,200,.03);border-color:var(--border);opacity:.5"></div>Break / Recess
-      </div>
+      <div class="leg-item"><div class="leg-sw" style="background:rgba(224,92,107,.12);border-color:var(--error)"></div>Faculty absent</div>
+      <div class="leg-item"><div class="leg-sw" style="background:rgba(245,166,35,.1);border-color:var(--warn)"></div>Double-booked</div>
+      <div class="leg-item"><div class="leg-sw" style="background:rgba(62,207,142,.08);border-color:var(--success)"></div>Resolved</div>
+      <div class="leg-item"><div class="leg-sw" style="background:rgba(107,112,137,.08);border-color:var(--text-muted)"></div>Cancelled</div>
+      <div class="leg-item"><div class="leg-sw" style="background:var(--bg-card);border-color:var(--border)"></div>Normal</div>
     </div>
 
-    <!-- Schedule grid -->
-    <div class="schedule-grid" id="scheduleGrid">
-      <div class="grid-placeholder">
-        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <div>Select a date and click <strong>Generate Schedule</strong> to begin</div>
-      </div>
-    </div>
-
+    <div style="overflow-x:auto"><div id="gridContainer">
+      <div class="tt-grid"><div class="grid-placeholder">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <div>Pick a date and click <strong>Create Schedule</strong></div>
+      </div></div>
+    </div></div>
   </div>
 </main>
 
-<!-- ── Resolution Modal ── -->
-<div class="modal-back" id="resolveModal">
+<!-- Cell modal -->
+<div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
-      <div>
-        <div class="modal-title" id="modalTitle">Resolve Absent Slot</div>
-        <div style="font-size:.82rem;color:var(--text-muted);margin-top:.2rem" id="modalSubtitle"></div>
-      </div>
-      <button class="modal-close" id="modalCloseBtn">
-        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <div><div class="modal-title" id="modalTitle">Edit Slot</div><div class="modal-sub" id="modalSub"></div></div>
+      <button class="modal-xbtn" id="modalX"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
-      <!-- Current slot info -->
-      <div class="slot-info-box" id="slotInfoBox"></div>
-
-      <!-- Replacement options -->
-      <div id="replacementSection">
-        <div class="section-label">Choose Replacement Lecture</div>
-        <div class="options-list" id="optionsList">
-          <div style="text-align:center;padding:1.5rem;color:var(--text-muted)">
-            <span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading options…
-          </div>
+      <div id="infoSection"><div class="msec-title">Current Lecture</div><div class="info-box" id="infoBox"></div></div>
+      <div id="replSection" style="display:none">
+        <div class="msec-title" id="replTitle">Assign Replacement</div>
+        <div id="coursePickWrap" style="display:none;margin-bottom:.75rem">
+          <label class="field" style="margin-bottom:.4rem"><span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-label)">Select Course</span></label>
+          <select id="coursePick"><option value="">— select course —</option></select>
         </div>
+        <div class="option-list" id="optionList"><div style="color:var(--text-muted);font-size:.83rem;text-align:center;padding:1rem"><span class="spin" style="display:inline-block"></span></div></div>
       </div>
-
-      <!-- Cancel section -->
-      <div class="cancel-section">
-        <div class="section-label">Or Cancel This Slot</div>
-        <input type="text" class="cancel-reason-input" id="cancelReasonInput"
-          placeholder="Reason for cancellation (optional)" />
+      <div class="cancel-area" id="cancelSection" style="display:none">
+        <div class="msec-title">Or cancel this slot</div>
+        <input type="text" id="cancelReason" placeholder="Reason for cancellation (optional)"/>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-danger btn-sm" id="cancelSlotBtn">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/>
-          <line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-        Cancel Slot
-      </button>
-      <div style="display:flex;gap:.75rem">
-        <button class="btn btn-ghost btn-sm" id="modalCancelBtn">Close</button>
-        <button class="btn btn-primary btn-sm" id="resolveConfirmBtn" disabled>
-          <svg viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></svg>
-          <span class="spin" style="display:none; border-color:rgba(255,255,255,.3); border-top-color:#fff;"></span>
-          Confirm Replacement
+      <div id="leftActs"></div>
+      <div style="display:flex;gap:.65rem;margin-left:auto">
+        <button class="btn btn-ghost btn-sm" id="modalCloseBtn">Close</button>
+        <button class="btn btn-primary btn-sm" id="saveBtn" style="display:none">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><polyline points="20,6 9,17 4,12"/></svg>Confirm
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Regenerate confirm modal -->
+<div class="modal-back" id="regenModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div><div class="modal-title">Delete &amp; Regenerate?</div></div>
+      <button class="modal-xbtn" id="regenX"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.88rem;color:var(--text-muted);line-height:1.65">This will <strong style="color:var(--error)">permanently delete</strong> today's entire schedule including all edits and recreate fresh from master. Cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" id="regenCancel">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="regenConfirm">Yes, Regenerate</button>
     </div>
   </div>
 </div>
@@ -289,347 +202,366 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 <script type="module">
-  import { requireRole } from '../js/auth/session.js';
-  import { initSidebar } from '../js/components/sidebar.js';
-  import {
-    getDayType, generateDailySchedule, loadDailySchedule,
-    resolveAbsentSlot, cancelSlot, uncancelSlot,
-    getAvailableReplacementOptions, getScheduleSummary
-  } from '../js/modules/dailyScheduler.js';
+import { requireRole } from '/js/auth/session.js';
+import { initSidebar } from '/js/components/sidebar.js';
+import { supabase } from '/js/config/supabase.js';
 
-  // ── Auth guard ──────────────────────────────────────────────────
-  const session = await requireRole('admin');
-  
-  // Initialize shared sidebar component
-  initSidebar(session, 'scheduler');
+const session = await requireRole('admin');
+initSidebar(session, 'scheduler');
 
-  // ── Toast ────────────────────────────────────────────────────────
-  function toast(msg, type = 'success') {
-    const c = document.getElementById('toast');
-    const el = document.createElement('div');
-    el.className = `toast-item ${type}`;
-    el.textContent = msg;
-    c.appendChild(el);
-    setTimeout(() => el.remove(), 4500);
-  }
+function toast(msg, type='success') {
+  const c=document.getElementById('toast');
+  const el=document.createElement('div');
+  el.className=`toast-item ${type}`;el.textContent=msg;
+  c.appendChild(el);setTimeout(()=>el.remove(),4500);
+}
 
-  // ── State ────────────────────────────────────────────────────────
-  let scheduleData = { rows: [], absentFacultyIds: [] };
-  let selectedDate = '';
-  let activeSlotId = null;
-  let selectedOption = null;
+let selectedDate=new Date().toISOString().slice(0,10);
+let timeSlots=[],rooms=[],scheduleMap={},absentIds=new Set();
+let activeCell=null,selectedOpt=null;
 
-  // ── Flatpickr ────────────────────────────────────────────────────
-  const fp = flatpickr('#scheduleDatePicker', {
-    dateFormat: 'Y-m-d',
-    defaultDate: new Date(),
-    disableMobile: true,
-    onChange([date]) {
-      if (date) selectedDate = date.toISOString().slice(0, 10);
-    },
-  });
-  selectedDate = new Date().toISOString().slice(0, 10);
+// Flatpickr
+flatpickr('#datePicker',{dateFormat:'Y-m-d',defaultDate:new Date(),disableMobile:true,
+  onChange([d]){if(d)selectedDate=d.toISOString().slice(0,10);}});
 
-  // ── Generate / Reload ────────────────────────────────────────────
-  document.getElementById('generateBtn').addEventListener('click', async () => {
-    if (!selectedDate) { toast('Please select a date.', 'error'); return; }
-    await doGenerate();
-  });
+function getDayType(ds){return new Date(ds+'T00:00:00').getDay()===6?'saturday':'weekday';}
 
-  document.getElementById('reloadBtn').addEventListener('click', async () => {
-    if (!selectedDate) return;
-    scheduleData = await loadDailySchedule(selectedDate);
-    renderGrid();
-  });
+function courseName(c){
+  if(!c)return'—';
+  return c.division?`${c.year} ${c.program} ${c.division}`:`${c.year} ${c.program}`;
+}
 
-  async function doGenerate() {
-    const btn = document.getElementById('generateBtn');
-    btn.disabled = true;
-    btn.querySelector('.spin').style.display = 'inline-block';
-    
-    document.getElementById('scheduleGrid').innerHTML =
-      '<div class="grid-placeholder"><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span><div>Building schedule…</div></div>';
-    
-    try {
-      scheduleData = await generateDailySchedule(selectedDate, session.user.id);
-      renderGrid();
-      document.getElementById('reloadBtn').style.display = '';
-    } catch(e) {
-      toast(e.message, 'error');
-      document.getElementById('scheduleGrid').innerHTML =
-        '<div class="grid-placeholder"><div>Failed to generate schedule.</div></div>';
-    } finally {
-      btn.disabled = false;
-      btn.querySelector('.spin').style.display = 'none';
+// Controls
+document.getElementById('generateBtn').addEventListener('click',()=>generateOrLoad(false));
+document.getElementById('reloadBtn').addEventListener('click',loadSchedule);
+document.getElementById('regenerateBtn').addEventListener('click',()=>document.getElementById('regenModal').classList.add('open'));
+document.getElementById('regenX').addEventListener('click',()=>document.getElementById('regenModal').classList.remove('open'));
+document.getElementById('regenCancel').addEventListener('click',()=>document.getElementById('regenModal').classList.remove('open'));
+document.getElementById('regenConfirm').addEventListener('click',async()=>{
+  document.getElementById('regenModal').classList.remove('open');
+  await generateOrLoad(true);
+});
+
+async function generateOrLoad(force=false){
+  const btn=document.getElementById('generateBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spin" style="display:inline-block;border-color:rgba(255,255,255,.3);border-top-color:#fff"></span> Generating…';
+  gridLoading();
+  try{
+    const{data:existing}=await supabase.from('daily_schedule').select('id').eq('schedule_date',selectedDate).limit(1);
+    const exists=existing&&existing.length>0;
+    if(exists&&!force){await loadSchedule();document.getElementById('dangerBar').style.display='';toast('Schedule loaded.','info');return;}
+    if(force&&exists){
+      const{error:de}=await supabase.from('daily_schedule').delete().eq('schedule_date',selectedDate);
+      if(de)throw de;
     }
+    const dayType=getDayType(selectedDate);
+    const{data:master,error:me}=await supabase.from('master_timetable')
+      .select('time_slot_id,room_id,course_id,subject_id,csf_id,faculty_id')
+      .eq('day_type',dayType).eq('is_active',true);
+    if(me)throw me;
+    if(!master||!master.length){toast('No master timetable found for this day type.','warn');gridEmpty('No master timetable entries. Set up the Master Timetable first.');return;}
+    const{error:ie}=await supabase.from('daily_schedule').insert(
+      master.map(r=>({schedule_date:selectedDate,time_slot_id:r.time_slot_id,room_id:r.room_id,
+        course_id:r.course_id,subject_id:r.subject_id,csf_id:r.csf_id,
+        assigned_faculty_id:r.faculty_id,original_faculty_id:r.faculty_id,
+        is_rescheduled:false,is_cancelled:false,generated_by:session.user.id}))
+    );
+    if(ie)throw ie;
+    await loadSchedule();
+    document.getElementById('dangerBar').style.display='';
+    toast('Schedule created.','success');
+  }catch(e){toast(e.message,'error');gridEmpty('Failed: '+e.message);}
+  finally{
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-.08-6.07"/></svg> Create Schedule';
+    document.getElementById('reloadBtn').style.display='';
   }
+}
 
-  // ── Render Grid ───────────────────────────────────────────────────
-  function renderGrid() {
-    const { rows, absentFacultyIds } = scheduleData;
-    const absentSet = new Set(absentFacultyIds);
-
-    // Update status bar
-    const summary = getScheduleSummary(rows, absentFacultyIds);
-    document.getElementById('countAbsent').textContent   = summary.needsAttention;
-    document.getElementById('countResolved').textContent  = summary.resolved;
-    document.getElementById('countCancelled').textContent = summary.cancelled;
-    document.getElementById('countTotal').textContent     = summary.total;
-    document.getElementById('statusBar').style.display   = '';
-    document.getElementById('legendRow').style.display   = '';
-
-    if (!rows.length) {
-      document.getElementById('scheduleGrid').innerHTML =
-        '<div class="grid-placeholder"><div>No lectures found for this date in the master timetable.</div></div>';
-      return;
+async function loadSchedule(){
+  gridLoading();
+  try{
+    const dayType=getDayType(selectedDate);
+    const[sR,rR,scR,lR]=await Promise.all([
+      supabase.from('time_slots').select('id,slot_label,start_time,end_time,slot_type,sort_order').eq('day_type',dayType).order('sort_order'),
+      supabase.from('rooms').select('id,room_code').eq('is_active',true).order('room_code'),
+      supabase.from('daily_schedule').select(`
+        id,is_cancelled,cancel_reason,is_rescheduled,original_faculty_id,
+        time_slot_id,room_id,course_id,
+        time_slot:time_slots!time_slot_id(id,slot_label,start_time,end_time,slot_type,sort_order),
+        room:rooms!room_id(id,room_code),
+        course:courses!course_id(id,course_code,year,program,division),
+        subject:subjects!subject_id(id,subject_name),
+        assigned_faculty:faculty!assigned_faculty_id(id,full_name)
+      `).eq('schedule_date',selectedDate),
+      supabase.from('faculty_leaves').select('faculty_id').eq('leave_date',selectedDate).eq('status','approved'),
+    ]);
+    if(sR.error)throw sR.error;if(rR.error)throw rR.error;if(scR.error)throw scR.error;
+    timeSlots=sR.data??[];rooms=rR.data??[];
+    absentIds=new Set((lR.data??[]).map(l=>l.faculty_id));
+    scheduleMap={};
+    for(const row of(scR.data??[])){
+      const t=row.time_slot_id,r=row.room_id;
+      if(!scheduleMap[t])scheduleMap[t]={};
+      scheduleMap[t][r]=row;
     }
+    renderGrid();updateStats();
+    ['statChips','legendRow'].forEach(id=>document.getElementById(id).style.display='');
+    document.getElementById('reloadBtn').style.display='';
+  }catch(e){toast(e.message,'error');gridEmpty('Failed to load.');}
+}
 
-    // Group rows by time slot, collect unique rooms
-    const slotMap   = new Map(); // slotId → { slotMeta, cells: Map<roomId, row> }
-    const roomSet   = new Map(); // roomId → roomName
-    const slotOrder = [];
+function isDoublebooked(fId,tsId,excludeId){
+  for(const[t,rm]of Object.entries(scheduleMap)){
+    if(t!==tsId)continue;
+    for(const[,row]of Object.entries(rm)){
+      if(row.id===excludeId)continue;
+      if(!row.is_cancelled&&row.assigned_faculty?.id===fId)return true;
+    }
+  }return false;
+}
 
-    for (const row of rows) {
-      const slot = row.time_slot;
-      if (!slotMap.has(slot.id)) {
-        slotMap.set(slot.id, { slot, cells: new Map() });
-        slotOrder.push(slot.id);
+function renderGrid(){
+  if(!timeSlots.length||!rooms.length){gridEmpty('No data.');return;}
+  const cols=`grid-template-columns:86px repeat(${rooms.length},minmax(108px,1fr))`;
+  let h=`<div class="tt-grid">`;
+  h+=`<div class="tt-head" style="${cols}"><div class="th-cell">Time</div>${rooms.map(r=>`<div class="th-cell">Room ${r.room_code}</div>`).join('')}</div>`;
+  for(const slot of timeSlots){
+    const isB=slot.slot_type!=='lecture';
+    h+=`<div class="tt-row${isB?' is-break':''}" style="${cols}">`;
+    h+=`<div class="time-cell"><span class="tl">${slot.slot_label??''}</span><span class="tr">${slot.start_time.slice(0,5)}–${slot.end_time.slice(0,5)}</span></div>`;
+    if(isB){
+      const lbl=slot.slot_type==='lunch'?'🍽 Lunch':'☕ Recess';
+      h+=`<div class="break-span" style="grid-column:2/${rooms.length+2}">${lbl}</div>`;
+    }else{
+      for(const room of rooms){
+        const row=scheduleMap[slot.id]?.[room.id];
+        h+=renderCell(row,slot,room);
       }
-      if (row.room) {
-        roomSet.set(row.room.id, row.room.name);
-        slotMap.get(slot.id).cells.set(row.room.id, row);
-      }
     }
-
-    // Sort slots by sort_order
-    slotOrder.sort((a, b) => slotMap.get(a).slot.sort_order - slotMap.get(b).slot.sort_order);
-    const rooms = [...roomSet.entries()].sort((a,b) => a[1].localeCompare(b[1]));
-
-    // Build column count: time + rooms
-    const colCount = 1 + rooms.length;
-    const gridStyle = `grid-template-columns: 90px repeat(${rooms.length}, minmax(100px,1fr))`;
-
-    const grid = document.getElementById('scheduleGrid');
-
-    // Header
-    let html = `<div class="grid-header" style="${gridStyle}">
-      <div class="grid-header-cell">Time</div>
-      ${rooms.map(([,name]) => `<div class="grid-header-cell">Room ${name}</div>`).join('')}
-    </div>`;
-
-    // Rows
-    for (const slotId of slotOrder) {
-      const { slot, cells } = slotMap.get(slotId);
-      const isBreak = slot.slot_type !== 'lecture';
-
-      html += `<div class="slot-row${isBreak ? ' is-break' : ''}" style="${gridStyle}">`;
-      html += `<div class="slot-time">
-        <span class="time-label">${slot.label ?? ''}</span>
-        <span class="time-range">${slot.start_time?.slice(0,5)} – ${slot.end_time?.slice(0,5)}</span>
-      </div>`;
-
-      if (isBreak) {
-        // Break row spans all room columns with label
-        const breakLabel = slot.slot_type === 'lunch' ? '🍽 Lunch Break'
-          : slot.label?.toLowerCase().includes('recess') ? '☕ Recess' : '— Break —';
-        html += `<div class="break-cell" style="grid-column:2/${colCount+1};color:var(--text-muted);
-          font-size:.78rem;font-style:italic;display:flex;align-items:center">
-          ${breakLabel}
-        </div>`;
-      } else {
-        for (const [roomId, roomName] of rooms) {
-          const row = cells.get(roomId);
-          if (!row) {
-            html += `<div class="lecture-cell state-empty"></div>`;
-            continue;
-          }
-
-          let state = 'state-normal';
-          let badge = '';
-
-          if (row.is_cancelled) {
-            state = 'state-cancelled';
-            badge = `<span class="cancelled-badge">CANCELLED</span>`;
-          } else if (row.is_rescheduled) {
-            state = 'state-resolved';
-            badge = `<span class="resolved-badge">✓ RESCHEDULED</span>`;
-          } else if (absentSet.has(row.assigned_faculty?.id)) {
-            state = 'state-absent';
-            badge = `<span class="absent-badge">⚠ ABSENT</span>`;
-          }
-
-          html += `<div class="lecture-cell ${state}" data-id="${row.id}">
-            <div class="cell-course">${row.course?.short_name ?? row.course?.name ?? ''}</div>
-            <div class="cell-subject">${row.subject?.name ?? '—'}</div>
-            <div class="cell-faculty">${row.assigned_faculty?.full_name ?? '—'}</div>
-            ${badge}
-            <div class="cell-room">${roomName}</div>
-          </div>`;
-        }
-      }
-
-      html += '</div>';
-    }
-
-    grid.innerHTML = html;
-
-    // Bind cell clicks
-    grid.querySelectorAll('.lecture-cell[data-id]').forEach(cell => {
-      cell.addEventListener('click', () => openResolveModal(cell.dataset.id));
-    });
+    h+=`</div>`;
   }
+  h+=`</div>`;
+  document.getElementById('gridContainer').innerHTML=h;
+  document.querySelectorAll('.lc').forEach(cell=>{
+    cell.addEventListener('click',()=>openModal(cell));
+  });
+}
 
-  // ── Resolution Modal ─────────────────────────────────────────────
-  async function openResolveModal(scheduleId) {
-    activeSlotId = scheduleId;
-    selectedOption = null;
+function renderCell(row,slot,room){
+  const base=`data-slot="${slot.id}" data-room="${room.id}" data-time="${slot.start_time.slice(0,5)}–${slot.end_time.slice(0,5)}" data-rcode="${room.room_code}"`;
+  if(!row){
+    return`<div class="lc s-empty" ${base}><div class="lc-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>`;
+  }
+  let state='normal';
+  const fId=row.assigned_faculty?.id;
+  if(row.is_cancelled)state='cancelled';
+  else if(row.is_rescheduled)state='resolved';
+  else if(fId&&absentIds.has(fId))state='absent';
+  else if(fId&&isDoublebooked(fId,slot.id,row.id))state='warn';
+  const badge={absent:'<span class="lc-badge absent">⚠ ABSENT</span>',warn:'<span class="lc-badge warn">⚠ DOUBLE</span>',resolved:'<span class="lc-badge resolved">✓ RESCHEDULED</span>',cancelled:'<span class="lc-badge cancelled">CANCELLED</span>',normal:''}[state]??'';
+  return`<div class="lc s-${state}" data-id="${row.id}" data-course="${row.course_id??''}" data-state="${state}" ${base}>
+    <div class="lc-course">${courseName(row.course)}</div>
+    <div class="lc-subject">${row.subject?.subject_name??'—'}</div>
+    <div class="lc-faculty">${row.assigned_faculty?.full_name??'—'}</div>
+    ${badge}
+  </div>`;
+}
 
-    const row = scheduleData.rows.find(r => r.id === scheduleId);
-    if (!row) return;
-
-    // Populate slot info
-    document.getElementById('modalTitle').textContent =
-      row.is_cancelled ? 'Slot Details (Cancelled)' :
-      row.is_rescheduled ? 'Slot Details (Rescheduled)' : 'Resolve Absent Slot';
-
-    document.getElementById('modalSubtitle').textContent =
-      `${row.time_slot?.start_time?.slice(0,5)} – ${row.time_slot?.end_time?.slice(0,5)}  ·  Room ${row.room?.name}`;
-
-    document.getElementById('slotInfoBox').innerHTML = `
-      <div class="slot-info-row">
-        <span class="slot-info-label">Course</span>
-        <span>${row.course?.name ?? '—'}</span>
-      </div>
-      <div class="slot-info-row">
-        <span class="slot-info-label">Subject</span>
-        <span>${row.subject?.name ?? '—'}</span>
-      </div>
-      <div class="slot-info-row">
-        <span class="slot-info-label">Assigned Faculty</span>
-        <span>${row.assigned_faculty?.full_name ?? '—'}</span>
-      </div>
-      <div class="slot-info-row">
-        <span class="slot-info-label">Status</span>
-        <span>${row.is_cancelled ? '🚫 Cancelled' : row.is_rescheduled ? '✅ Rescheduled' : '⚠ Needs Attention'}</span>
-      </div>
-    `;
-
-    document.getElementById('cancelReasonInput').value = row.cancel_reason ?? '';
-    document.getElementById('resolveConfirmBtn').disabled = true;
-    document.getElementById('optionsList').innerHTML =
-      '<div style="text-align:center;padding:1.5rem;color:var(--text-muted)"><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading options…</div>';
-
-    document.getElementById('resolveModal').classList.add('open');
-
-    // Load replacement options
-    try {
-      const options = await getAvailableReplacementOptions(
-        row.course?.id ?? row.course_id,
-        selectedDate,
-        row.time_slot?.id ?? row.time_slot_id
-      );
-      renderOptions(options);
-    } catch(e) {
-      document.getElementById('optionsList').innerHTML =
-        `<div style="text-align:center;color:var(--error);padding:1rem">${e.message}</div>`;
+function updateStats(){
+  let absent=0,warn=0,resolved=0,cancelled=0,total=0;
+  for(const[tsId,rm]of Object.entries(scheduleMap)){
+    const slot=timeSlots.find(s=>s.id===tsId);
+    if(slot?.slot_type!=='lecture')continue;
+    for(const[,row]of Object.entries(rm)){
+      total++;
+      if(row.is_cancelled){cancelled++;continue;}
+      if(row.is_rescheduled){resolved++;continue;}
+      const fId=row.assigned_faculty?.id;
+      if(fId&&absentIds.has(fId))absent++;
+      else if(fId&&isDoublebooked(fId,tsId,row.id))warn++;
     }
   }
+  document.getElementById('cntAbsent').textContent=absent;
+  document.getElementById('cntWarn').textContent=warn;
+  document.getElementById('cntResolved').textContent=resolved;
+  document.getElementById('cntCancelled').textContent=cancelled;
+  document.getElementById('cntTotal').textContent=total;
+}
 
-  function renderOptions(options) {
-    const list = document.getElementById('optionsList');
-    if (!options.length) {
-      list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:1.5rem">No replacement options found for this course.</div>';
-      return;
-    }
+// ── Modal ──────────────────────────────────────────────────────────
+async function openModal(cell){
+  selectedOpt=null;
+  const scheduleId=cell.dataset.id;
+  const tsId=cell.dataset.slot;
+  const roomId=cell.dataset.room;
+  const state=cell.dataset.state??'empty';
+  const time=cell.dataset.time??'';
+  const rcode=cell.dataset.rcode??'';
+  const courseId=cell.dataset.course??'';
+  const row=scheduleId?scheduleMap[tsId]?.[roomId]:null;
+  activeCell={scheduleId,tsId,roomId,courseId:row?.course_id??courseId,row};
 
-    list.innerHTML = options.map((opt, i) => {
-      const warnAbsent = opt.warnAbsent
-        ? `<span class="warn-badge"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>ABSENT</span>` : '';
-      const warnBusy  = opt.warnBusy
-        ? `<span class="warn-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>BUSY</span>` : '';
+  document.getElementById('modalSub').textContent=`${time}  ·  Room ${rcode}`;
+  document.getElementById('saveBtn').style.display='none';
+  document.getElementById('leftActs').innerHTML='';
+  document.getElementById('replSection').style.display='none';
+  document.getElementById('cancelSection').style.display='none';
+  document.getElementById('coursePickWrap').style.display='none';
+  document.getElementById('cancelReason').value='';
 
-      return `<div class="option-item" data-idx="${i}">
-        <div class="option-radio"><div class="option-radio-dot"></div></div>
-        <div class="option-text">
-          <div class="option-subject">${opt.subjectName}</div>
-          <div class="option-faculty">Prof. ${opt.facultyName}</div>
+  if(!row){
+    // Empty — add lecture
+    document.getElementById('modalTitle').textContent='Add Lecture';
+    document.getElementById('infoSection').style.display='none';
+    document.getElementById('replSection').style.display='';
+    document.getElementById('replTitle').textContent='Choose Subject & Faculty';
+    document.getElementById('saveBtn').style.display='';
+    // Show course picker first
+    document.getElementById('coursePickWrap').style.display='';
+    await populateCoursePicker(tsId);
+    document.getElementById('optionList').innerHTML='<div style="color:var(--text-muted);font-size:.82rem;padding:.5rem">Select a course above to see options.</div>';
+  } else if(row.is_cancelled){
+    document.getElementById('modalTitle').textContent='Cancelled Slot';
+    document.getElementById('infoSection').style.display='';
+    document.getElementById('infoBox').innerHTML=buildInfo(row);
+    document.getElementById('leftActs').innerHTML=`<button class="btn btn-success btn-sm" id="uncancelBtn">↩ Restore Lecture</button>`;
+    document.getElementById('uncancelBtn').addEventListener('click',uncancelSlot);
+  } else {
+    const titles={absent:'Resolve Absent Slot',warn:'Double-Booked Slot',resolved:'Edit Rescheduled Slot',normal:'Edit Slot'};
+    document.getElementById('modalTitle').textContent=titles[state]??'Edit Slot';
+    document.getElementById('infoSection').style.display='';
+    document.getElementById('infoBox').innerHTML=buildInfo(row);
+    document.getElementById('replSection').style.display='';
+    document.getElementById('replTitle').textContent='Replace with';
+    document.getElementById('cancelSection').style.display='';
+    document.getElementById('saveBtn').style.display='';
+    document.getElementById('leftActs').innerHTML=`<button class="btn btn-danger btn-sm" id="cancelSlotBtn">✕ Cancel Slot</button>`;
+    document.getElementById('cancelSlotBtn').addEventListener('click',cancelSlot);
+    await fillOptions(row.course_id??courseId, tsId);
+  }
+
+  document.getElementById('cellModal').classList.add('open');
+}
+
+function buildInfo(row){
+  return`<span class="info-lbl">Course</span><span class="info-val">${courseName(row.course)}</span>
+    <span class="info-lbl">Subject</span><span class="info-val">${row.subject?.subject_name??'—'}</span>
+    <span class="info-lbl">Faculty</span><span class="info-val">${row.assigned_faculty?.full_name??'—'}</span>
+    <span class="info-lbl">Status</span><span class="info-val">${
+      row.is_cancelled?'🚫 Cancelled':row.is_rescheduled?'✅ Rescheduled':
+      absentIds.has(row.assigned_faculty?.id)?'⚠ Faculty Absent':'✓ Normal'
+    }</span>`;
+}
+
+async function populateCoursePicker(tsId){
+  const{data:courses}=await supabase.from('courses').select('id,year,program,division').eq('is_active',true).order('year').order('program');
+  const sel=document.getElementById('coursePick');
+  sel.innerHTML='<option value="">— select course —</option>'+(courses??[]).map(c=>`<option value="${c.id}">${courseName(c)}</option>`).join('');
+  sel.onchange=async function(){
+    if(!this.value)return;
+    activeCell.courseId=this.value;
+    await fillOptions(this.value,tsId);
+  };
+}
+
+async function fillOptions(courseId,tsId){
+  const list=document.getElementById('optionList');
+  list.innerHTML=`<div style="color:var(--text-muted);font-size:.83rem;text-align:center;padding:1rem"><span class="spin" style="display:inline-block"></span> Loading…</div>`;
+  try{
+    const{data:csf,error}=await supabase.from('course_subject_faculty')
+      .select(`id,faculty_id,subject_id,subject:subjects!subject_id(id,subject_name),faculty:faculty!faculty_id(id,full_name)`)
+      .eq('course_id',courseId).eq('is_active',true);
+    if(error)throw error;
+    if(!csf?.length){list.innerHTML=`<div style="color:var(--text-muted);text-align:center;padding:1rem;font-size:.83rem">No CSF mappings for this course.</div>`;return;}
+    const[lR,bR]=await Promise.all([
+      supabase.from('faculty_leaves').select('faculty_id').eq('leave_date',selectedDate).eq('status','approved'),
+      supabase.from('daily_schedule').select('assigned_faculty_id').eq('schedule_date',selectedDate).eq('time_slot_id',tsId).eq('is_cancelled',false),
+    ]);
+    const abS=new Set((lR.data??[]).map(l=>l.faculty_id));
+    const buS=new Set((bR.data??[]).map(s=>s.assigned_faculty_id));
+    const opts=csf.map(r=>({csfId:r.id,subjectId:r.subject_id,subjectName:r.subject.subject_name,facultyId:r.faculty_id,facultyName:r.faculty.full_name,warnAbsent:abS.has(r.faculty_id),warnBusy:buS.has(r.faculty_id)}));
+    list.innerHTML=opts.map((o,i)=>`
+      <div class="opt-item" data-idx="${i}">
+        <div class="opt-radio"><div class="opt-dot"></div></div>
+        <div class="opt-text"><div class="opt-subject">${o.subjectName}</div><div class="opt-faculty">Prof. ${o.facultyName}</div></div>
+        <div class="opt-warns">
+          ${o.warnAbsent?`<span class="warn-tag absent-tag">⚠ ABSENT</span>`:''}
+          ${o.warnBusy?`<span class="warn-tag">⚠ BUSY</span>`:''}
         </div>
-        <div class="option-badges">${warnAbsent}${warnBusy}</div>
-      </div>`;
-    }).join('');
-
-    // Bind selection
-    list.querySelectorAll('.option-item').forEach((el, i) => {
-      el.addEventListener('click', () => {
-        list.querySelectorAll('.option-item').forEach(x => x.classList.remove('selected'));
-        el.classList.add('selected');
-        selectedOption = options[i];
-        document.getElementById('resolveConfirmBtn').disabled = false;
+      </div>`).join('');
+    list.querySelectorAll('.opt-item').forEach((el,i)=>{
+      el.addEventListener('click',()=>{
+        list.querySelectorAll('.opt-item').forEach(x=>x.classList.remove('selected'));
+        el.classList.add('selected');selectedOpt=opts[i];
       });
     });
-  }
+  }catch(e){list.innerHTML=`<div style="color:var(--error);padding:1rem;font-size:.83rem">${e.message}</div>`;}
+}
 
-  // ── Confirm replacement ──────────────────────────────────────────
-  document.getElementById('resolveConfirmBtn').addEventListener('click', async () => {
-    if (!selectedOption || !activeSlotId) return;
-    const btn = document.getElementById('resolveConfirmBtn');
-    btn.disabled = true;
-    btn.querySelector('.spin').style.display = 'inline-block';
-    
-    try {
-      await resolveAbsentSlot(activeSlotId, {
-        csfId:     selectedOption.csfId,
-        courseId:  scheduleData.rows.find(r => r.id === activeSlotId)?.course?.id,
-        subjectId: selectedOption.subjectId,
-        facultyId: selectedOption.facultyId,
-      }, session.user.id);
-      toast(`Slot resolved — ${selectedOption.subjectName} / ${selectedOption.facultyName}`, 'success');
-      closeModal();
-      scheduleData = await loadDailySchedule(selectedDate);
-      renderGrid();
-    } catch(e) {
-      toast(e.message, 'error');
-      btn.disabled = false;
-      btn.querySelector('.spin').style.display = 'none';
+// Save
+document.getElementById('saveBtn').addEventListener('click',async()=>{
+  if(!selectedOpt){toast('Please select a subject & faculty.','warn');return;}
+  if(!activeCell.courseId){toast('Please select a course.','warn');return;}
+  const btn=document.getElementById('saveBtn');btn.disabled=true;
+  try{
+    if(activeCell.scheduleId){
+      const{error}=await supabase.from('daily_schedule').update({
+        csf_id:selectedOpt.csfId,subject_id:selectedOpt.subjectId,
+        assigned_faculty_id:selectedOpt.facultyId,is_rescheduled:true,
+        is_cancelled:false,cancel_reason:null,
+        course_id:activeCell.courseId
+      }).eq('id',activeCell.scheduleId);
+      if(error)throw error;
+    }else{
+      const{error}=await supabase.from('daily_schedule').insert({
+        schedule_date:selectedDate,time_slot_id:activeCell.tsId,room_id:activeCell.roomId,
+        course_id:activeCell.courseId,subject_id:selectedOpt.subjectId,csf_id:selectedOpt.csfId,
+        assigned_faculty_id:selectedOpt.facultyId,original_faculty_id:selectedOpt.facultyId,
+        is_rescheduled:false,is_cancelled:false,generated_by:session.user.id
+      });
+      if(error)throw error;
     }
-  });
+    toast('Saved.','success');closeModal();await loadSchedule();
+  }catch(e){toast(e.message,'error');}
+  finally{btn.disabled=false;}
+});
 
-  // ── Cancel slot ──────────────────────────────────────────────────
-  document.getElementById('cancelSlotBtn').addEventListener('click', async () => {
-    if (!activeSlotId) return;
-    const btn = document.getElementById('cancelSlotBtn');
-    btn.disabled = true;
-    const reason = document.getElementById('cancelReasonInput').value.trim();
-    try {
-      await cancelSlot(activeSlotId, reason);
-      toast('Slot cancelled.', 'warn');
-      closeModal();
-      scheduleData = await loadDailySchedule(selectedDate);
-      renderGrid();
-    } catch(e) {
-      toast(e.message, 'error');
-    } finally { btn.disabled = false; }
-  });
+async function cancelSlot(){
+  if(!activeCell.scheduleId)return;
+  const reason=document.getElementById('cancelReason').value.trim();
+  try{
+    const{error}=await supabase.from('daily_schedule').update({is_cancelled:true,cancel_reason:reason||null}).eq('id',activeCell.scheduleId);
+    if(error)throw error;
+    toast('Slot cancelled.','warn');closeModal();await loadSchedule();
+  }catch(e){toast(e.message,'error');}
+}
 
-  // ── Close modal ──────────────────────────────────────────────────
-  function closeModal() {
-    document.getElementById('resolveModal').classList.remove('open');
-    activeSlotId = null;
-    selectedOption = null;
-    
-    // reset button spin state
-    document.getElementById('resolveConfirmBtn').querySelector('.spin').style.display = 'none';
-  }
+async function uncancelSlot(){
+  if(!activeCell.scheduleId)return;
+  try{
+    const{error}=await supabase.from('daily_schedule').update({is_cancelled:false,cancel_reason:null}).eq('id',activeCell.scheduleId);
+    if(error)throw error;
+    toast('Slot restored.','success');closeModal();await loadSchedule();
+  }catch(e){toast(e.message,'error');}
+}
 
-  document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
-  document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
-  document.getElementById('resolveModal').addEventListener('click', e => {
-    if (e.target === document.getElementById('resolveModal')) closeModal();
-  });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModal();
-  });
+function closeModal(){document.getElementById('cellModal').classList.remove('open');activeCell=null;selectedOpt=null;}
+['modalX','modalCloseBtn'].forEach(id=>document.getElementById(id).addEventListener('click',closeModal));
+document.getElementById('cellModal').addEventListener('click',e=>{if(e.target===document.getElementById('cellModal'))closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+function gridLoading(){document.getElementById('gridContainer').innerHTML=`<div class="tt-grid"><div class="grid-placeholder"><span class="spin" style="display:inline-block;width:24px;height:24px;border-width:3px"></span><div>Loading…</div></div></div>`;}
+function gridEmpty(msg){document.getElementById('gridContainer').innerHTML=`<div class="tt-grid"><div class="grid-placeholder"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><div>${msg}</div></div></div>`;}
+
+// Auto-load if schedule exists for today
+(async()=>{
+  const{data}=await supabase.from('daily_schedule').select('id').eq('schedule_date',selectedDate).limit(1);
+  if(data&&data.length>0){document.getElementById('dangerBar').style.display='';await loadSchedule();}
+})();
 </script>
 </body>
 </html>
