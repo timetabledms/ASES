@@ -224,12 +224,16 @@ let activeCell=null,selectedOpt=null;
 
 // Flatpickr
 flatpickr('#datePicker',{dateFormat:'Y-m-d',defaultDate:new Date(),disableMobile:true,
-  onChange([d]){
-    if(!d)return;
-    selectedDate=d.toISOString().slice(0,10);
-    // Auto-load if schedule exists for this date
-    autoLoadIfExists();
-  }
+  // NEW — CORRECT
+onChange([d]) {
+  selectedDate = d.toISOString().slice(0,10);
+  autoLoadIfExists(selectedDate);  // pass it directly
+}
+
+async function autoLoadIfExists(date) {
+  const checkDate = date ?? selectedDate;  // use parameter, not closure
+  // now always uses the correct date
+}
 });
 
 async function autoLoadIfExists(){
