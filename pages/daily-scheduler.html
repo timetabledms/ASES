@@ -224,7 +224,28 @@ let activeCell=null,selectedOpt=null;
 
 // Flatpickr
 flatpickr('#datePicker',{dateFormat:'Y-m-d',defaultDate:new Date(),disableMobile:true,
-  onChange([d]){if(d)selectedDate=d.toISOString().slice(0,10);}});
+  onChange([d]){
+    if(!d)return;
+    selectedDate=d.toISOString().slice(0,10);
+    // Auto-load if schedule exists for this date
+    autoLoadIfExists();
+  }
+});
+
+async function autoLoadIfExists(){
+  const{data}=await supabase.from('daily_schedule').select('id').eq('schedule_date',selectedDate).limit(1);
+  if(data&&data.length>0){
+    document.getElementById('dangerBar').style.display='';
+    document.getElementById('reloadBtn').style.display='';
+    await loadSchedule();
+  } else {
+    // No schedule yet — clear the grid, hide status bars
+    document.getElementById('dangerBar').style.display='none';
+    document.getElementById('statChips').style.display='none';
+    document.getElementById('legendRow').style.display='none';
+    gridEmpty('No schedule for this date. Click <strong>Create Schedule</strong> to generate.');
+  }
+}
 
 function getDayType(ds){return new Date(ds+'T00:00:00').getDay()===6?'saturday':'weekday';}
 
@@ -439,8 +460,11 @@ async function openModal(cell){
     document.getElementById('replTitle').textContent='Replace with';
     document.getElementById('cancelSection').style.display='';
     document.getElementById('saveBtn').style.display='';
-    document.getElementById('leftActs').innerHTML=`<button class="btn btn-danger btn-sm" id="cancelSlotBtn">✕ Cancel Slot</button>`;
+    document.getElementById('leftActs').innerHTML=`
+      <button class="btn btn-danger btn-sm" id="cancelSlotBtn">✕ Cancel Slot</button>
+      <button class="btn btn-ghost btn-sm" id="deleteSlotBtn" style="color:var(--error);border-color:rgba(224,92,107,.3)">🗑 Delete Lecture</button>`;
     document.getElementById('cancelSlotBtn').addEventListener('click',cancelSlot);
+    document.getElementById('deleteSlotBtn').addEventListener('click',deleteLecture);
     await fillOptions(row.course_id??courseId, tsId);
   }
 
@@ -530,6 +554,16 @@ document.getElementById('saveBtn').addEventListener('click',async()=>{
   finally{btn.disabled=false;}
 });
 
+async function deleteLecture(){
+  if(!activeCell.scheduleId)return;
+  if(!confirm('Delete this lecture completely? The cell will become empty and can be reassigned.'))return;
+  try{
+    const{error}=await supabase.from('daily_schedule').delete().eq('id',activeCell.scheduleId);
+    if(error)throw error;
+    toast('Lecture deleted.','warn');closeModal();await loadSchedule();
+  }catch(e){toast(e.message,'error');}
+}
+
 async function cancelSlot(){
   if(!activeCell.scheduleId)return;
   const reason=document.getElementById('cancelReason').value.trim();
@@ -557,11 +591,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 function gridLoading(){document.getElementById('gridContainer').innerHTML=`<div class="tt-grid"><div class="grid-placeholder"><span class="spin" style="display:inline-block;width:24px;height:24px;border-width:3px"></span><div>Loading…</div></div></div>`;}
 function gridEmpty(msg){document.getElementById('gridContainer').innerHTML=`<div class="tt-grid"><div class="grid-placeholder"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><div>${msg}</div></div></div>`;}
 
-// Auto-load if schedule exists for today
-(async()=>{
-  const{data}=await supabase.from('daily_schedule').select('id').eq('schedule_date',selectedDate).limit(1);
-  if(data&&data.length>0){document.getElementById('dangerBar').style.display='';await loadSchedule();}
-})();
+// Auto-load on page open if schedule exists for today
+autoLoadIfExists();
 </script>
 </body>
 </html>
