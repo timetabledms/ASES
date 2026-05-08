@@ -194,7 +194,12 @@ function toast(msg, type='success') {
 }
 
 // ── State ──────────────────────────────────────────────────────────
-let currentDate = new Date().toISOString().slice(0,10);
+// Use local date (not UTC) to avoid IST timezone shifting date back by 1
+function localDateStr(d) {
+  const dt = d ?? new Date();
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+}
+let currentDate = localDateStr();
 let timeSlots   = [];
 let rooms       = [];
 let scheduleMap = {};   // tsId → roomId → scheduleRow
@@ -213,7 +218,7 @@ flatpickr('#execDatePicker', {
   disableMobile: true,
   onChange([d]) {
     if (!d) return;
-    currentDate = d.toISOString().slice(0,10);
+    currentDate = localDateStr(d);
     // Pass date directly — don't rely on closure reading currentDate
     loadDay(currentDate);
   }
