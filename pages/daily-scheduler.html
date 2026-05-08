@@ -286,12 +286,13 @@ async function generateOrLoad(force=false){
     }
     const dayType=getDayType(selectedDate);
     const{data:master,error:me}=await supabase.from('master_timetable')
-      .select('time_slot_id,room_id,course_id,subject_id,csf_id,faculty_id')
+      .select('id,time_slot_id,room_id,course_id,subject_id,csf_id,faculty_id')
       .eq('day_type',dayType).eq('is_active',true);
     if(me)throw me;
     if(!master||!master.length){toast('No master timetable found for this day type.','warn');gridEmpty('No master timetable entries. Set up the Master Timetable first.');return;}
     const{error:ie}=await supabase.from('daily_schedule').insert(
-      master.map(r=>({schedule_date:selectedDate,time_slot_id:r.time_slot_id,room_id:r.room_id,
+      master.map(r=>({schedule_date:selectedDate,master_entry_id:r.id,
+        time_slot_id:r.time_slot_id,room_id:r.room_id,
         course_id:r.course_id,subject_id:r.subject_id,csf_id:r.csf_id,
         assigned_faculty_id:r.faculty_id,original_faculty_id:r.faculty_id,
         is_rescheduled:false,is_cancelled:false,generated_by:session.user.id}))
