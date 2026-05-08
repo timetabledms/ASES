@@ -218,37 +218,37 @@ function toast(msg, type='success') {
   c.appendChild(el);setTimeout(()=>el.remove(),4500);
 }
 
-let selectedDate=new Date().toISOString().slice(0,10);
+function localDateStr(d) {
+  const dt = d ?? new Date();
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+}
+let selectedDate=localDateStr();
 let timeSlots=[],rooms=[],scheduleMap={},absentIds=new Set();
 let activeCell=null,selectedOpt=null;
 
-// Flatpickr initialization
-flatpickr('#datePicker', {
-  dateFormat: 'Y-m-d',
-  defaultDate: new Date(),
-  disableMobile: true,
-  onChange: function(selectedDates, dateStr) {
-    selectedDate = dateStr;
-    autoLoadIfExists(); 
+// Flatpickr
+flatpickr('#datePicker',{dateFormat:'Y-m-d',defaultDate:new Date(),disableMobile:true,
+  onChange([d]){
+    if(!d)return;
+    // Set selectedDate FIRST, then pass it explicitly to avoid closure timing bug
+    selectedDate=localDateStr(d);
+    autoLoadIfExists(selectedDate);
   }
 });
 
-async function autoLoadIfExists() {
-  const { data, error } = await supabase
-    .from('daily_schedule')
-    .select('id')
-    .eq('schedule_date', selectedDate)
-    .limit(1);
-
-  if (data && data.length > 0) {
-    document.getElementById('dangerBar').style.display = '';
-    document.getElementById('reloadBtn').style.display = '';
+async function autoLoadIfExists(date){
+  // Always use the passed date parameter — never read selectedDate from closure here
+  const checkDate = date ?? selectedDate;
+  const{data}=await supabase.from('daily_schedule').select('id').eq('schedule_date',checkDate).limit(1);
+  if(data&&data.length>0){
+    document.getElementById('dangerBar').style.display='';
+    document.getElementById('reloadBtn').style.display='';
     await loadSchedule();
   } else {
     // No schedule yet — clear the grid, hide status bars
-    document.getElementById('dangerBar').style.display = 'none';
-    document.getElementById('statChips').style.display = 'none';
-    document.getElementById('legendRow').style.display = 'none';
+    document.getElementById('dangerBar').style.display='none';
+    document.getElementById('statChips').style.display='none';
+    document.getElementById('legendRow').style.display='none';
     gridEmpty('No schedule for this date. Click <strong>Create Schedule</strong> to generate.');
   }
 }
@@ -598,7 +598,7 @@ function gridLoading(){document.getElementById('gridContainer').innerHTML=`<div 
 function gridEmpty(msg){document.getElementById('gridContainer').innerHTML=`<div class="tt-grid"><div class="grid-placeholder"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><div>${msg}</div></div></div>`;}
 
 // Auto-load on page open if schedule exists for today
-autoLoadIfExists();
+autoLoadIfExists(selectedDate);
 </script>
 </body>
 </html>
