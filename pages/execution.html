@@ -245,7 +245,7 @@ async function loadDay(date) {
       supabase.from('daily_schedule')
         .select(`
           id, is_cancelled, cancel_reason, is_rescheduled,
-          time_slot_id, room_id, course_id,
+          time_slot_id, room_id, course_id, subject_id, assigned_faculty_id,
           time_slot:time_slots!time_slot_id(id,slot_label,start_time,end_time,slot_type,sort_order),
           room:rooms!room_id(id,room_code),
           course:courses!course_id(id,year,program,division),
@@ -254,13 +254,18 @@ async function loadDay(date) {
         `)
         .eq('schedule_date', loadDate),
       supabase.from('lecture_execution')
-        .select('id,daily_schedule_id,faculty_status')
+        .select('daily_schedule_id,faculty_status')
         .eq('schedule_date', loadDate),
     ]);
 
-    if (slotsRes.error) throw slotsRes.error;
-    if (roomsRes.error) throw roomsRes.error;
-    if (schedRes.error) throw schedRes.error;
+    if (slotsRes.error) throw new Error('Time slots: ' + slotsRes.error.message);
+    if (roomsRes.error) throw new Error('Rooms: ' + roomsRes.error.message);
+    if (schedRes.error) throw new Error('Schedule: ' + schedRes.error.message);
+    if (execRes.error)  console.warn('Execution fetch error (non-fatal):', execRes.error.message);
+
+    console.log('[ASES Execution] Date:', loadDate, '| Slots:', slotsRes.data?.length,
+      '| Rooms:', roomsRes.data?.length, '| Schedule rows:', schedRes.data?.length,
+      '| Execution rows:', execRes.data?.length);
 
     timeSlots = slotsRes.data ?? [];
     rooms     = roomsRes.data ?? [];
@@ -389,12 +394,15 @@ async function cycleStatus(cell) {
     const { error } = await supabase
       .from('lecture_execution')
       .upsert({
-        daily_schedule_id: scheduleId,
-        schedule_date:     currentDate,
-        actual_faculty_id: getScheduleRow(scheduleId)?.assigned_faculty?.id ?? null,
-        faculty_status:    nextStatus,
-        marked_by:         session.user.id,
-        updated_at:        new Date().toISOString(),
+        daily_schedule_id:  scheduleId,
+        schedule_date:      currentDate,
+        actual_faculty_id:  getScheduleRow(scheduleId)?.assigned_faculty?.id ?? null,
+        faculty_status:     nextStatus,
+        is_time_changed:    false,
+        is_room_changed:    false,
+        is_replaced:        false,
+        marked_by:          session.user.id,
+        updated_at:         new Date().toISOString(),
       }, { onConflict: 'daily_schedule_id' });
 
     if (error) throw error;
