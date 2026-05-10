@@ -95,7 +95,7 @@
 <!-- ── Main ── -->
 <main class="main">
   <div class="topbar">
-    <div><h1 class="page-title">Reports</h1><p class="page-subtitle">Analyse lecture execution, attendance, leaves, and modifications</p></div>
+    <div><h1 class="page-title">Reports</h1><p class="page-subtitle">Analyse lecture execution, attendance, leaves, and rescheduled slots</p></div>
   </div>
   <div class="content">
     <div class="report-layout">
@@ -105,15 +105,14 @@
         <div class="report-nav-label">Execution</div>
         <button class="report-nav-btn active" data-report="r1">1. Daily Summary</button>
         <button class="report-nav-btn" data-report="r2">2. Faculty Lectures</button>
-        <button class="report-nav-btn" data-report="r7">3. Modifications Log</button>
-        <button class="report-nav-btn" data-report="r8">4. Not Engaged / Unmarked</button>
+        <button class="report-nav-btn" data-report="r8">3. Not Engaged / Unmarked</button>
         <div class="report-nav-label">Academics</div>
-        <button class="report-nav-btn" data-report="r4">5. By Course</button>
-        <button class="report-nav-btn" data-report="r5">6. By Subject</button>
-        <button class="report-nav-btn" data-report="r6">7. By Room</button>
-        <button class="report-nav-btn" data-report="r9">8. Rescheduled Slots</button>
+        <button class="report-nav-btn" data-report="r4">4. By Course</button>
+        <button class="report-nav-btn" data-report="r5">5. By Subject</button>
+        <button class="report-nav-btn" data-report="r6">6. By Room</button>
+        <button class="report-nav-btn" data-report="r9">7. Rescheduled Slots</button>
         <div class="report-nav-label">Leave</div>
-        <button class="report-nav-btn" data-report="r3">9. Leave Summary</button>
+        <button class="report-nav-btn" data-report="r3">8. Leave Summary</button>
       </div>
 
       <!-- Report panels -->
@@ -240,32 +239,6 @@
           <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th></tr></thead><tbody id="r6Body"><tr class="empty-row"><td colspan="6">Select room and run.</td></tr></tbody></table></div>
         </div>
 
-        <!-- R7: Modifications Log -->
-        <div class="report-section" id="r7">
-          <div class="report-header">
-            <div class="report-title">Modifications Log</div>
-            <div class="export-btns">
-              <button class="btn btn-ghost btn-sm" id="r7ExportPdf">PDF</button>
-              <button class="btn btn-ghost btn-sm" id="r7ExportXls">Excel</button>
-            </div>
-          </div>
-          <div class="filter-card">
-            <div class="field"><label>From</label><input type="text" id="r7From" readonly/></div>
-            <div class="field"><label>To</label><input type="text" id="r7To" readonly/></div>
-            <div class="field"><label>Modification Type</label>
-              <select id="r7ModType">
-                <option value="any">Any Modification</option>
-                <option value="time">Time Changed</option>
-                <option value="room">Room Changed</option>
-                <option value="replaced">Replaced</option>
-              </select>
-            </div>
-            <button class="btn btn-primary btn-sm" id="r7Run">Run</button>
-          </div>
-          <div class="result-count" id="r7Count"></div>
-          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Flags</th><th>Note</th></tr></thead><tbody id="r7Body"><tr class="empty-row"><td colspan="7">Set date range and run.</td></tr></tbody></table></div>
-        </div>
-
         <!-- R8: Not Engaged / Not Marked -->
         <div class="report-section" id="r8">
           <div class="report-header">
@@ -390,7 +363,7 @@
   const today  = new Date().toISOString().slice(0,10);
   flatpickr('#r1Date',  { ...fpOpts, defaultDate: today });
   ['r2From','r2To','r3From','r3To','r4From','r4To','r5From','r5To',
-   'r6From','r6To','r7From','r7To','r8From','r8To','r9From','r9To']
+   'r6From','r6To','r8From','r8To','r9From','r9To']
     .forEach(id => flatpickr('#'+id, fpOpts));
 
   // ── Tom Select inits ──────────────────────────────────────────────
@@ -713,47 +686,6 @@
       {header:'Subject',key:'subject',width:26},{header:'Faculty',key:'faculty',width:22},{header:'Status',key:'status'}];
     if(id.includes('Pdf')) exportToPDF(flat,cols,'By Room Report','Report_By_Room');
     else exportToExcel(flat,cols,'Report_By_Room');
-  }));
-
-  // ── R7: Modifications Log ─────────────────────────────────────────
-  let r7Data = [];
-  document.getElementById('r7Run').addEventListener('click', async () => {
-    const modType=document.getElementById('r7ModType').value;
-    const filters={fromDate:document.getElementById('r7From').value||null,
-      toDate:document.getElementById('r7To').value||null};
-    if(modType==='any')      filters.isModified=true;
-    if(modType==='time')     filters.isTimeChanged=true;
-    if(modType==='room')     filters.isRoomChanged=true;
-    if(modType==='replaced') filters.isReplaced=true;
-    loadingRow('r7Body',7);
-    try {
-      r7Data = await getFilteredReport(filters, session.role, myFacultyId);
-      setCount('r7Count',r7Data.length);
-      if(!r7Data.length){emptyRow('r7Body',7,'No modified lectures found.');return;}
-      document.getElementById('r7Body').innerHTML = r7Data.map(r=>`<tr>
-        <td>${fmtDate(r.schedule_date)}</td>
-        <td>${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}</td>
-        <td>${courseLbl(r.daily_schedule?.course)}</td>
-        <td>${r.daily_schedule?.subject?.subject_name??'—'}</td>
-        <td>${r.actual_faculty?.full_name??'—'}</td>
-        <td>${modFlags(r)}</td>
-        <td style="color:var(--text-muted);font-size:.8rem">${r.modification_note??'—'}</td>
-      </tr>`).join('');
-    } catch(e){toast(e.message,'error');emptyRow('r7Body',7,'Error.');}
-  });
-  ['r7ExportPdf','r7ExportXls'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{
-    const flat=r7Data.map(r=>({date:fmtDate(r.schedule_date),
-      time:`${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}`,
-      course:courseLbl(r.daily_schedule?.course),subject:r.daily_schedule?.subject?.subject_name??'—',
-      faculty:r.actual_faculty?.full_name??'—',
-      timeChanged:r.is_time_changed?'Yes':'No',roomChanged:r.is_room_changed?'Yes':'No',
-      replaced:r.is_replaced?'Yes':'No',note:r.modification_note??'—'}));
-    const cols=[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Course',key:'course'},
-      {header:'Subject',key:'subject',width:26},{header:'Faculty',key:'faculty',width:22},
-      {header:'Time Changed',key:'timeChanged'},{header:'Room Changed',key:'roomChanged'},
-      {header:'Replaced',key:'replaced'},{header:'Note',key:'note',width:30}];
-    if(id.includes('Pdf')) exportToPDF(flat,cols,'Modifications Log','Modifications_Log');
-    else exportToExcel(flat,cols,'Modifications_Log');
   }));
 
   // ── R8: Not Engaged / Not Marked ─────────────────────────────────
