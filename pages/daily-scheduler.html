@@ -547,6 +547,17 @@ document.getElementById('saveBtn').addEventListener('click',async()=>{
         course_id:activeCell.courseId
       }).eq('id',activeCell.scheduleId);
       if(error)throw error;
+
+      // Reset execution status to not_marked — lecture has changed, old status is invalid
+      await supabase.from('lecture_execution')
+        .update({
+          faculty_status:     'not_marked',
+          actual_faculty_id:  selectedOpt.facultyId,
+          updated_at:         new Date().toISOString(),
+        })
+        .eq('daily_schedule_id', activeCell.scheduleId);
+      // Note: if no execution row exists yet, the update simply affects 0 rows — that's fine
+
     }else{
       const{error}=await supabase.from('daily_schedule').insert({
         schedule_date:selectedDate,time_slot_id:activeCell.tsId,room_id:activeCell.roomId,
