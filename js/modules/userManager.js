@@ -64,7 +64,7 @@ export async function createAdmin({ fullName, email, password, role = 'admin' })
  *
  * @param {{ fullName, email, password, employeeCode, phone, department }} params
  */
-export async function createFaculty({ fullName, email, password, employeeCode, phone, department }) {
+export async function createFaculty({ fullName, email, password, employeeCode, phone, department, facultyType = 'fulltime' }) {
   const { data: { session } } = await supabase.auth.getSession();
 
   const res = await fetch(EDGE_FN_URL, {
@@ -81,6 +81,7 @@ export async function createFaculty({ fullName, email, password, employeeCode, p
       employeeCode,
       phone:        phone || null,
       department:   department || null,
+      facultyType:  facultyType || 'fulltime',
     }),
   });
 
@@ -134,7 +135,7 @@ export async function getAllAdmins() {
 export async function getAllFaculty() {
   const { data, error } = await supabase
     .from('faculty')
-    .select('id, employee_code, full_name, email, phone, department, is_active, created_at')
+    .select('id, employee_code, full_name, email, phone, department, faculty_type, is_active, created_at')
     .order('full_name');
 
   if (error) throw error;
