@@ -9,8 +9,8 @@
 import { logout } from '../auth/session.js';
 
 const COLLEGE_LOGO = 'https://i.ibb.co/Q3sckzSm/square-crop.png';
-const COLLEGE_NAME = 'B. K. Birla College of Arts, Science & Commerce';
-const COLLEGE_SUB  = 'Empowered Autonomous Status';
+const COLLEGE_NAME = 'B. K. Birla College, Kalyan';
+const COLLEGE_SUB  = '(Empowered Autonomous Status)';
 
 /**
  * @param {object} session  — from requireRole()
