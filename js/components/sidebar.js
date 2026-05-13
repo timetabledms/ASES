@@ -10,6 +10,7 @@ import { logout } from '../auth/session.js';
 
 const COLLEGE_LOGO = 'https://i.ibb.co/Q3sckzSm/square-crop.png';
 const COLLEGE_NAME = 'B. K. Birla College, Kalyan';
+const DEPT_NAME    = 'Dept. of Management Studies';
 const COLLEGE_SUB  = '(Empowered Autonomous Status)';
 
 /**
@@ -21,15 +22,16 @@ export function initSidebar(session, activePage = '') {
   const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
 
   // ── College header ──────────────────────────────────────────────
-  const collegeEl = document.getElementById('sidebarCollege');
-  if (collegeEl) {
-    collegeEl.innerHTML = `
-      <img class="college-logo" src="${COLLEGE_LOGO}" alt="College logo" loading="lazy" />
-      <div class="college-text">
-        <div class="college-name">${COLLEGE_NAME}</div>
-        <div class="college-sub">${COLLEGE_SUB}</div>
-      </div>`;
-  }
+const collegeEl = document.getElementById('sidebarCollege');
+if (collegeEl) {
+  collegeEl.innerHTML = `
+    <img class="college-logo" src="${COLLEGE_LOGO}" alt="College logo" loading="lazy" />
+    <div class="college-text">
+      <div class="college-name">${COLLEGE_NAME}</div>
+      <div class="dept-name">${DEPT_NAME}</div> 
+      <div class="college-sub">${COLLEGE_SUB}</div>
+    </div>`;
+}
 
   // ── Nav links ───────────────────────────────────────────────────
   const navEl = document.getElementById('sideNav');
