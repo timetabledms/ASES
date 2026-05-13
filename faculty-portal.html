@@ -6,15 +6,14 @@
   <link rel="stylesheet" href="/css/theme.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
   <style>
-    /* ── Tabs ── */
     .tabs{display:flex;gap:.4rem;background:var(--bg-card);border:1px solid var(--border);
-      border-radius:12px;padding:.28rem;margin-bottom:1.25rem;transition:background .25s,border-color .25s}
-    .tab-btn{flex:1;text-align:center;padding:.52rem .85rem;border-radius:9px;font-size:.84rem;
+      border-radius:12px;padding:.28rem;margin-bottom:1.25rem;transition:background .25s,border-color .25s;
+      flex-wrap:wrap}
+    .tab-btn{flex:1;text-align:center;padding:.52rem .85rem;border-radius:9px;font-size:.82rem;
       font-weight:500;cursor:pointer;border:none;background:transparent;
-      color:var(--text-muted);transition:background .2s,color .2s;font-family:var(--ff-body)}
+      color:var(--text-muted);transition:background .2s,color .2s;font-family:var(--ff-body);
+      white-space:nowrap;min-width:120px}
     .tab-btn.active{background:var(--accent);color:#fff}
-
-    /* ── Hero strip ── */
     .faculty-hero{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;
       padding:1.25rem 1.5rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1.1rem;
       transition:background .25s,border-color .25s}
@@ -26,52 +25,83 @@
     .readonly-pill{display:inline-flex;align-items:center;gap:.35rem;
       background:rgba(79,106,245,.08);border:1px solid rgba(79,106,245,.18);
       border-radius:20px;padding:.18rem .65rem;font-size:.72rem;font-weight:600;
-      color:var(--accent);margin-left:.5rem}
-
-    /* ── Today card ── */
-    .today-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;
-      overflow:hidden;transition:background .25s,border-color .25s}
-    .today-header{padding:1rem 1.35rem;border-bottom:1px solid var(--border);
-      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
-    .today-title{font-size:.95rem;font-weight:600;color:var(--text-primary);
-      display:flex;align-items:center;gap:.5rem}
-    .today-title svg{width:15px;height:15px;stroke:var(--accent);fill:none;stroke-width:2;
-      stroke-linecap:round;stroke-linejoin:round}
-    .today-date{font-size:.8rem;color:var(--text-muted)}
-
-    /* Status badges */
+      color:var(--accent);margin-left:.5rem;vertical-align:middle}
+    .filters-bar{display:flex;align-items:flex-end;gap:.75rem;flex-wrap:wrap;margin-bottom:1.1rem}
+    .filters-bar .field{min-width:140px}
+    .section-header{display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
+    .section-title{font-size:.95rem;font-weight:600;color:var(--text-primary)}
+    .export-bar{display:flex;gap:.45rem}
     .badge-on-time    {background:rgba(62,207,142,.14);color:var(--success)}
     .badge-late       {background:rgba(245,166,35,.14); color:var(--warn)}
     .badge-not-engaged{background:rgba(224,92,107,.14); color:var(--error)}
     .badge-not-marked {background:rgba(107,112,137,.14);color:var(--text-muted)}
     .badge-cancelled  {background:rgba(107,112,137,.14);color:var(--text-muted)}
-
-    /* ── Filters bar ── */
-    .filters-bar{display:flex;align-items:flex-end;gap:.75rem;flex-wrap:wrap;margin-bottom:1.1rem}
-    .filters-bar .field{min-width:140px}
-
-    /* ── Export bar ── */
-    .section-header{display:flex;align-items:center;justify-content:space-between;
-      margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
-    .section-title{font-size:.95rem;font-weight:600;color:var(--text-primary)}
-    .export-bar{display:flex;gap:.45rem}
-
-    /* ── Empty state ── */
+    .badge-leave{background:rgba(79,106,245,.1);color:var(--accent)}
+    .badge-halfday{background:rgba(245,166,35,.1);color:var(--warn)}
     .empty-state{display:flex;flex-direction:column;align-items:center;gap:.65rem;
       padding:2.5rem;color:var(--text-muted);text-align:center}
     .empty-state svg{width:32px;height:32px;stroke:var(--border);fill:none;stroke-width:1.5;
       stroke-linecap:round;stroke-linejoin:round}
 
-    /* Leave type badge */
-    .badge-leave{background:rgba(79,106,245,.1);color:var(--accent)}
-    .badge-halfday{background:rgba(245,166,35,.1);color:var(--warn)}
+    /* Day toggle */
+    .day-toggle{display:flex;gap:.4rem;background:var(--bg-input);border:1px solid var(--border);
+      border-radius:10px;padding:.25rem;width:fit-content}
+    .day-btn{padding:.45rem 1rem;border-radius:8px;font-family:var(--ff-body);font-size:.82rem;
+      font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text-muted);
+      transition:background .2s,color .2s}
+    .day-btn.active{background:var(--accent);color:#fff}
+
+    /* Timetable grid */
+    .tt-grid{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
+      overflow:hidden;min-width:600px}
+    .tt-head{display:grid;border-bottom:1px solid var(--border);background:rgba(127,127,200,.04)}
+    .th-cell{padding:.55rem .65rem;font-size:.64rem;font-weight:700;letter-spacing:.08em;
+      text-transform:uppercase;color:var(--text-muted);border-right:1px solid var(--border)}
+    .th-cell:last-child{border-right:none}
+    .tt-row{display:grid;border-bottom:1px solid rgba(200,210,230,.35)}
+    [data-theme="dark"] .tt-row{border-bottom-color:rgba(37,41,53,.5)}
+    .tt-row:last-child{border-bottom:none}
+    .tt-row.is-break{background:var(--bg-input)}
+    .time-cell{padding:.4rem .6rem;font-size:.68rem;color:var(--text-muted);
+      border-right:1px solid var(--border);display:flex;flex-direction:column;
+      justify-content:center;min-width:84px;flex-shrink:0}
+    .time-cell .tl{font-weight:700;font-size:.7rem;color:var(--text-label)}
+    .time-cell .tr{font-size:.63rem}
+    .break-span{padding:.35rem .65rem;font-size:.7rem;font-style:italic;
+      color:var(--text-muted);display:flex;align-items:center}
+    /* Lecture cell */
+    .lc{padding:.4rem .5rem;border-right:1px solid var(--border);min-height:62px;
+      display:flex;flex-direction:column;gap:.08rem}
+    .lc:last-child{border-right:none}
+    .lc.mine{background:rgba(79,106,245,.07);border-left:3px solid var(--accent)}
+    .lc-course{font-size:.6rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted)}
+    .lc-subject{font-size:.75rem;font-weight:600;color:var(--text-primary);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .lc-faculty{font-size:.68rem;color:var(--text-muted);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .lc-empty{display:flex;align-items:center;justify-content:center;
+      height:100%;color:var(--border);font-size:.7rem}
+    .mine-tag{font-size:.58rem;font-weight:700;color:var(--accent);
+      background:rgba(79,106,245,.12);border-radius:3px;padding:.05rem .3rem;width:fit-content}
+    .grid-placeholder{padding:3rem;text-align:center;color:var(--text-muted);
+      display:flex;flex-direction:column;align-items:center;gap:.65rem}
+    .grid-placeholder svg{width:32px;height:32px;stroke:var(--border);fill:none;
+      stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+    /* CSF mapping table */
+    .csf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.65rem}
+    .csf-card{background:var(--bg-input);border:1px solid var(--border);border-radius:10px;
+      padding:.85rem 1rem;transition:background .25s,border-color .25s}
+    .csf-card-course{font-size:.65rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+      color:var(--accent);margin-bottom:.25rem}
+    .csf-card-subject{font-size:.9rem;font-weight:600;color:var(--text-primary)}
 
     @media(max-width:768px){.sidebar{display:none}.content{padding:1rem}.topbar{padding:1rem}}
   </style>
 </head>
 <body>
 
-<!-- ── Sidebar ── -->
 <aside class="sidebar">
   <div class="sidebar-college" id="sidebarCollege"></div>
   <nav id="sideNav"></nav>
@@ -97,25 +127,21 @@
   </div>
 </aside>
 
-<!-- ── Main ── -->
 <main class="main">
   <div class="topbar">
     <div>
       <h1 class="page-title">Faculty Portal</h1>
-      <p class="page-subtitle">View-only — your lectures, history and leave records</p>
+      <p class="page-subtitle">View-only — your lectures, history, leaves and timetable</p>
     </div>
   </div>
-
   <div class="content">
 
     <!-- Hero -->
     <div class="faculty-hero">
       <div class="hero-avatar" id="heroAvatar">?</div>
       <div>
-        <div class="hero-name" id="heroName">—
-          <span class="readonly-pill">👁 View Only</span>
-        </div>
-        <div class="hero-meta" id="heroMeta">Loading profile…</div>
+        <div class="hero-name" id="heroName">—<span class="readonly-pill">👁 View Only</span></div>
+        <div class="hero-meta" id="heroMeta">Loading…</div>
       </div>
     </div>
 
@@ -124,54 +150,50 @@
       <button class="tab-btn active" data-tab="today">Today's Lectures</button>
       <button class="tab-btn" data-tab="history">Lecture History</button>
       <button class="tab-btn" data-tab="leaves">My Leaves</button>
+      <button class="tab-btn" data-tab="csf">My Subjects</button>
+      <button class="tab-btn" data-tab="tt">Timetable</button>
     </div>
 
-    <!-- ══ Tab: Today ══ -->
+    <!-- ══ TODAY ══ -->
     <div id="tabToday">
-      <div class="today-card">
-        <div class="today-header">
-          <div class="today-title">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:1rem 1.35rem;border-bottom:1px solid var(--border);
+          display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+          <div class="section-title">
+            <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;margin-right:.4rem"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
             Today's Schedule
           </div>
-          <div class="today-date" id="todayDateLabel">—</div>
+          <div style="font-size:.8rem;color:var(--text-muted)" id="todayDateLabel"></div>
         </div>
         <div class="table-wrap" style="border:none;border-radius:0">
           <table>
-            <thead>
-              <tr><th>Time</th><th>Room</th><th>Course</th><th>Subject</th><th>Status</th></tr>
-            </thead>
-            <tbody id="todayBody">
-              <tr class="empty-row"><td colspan="5"><span class="spin" style="display:inline-block"></span> Loading…</td></tr>
-            </tbody>
+            <thead><tr><th>Time</th><th>Room</th><th>Course</th><th>Subject</th><th>Status</th></tr></thead>
+            <tbody id="todayBody"><tr class="empty-row"><td colspan="5"><span class="spin" style="display:inline-block"></span></td></tr></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- ══ Tab: History ══ -->
+    <!-- ══ HISTORY ══ -->
     <div id="tabHistory" style="display:none">
       <div class="card">
         <div class="section-header">
           <div class="section-title">Lecture History</div>
           <div class="export-bar">
             <button class="btn btn-ghost btn-sm" id="exportHistPdf">
-              <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
-              PDF
+              <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>PDF
             </button>
             <button class="btn btn-ghost btn-sm" id="exportHistXls">
-              <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-              Excel
+              <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>Excel
             </button>
           </div>
         </div>
         <div class="filters-bar">
           <div class="field"><label>From Date</label><input type="text" id="histFrom" placeholder="From" readonly/></div>
           <div class="field"><label>To Date</label><input type="text" id="histTo" placeholder="To" readonly/></div>
-          <div class="field">
-            <label>Status</label>
+          <div class="field"><label>Status</label>
             <select id="histStatus">
-              <option value="">All Status</option>
+              <option value="">All</option>
               <option value="on_time">On Time</option>
               <option value="late">Late</option>
               <option value="not_engaged">Not Engaged</option>
@@ -183,23 +205,19 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead>
-              <tr><th>Date</th><th>Time</th><th>Room</th><th>Course</th><th>Subject</th><th>Status</th></tr>
-            </thead>
-            <tbody id="historyBody">
-              <tr class="empty-row"><td colspan="6">Set a date range and search.</td></tr>
-            </tbody>
+            <thead><tr><th>Date</th><th>Time</th><th>Room</th><th>Course</th><th>Subject</th><th>Status</th></tr></thead>
+            <tbody id="historyBody"><tr class="empty-row"><td colspan="6">Set a date range and search.</td></tr></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- ══ Tab: Leaves ══ -->
+    <!-- ══ LEAVES ══ -->
     <div id="tabLeaves" style="display:none">
       <div class="card">
         <div class="section-header">
           <div class="section-title">My Leave Records</div>
-          <div style="font-size:.78rem;color:var(--text-muted)">Entered by admin only — read-only</div>
+          <div style="font-size:.78rem;color:var(--text-muted)">Entered by admin · read-only</div>
         </div>
         <div class="filters-bar">
           <div class="field"><label>From Date</label><input type="text" id="leaveFrom" placeholder="From" readonly/></div>
@@ -209,23 +227,76 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead>
-              <tr><th>Date</th><th>Leave Type</th><th>Reason</th><th>Entered By</th><th>Status</th></tr>
-            </thead>
-            <tbody id="leavesBody">
-              <tr class="empty-row"><td colspan="5">Set a date range and search.</td></tr>
-            </tbody>
+            <thead><tr><th>Date</th><th>Leave Type</th><th>Reason</th><th>Entered By</th><th>Status</th></tr></thead>
+            <tbody id="leavesBody"><tr class="empty-row"><td colspan="5">Set a date range and search.</td></tr></tbody>
           </table>
         </div>
       </div>
+    </div>
+
+    <!-- ══ MY SUBJECTS (CSF) ══ -->
+    <div id="tabCsf" style="display:none">
+      <div class="card">
+        <div class="section-header">
+          <div class="section-title">My Subject Assignments</div>
+          <div style="font-size:.78rem;color:var(--text-muted)">Courses & subjects assigned to you</div>
+        </div>
+        <div id="csfContainer">
+          <div class="grid-placeholder">
+            <span class="spin" style="display:inline-block"></span>
+            <div>Loading…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TIMETABLE ══ -->
+    <div id="tabTt" style="display:none">
+
+      <!-- My timetable -->
+      <div class="card" style="margin-bottom:1.25rem">
+        <div class="section-header">
+          <div class="section-title">My Timetable</div>
+          <div class="day-toggle">
+            <button class="day-btn active" data-day="weekday" id="myTtWeekday">Weekday</button>
+            <button class="day-btn" data-day="saturday" id="myTtSaturday">Saturday</button>
+          </div>
+        </div>
+        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem">
+          <span style="display:inline-block;width:12px;height:12px;background:rgba(79,106,245,.07);border:2px solid var(--accent);border-radius:3px;vertical-align:middle;margin-right:.3rem"></span>
+          Highlighted cells are your lectures
+        </p>
+        <div style="overflow-x:auto"><div id="myTtGrid">
+          <div class="tt-grid"><div class="grid-placeholder">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <div>Loading timetable…</div>
+          </div></div>
+        </div></div>
+      </div>
+
+      <!-- Full college timetable -->
+      <div class="card">
+        <div class="section-header">
+          <div class="section-title">Full College Timetable</div>
+          <div class="day-toggle">
+            <button class="day-btn active" data-day="weekday" id="fullTtWeekday">Weekday</button>
+            <button class="day-btn" data-day="saturday" id="fullTtSaturday">Saturday</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto"><div id="fullTtGrid">
+          <div class="tt-grid"><div class="grid-placeholder">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <div>Loading…</div>
+          </div></div>
+        </div></div>
+      </div>
+
     </div>
 
   </div>
 </main>
 
 <div id="toast"></div>
-
-<!-- CDN libs for export -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable/dist/jspdf.plugin.autotable.min.js"></script>
@@ -236,11 +307,9 @@ import { requireRole } from '/js/auth/session.js';
 import { initSidebar } from '/js/components/sidebar.js';
 import { supabase } from '/js/config/supabase.js';
 
-// ── Auth — faculty only ────────────────────────────────────────────
 const session = await requireRole('faculty');
 initSidebar(session, 'portal');
 
-// ── Toast ─────────────────────────────────────────────────────────
 function toast(msg, type='success') {
   const c=document.getElementById('toast');
   const el=document.createElement('div');
@@ -248,357 +317,360 @@ function toast(msg, type='success') {
   c.appendChild(el);setTimeout(()=>el.remove(),4000);
 }
 
-// ── Local date helper (avoids UTC timezone shift) ─────────────────
 function localDateStr(d) {
   const dt=d??new Date();
   return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
 }
 const todayStr = localDateStr();
 
-// ── Fetch my faculty row ───────────────────────────────────────────
-let myFacultyId = null;
-let myFacultyName = session.profile.full_name;
+// ── Fetch faculty profile ─────────────────────────────────────────
+let myFacultyId=null, myFacultyName=session.profile.full_name;
 
 {
-  const { data, error } = await supabase
-    .from('faculty')
-    .select('id, full_name, employee_code, department')
-    .eq('supabase_uid', session.user.id)
-    .maybeSingle();
-
+  const {data} = await supabase.from('faculty')
+    .select('id,full_name,employee_code,department')
+    .eq('supabase_uid', session.user.id).maybeSingle();
   if (data) {
-    myFacultyId = data.id;
+    myFacultyId   = data.id;
     myFacultyName = data.full_name;
-
-    // Hero
     document.getElementById('heroAvatar').textContent = data.full_name.charAt(0).toUpperCase();
     document.getElementById('heroName').innerHTML =
       `${data.full_name} <span class="readonly-pill">👁 View Only</span>`;
-    const parts = [];
-    if (data.employee_code) parts.push(`Emp. ${data.employee_code}`);
-    if (data.department)    parts.push(data.department);
-    document.getElementById('heroMeta').textContent = parts.join(' · ') || 'Faculty';
+    const parts=[];
+    if(data.employee_code) parts.push(`Emp. ${data.employee_code}`);
+    if(data.department)    parts.push(data.department);
+    document.getElementById('heroMeta').textContent = parts.join(' · ')||'Faculty';
   } else {
-    document.getElementById('heroMeta').textContent = 'Profile not linked — contact admin.';
+    document.getElementById('heroMeta').textContent='Profile not linked — contact admin.';
   }
 }
-
-// Also update sidebar user pill
 document.getElementById('userName').textContent   = myFacultyName;
 document.getElementById('userAvatar').textContent = myFacultyName.charAt(0).toUpperCase();
 
 // ── Helpers ───────────────────────────────────────────────────────
-function fmtDate(d) {
-  if (!d) return '—';
-  return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
-}
+function fmtDate(d){if(!d)return'—';return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+function fmtTime(t){return t?t.slice(0,5):'—';}
+function cName(c){if(!c)return'—';return c.division?`${c.year} ${c.program} ${c.division}`:`${c.year} ${c.program}`;}
 
-function fmtTime(t) { return t ? t.slice(0,5) : '—'; }
-
-function courseName(c) {
-  if (!c) return '—';
-  return c.division ? `${c.year} ${c.program} ${c.division}` : `${c.year} ${c.program}`;
-}
-
-const STATUS_LABEL = {on_time:'On Time',late:'Late',not_engaged:'Not Engaged',not_marked:'Not Marked'};
-const STATUS_CLASS = {on_time:'badge-on-time',late:'badge-late',not_engaged:'badge-not-engaged',not_marked:'badge-not-marked'};
-const LEAVE_LABEL  = {casual:'Casual',medical:'Medical',earned:'Earned',duty:'Duty',
+const SL={on_time:'On Time',late:'Late',not_engaged:'Not Engaged',not_marked:'Not Marked'};
+const SC={on_time:'badge-on-time',late:'badge-late',not_engaged:'badge-not-engaged',not_marked:'badge-not-marked'};
+const LL={casual:'Casual',medical:'Medical',earned:'Earned',duty:'Duty',
   half_day_morning:'Half Day (AM)',half_day_afternoon:'Half Day (PM)',compensatory:'Compensatory',other:'Other'};
 
-function statusBadge(s) {
-  const st=s??'not_marked';
-  return `<span class="badge ${STATUS_CLASS[st]??'badge-not-marked'}">${STATUS_LABEL[st]??st}</span>`;
-}
+function sBadge(s){const st=s??'not_marked';return`<span class="badge ${SC[st]??'badge-not-marked'}">${SL[st]??st}</span>`;}
 
 // ── Tabs ──────────────────────────────────────────────────────────
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+const TAB_MAP={today:'tabToday',history:'tabHistory',leaves:'tabLeaves',csf:'tabCsf',tt:'tabTt'};
+let ttLoaded={myTt:false,fullTt:false}, csfLoaded=false;
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    ['tabToday','tabHistory','tabLeaves'].forEach(id=>
-      document.getElementById(id).style.display='none');
-    const map={today:'tabToday',history:'tabHistory',leaves:'tabLeaves'};
-    document.getElementById(map[btn.dataset.tab]).style.display='';
+    Object.values(TAB_MAP).forEach(id=>document.getElementById(id).style.display='none');
+    document.getElementById(TAB_MAP[btn.dataset.tab]).style.display='';
+    // Lazy load
+    if(btn.dataset.tab==='csf'  && !csfLoaded)   { loadCSF();    csfLoaded=true; }
+    if(btn.dataset.tab==='tt'   && !ttLoaded.myTt){ loadMyTt('weekday'); loadFullTt('weekday'); ttLoaded.myTt=true;ttLoaded.fullTt=true; }
   });
 });
 
 // ── Flatpickr ─────────────────────────────────────────────────────
-flatpickr('#histFrom',  {dateFormat:'Y-m-d',disableMobile:true});
-flatpickr('#histTo',    {dateFormat:'Y-m-d',disableMobile:true});
-flatpickr('#leaveFrom', {dateFormat:'Y-m-d',disableMobile:true});
-flatpickr('#leaveTo',   {dateFormat:'Y-m-d',disableMobile:true});
+flatpickr('#histFrom',{dateFormat:'Y-m-d',disableMobile:true});
+flatpickr('#histTo',  {dateFormat:'Y-m-d',disableMobile:true});
+flatpickr('#leaveFrom',{dateFormat:'Y-m-d',disableMobile:true});
+flatpickr('#leaveTo',  {dateFormat:'Y-m-d',disableMobile:true});
 
-// ══════════════════════════════════════════════════════════════════
-// TAB 1 — TODAY'S LECTURES
-// ══════════════════════════════════════════════════════════════════
-document.getElementById('todayDateLabel').textContent =
+// ══ TODAY ════════════════════════════════════════════════════════
+document.getElementById('todayDateLabel').textContent=
   new Date().toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
 
-async function loadToday() {
-  if (!myFacultyId) {
-    document.getElementById('todayBody').innerHTML =
-      `<tr><td colspan="5"><div class="empty-state">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <div>Faculty profile not linked. Contact your administrator.</div>
-      </div></td></tr>`;
-    return;
-  }
-
-  try {
-    // Fetch today's schedule for this faculty
-    const { data: schedRows, error: schedErr } = await supabase
-      .from('daily_schedule')
-      .select(`
-        id, is_cancelled, cancel_reason,
-        time_slot:time_slots!time_slot_id(start_time, end_time, slot_type, sort_order),
+async function loadToday(){
+  const tbody=document.getElementById('todayBody');
+  if(!myFacultyId){tbody.innerHTML='<tr class="empty-row"><td colspan="5">Profile not linked.</td></tr>';return;}
+  try{
+    const{data:rows,error}=await supabase.from('daily_schedule')
+      .select(`id,is_cancelled,
+        time_slot:time_slots!time_slot_id(start_time,end_time,slot_type,sort_order),
         room:rooms!room_id(room_code),
-        course:courses!course_id(year, program, division),
-        subject:subjects!subject_id(subject_name)
-      `)
-      .eq('schedule_date', todayStr)
-      .eq('assigned_faculty_id', myFacultyId)
-      .eq('is_cancelled', false);
-
-    if (schedErr) throw schedErr;
-
-    // Filter lecture slots only, sort by time
-    const lectures = (schedRows ?? [])
-      .filter(r => r.time_slot?.slot_type === 'lecture')
-      .sort((a,b) => (a.time_slot?.sort_order??0) - (b.time_slot?.sort_order??0));
-
-    if (!lectures.length) {
-      document.getElementById('todayBody').innerHTML =
-        `<tr><td colspan="5"><div class="empty-state">
-          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <div>No lectures scheduled for you today.</div>
-        </div></td></tr>`;
-      return;
+        course:courses!course_id(year,program,division),
+        subject:subjects!subject_id(subject_name)`)
+      .eq('schedule_date',todayStr)
+      .eq('assigned_faculty_id',myFacultyId)
+      .eq('is_cancelled',false);
+    if(error)throw error;
+    const lectures=(rows??[]).filter(r=>r.time_slot?.slot_type==='lecture')
+      .sort((a,b)=>(a.time_slot?.sort_order??0)-(b.time_slot?.sort_order??0));
+    if(!lectures.length){
+      tbody.innerHTML=`<tr><td colspan="5"><div class="empty-state">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <div>No lectures scheduled for you today.</div></div></td></tr>`;return;
     }
-
-    // Fetch execution status for these schedule IDs
-    const ids = lectures.map(r=>r.id);
-    const { data: execRows } = await supabase
-      .from('lecture_execution')
-      .select('daily_schedule_id, faculty_status')
-      .in('daily_schedule_id', ids);
-
-    const execMap = {};
-    for (const ex of (execRows??[])) execMap[ex.daily_schedule_id] = ex.faculty_status;
-
-    document.getElementById('todayBody').innerHTML = lectures.map(r => {
-      const status = execMap[r.id] ?? 'not_marked';
-      return `<tr>
-        <td style="white-space:nowrap;font-weight:500">${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}</td>
-        <td style="color:var(--accent);font-weight:600">${r.room?.room_code??'—'}</td>
-        <td>${courseName(r.course)}</td>
-        <td>${r.subject?.subject_name??'—'}</td>
-        <td>${statusBadge(status)}</td>
-      </tr>`;
-    }).join('');
-
-  } catch(e) {
-    toast(e.message, 'error');
-    document.getElementById('todayBody').innerHTML =
-      `<tr class="empty-row"><td colspan="5">Failed to load today's schedule.</td></tr>`;
-  }
+    const ids=lectures.map(r=>r.id);
+    const{data:exRows}=await supabase.from('lecture_execution')
+      .select('daily_schedule_id,faculty_status').in('daily_schedule_id',ids);
+    const exMap={};for(const ex of(exRows??[]))exMap[ex.daily_schedule_id]=ex.faculty_status;
+    tbody.innerHTML=lectures.map(r=>`<tr>
+      <td style="white-space:nowrap;font-weight:500">${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}</td>
+      <td style="color:var(--accent);font-weight:600">${r.room?.room_code??'—'}</td>
+      <td>${cName(r.course)}</td>
+      <td>${r.subject?.subject_name??'—'}</td>
+      <td>${sBadge(exMap[r.id])}</td>
+    </tr>`).join('');
+  }catch(e){toast(e.message,'error');tbody.innerHTML='<tr class="empty-row"><td colspan="5">Error loading.</td></tr>';}
 }
 
-// ══════════════════════════════════════════════════════════════════
-// TAB 2 — LECTURE HISTORY
-// ══════════════════════════════════════════════════════════════════
-let historyData = []; // for export
+// ══ HISTORY ══════════════════════════════════════════════════════
+let historyData=[];
 
-document.getElementById('histSearchBtn').addEventListener('click', loadHistory);
-document.getElementById('histClearBtn').addEventListener('click', () => {
-  document.getElementById('histFrom').value = '';
-  document.getElementById('histTo').value   = '';
-  document.getElementById('histStatus').value = '';
-  document.getElementById('historyBody').innerHTML =
-    '<tr class="empty-row"><td colspan="6">Set a date range and search.</td></tr>';
-  historyData = [];
+document.getElementById('histSearchBtn').addEventListener('click',loadHistory);
+document.getElementById('histClearBtn').addEventListener('click',()=>{
+  ['histFrom','histTo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('histStatus').value='';
+  document.getElementById('historyBody').innerHTML='<tr class="empty-row"><td colspan="6">Set a date range and search.</td></tr>';
+  historyData=[];
 });
 
-async function loadHistory() {
-  if (!myFacultyId) return;
-  const from   = document.getElementById('histFrom').value;
-  const to     = document.getElementById('histTo').value;
-  const status = document.getElementById('histStatus').value;
-  const tbody  = document.getElementById('historyBody');
-  tbody.innerHTML = '<tr class="empty-row"><td colspan="6"><span class="spin" style="display:inline-block"></span> Loading…</td></tr>';
-
-  try {
-    // Get schedule rows for this faculty in date range
-    let q = supabase
-      .from('daily_schedule')
-      .select(`
-        id, schedule_date, is_cancelled,
-        time_slot:time_slots!time_slot_id(start_time, end_time, slot_type, sort_order),
-        room:rooms!room_id(room_code),
-        course:courses!course_id(year, program, division),
-        subject:subjects!subject_id(subject_name)
-      `)
-      .eq('assigned_faculty_id', myFacultyId)
-      .eq('is_cancelled', false)
-      .order('schedule_date', { ascending: false });
-
-    if (from) q = q.gte('schedule_date', from);
-    if (to)   q = q.lte('schedule_date', to);
-
-    const { data: schedRows, error: schedErr } = await q;
-    if (schedErr) throw schedErr;
-
-    // Only lecture slots
-    const lectures = (schedRows??[]).filter(r => r.time_slot?.slot_type === 'lecture');
-    if (!lectures.length) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No lecture records found for this period.</td></tr>';
-      historyData = [];
-      return;
-    }
-
-    // Fetch execution for these IDs
-    const ids = lectures.map(r=>r.id);
-    const { data: execRows } = await supabase
-      .from('lecture_execution')
-      .select('daily_schedule_id, faculty_status')
-      .in('daily_schedule_id', ids);
-
-    const execMap = {};
-    for (const ex of (execRows??[])) execMap[ex.daily_schedule_id] = ex.faculty_status;
-
-    // Apply status filter client-side
-    let rows = lectures.map(r => ({...r, status: execMap[r.id] ?? 'not_marked'}));
-    if (status) rows = rows.filter(r => r.status === status);
-
-    if (!rows.length) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No records match the selected filter.</td></tr>';
-      historyData = [];
-      return;
-    }
-
-    historyData = rows;
-    tbody.innerHTML = rows.map(r => `<tr>
+async function loadHistory(){
+  if(!myFacultyId)return;
+  const from=document.getElementById('histFrom').value;
+  const to=document.getElementById('histTo').value;
+  const status=document.getElementById('histStatus').value;
+  const tbody=document.getElementById('historyBody');
+  tbody.innerHTML='<tr class="empty-row"><td colspan="6"><span class="spin" style="display:inline-block"></span> Loading…</td></tr>';
+  try{
+    let q=supabase.from('daily_schedule').select(`
+      id,schedule_date,
+      time_slot:time_slots!time_slot_id(start_time,end_time,slot_type,sort_order),
+      room:rooms!room_id(room_code),
+      course:courses!course_id(year,program,division),
+      subject:subjects!subject_id(subject_name)`)
+      .eq('assigned_faculty_id',myFacultyId)
+      .eq('is_cancelled',false)
+      .order('schedule_date',{ascending:false});
+    if(from)q=q.gte('schedule_date',from);
+    if(to)  q=q.lte('schedule_date',to);
+    const{data:rows,error}=await q;if(error)throw error;
+    const lectures=(rows??[]).filter(r=>r.time_slot?.slot_type==='lecture');
+    if(!lectures.length){tbody.innerHTML='<tr class="empty-row"><td colspan="6">No records found.</td></tr>';historyData=[];return;}
+    const ids=lectures.map(r=>r.id);
+    const{data:exRows}=await supabase.from('lecture_execution')
+      .select('daily_schedule_id,faculty_status').in('daily_schedule_id',ids);
+    const exMap={};for(const ex of(exRows??[]))exMap[ex.daily_schedule_id]=ex.faculty_status;
+    let rows2=lectures.map(r=>({...r,status:exMap[r.id]??'not_marked'}));
+    if(status)rows2=rows2.filter(r=>r.status===status);
+    if(!rows2.length){tbody.innerHTML='<tr class="empty-row"><td colspan="6">No records match filter.</td></tr>';historyData=[];return;}
+    historyData=rows2;
+    tbody.innerHTML=rows2.map(r=>`<tr>
       <td style="white-space:nowrap">${fmtDate(r.schedule_date)}</td>
       <td style="white-space:nowrap">${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}</td>
       <td style="color:var(--accent);font-weight:600">${r.room?.room_code??'—'}</td>
-      <td>${courseName(r.course)}</td>
+      <td>${cName(r.course)}</td>
       <td>${r.subject?.subject_name??'—'}</td>
-      <td>${statusBadge(r.status)}</td>
+      <td>${sBadge(r.status)}</td>
     </tr>`).join('');
-
-  } catch(e) {
-    toast(e.message, 'error');
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Error loading history.</td></tr>';
-  }
+  }catch(e){toast(e.message,'error');tbody.innerHTML='<tr class="empty-row"><td colspan="6">Error.</td></tr>';}
 }
 
-// ── History Export PDF ────────────────────────────────────────────
-document.getElementById('exportHistPdf').addEventListener('click', () => {
-  if (!historyData.length) { toast('No data to export. Run a search first.', 'warn'); return; }
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-
+// Export PDF
+document.getElementById('exportHistPdf').addEventListener('click',()=>{
+  if(!historyData.length){toast('No data. Run a search first.','warn');return;}
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(30,40,80);
-  doc.text('B.K. Birla College — ASES', 14, 13);
-  doc.setFontSize(10);doc.text(`Lecture History — ${myFacultyName}`, 14, 20);
+  doc.text('B.K. Birla College — ASES',14,13);
+  doc.setFontSize(10);doc.text(`Lecture History — ${myFacultyName}`,14,20);
   doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120);
-  doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`, doc.internal.pageSize.width-14, 13, {align:'right'});
-
+  doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`,doc.internal.pageSize.width-14,13,{align:'right'});
   doc.autoTable({
     head:[['Date','Time','Room','Course','Subject','Status']],
-    body: historyData.map(r=>[
-      fmtDate(r.schedule_date),
+    body:historyData.map(r=>[fmtDate(r.schedule_date),
       `${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}`,
-      r.room?.room_code??'—',
-      courseName(r.course),
-      r.subject?.subject_name??'—',
-      STATUS_LABEL[r.status]??'—',
-    ]),
-    startY:25,theme:'grid',
-    styles:{fontSize:8,cellPadding:2},
+      r.room?.room_code??'—',cName(r.course),r.subject?.subject_name??'—',SL[r.status]??'—']),
+    startY:25,theme:'grid',styles:{fontSize:8,cellPadding:2},
     headStyles:{fillColor:[79,106,245],textColor:255,fontStyle:'bold'},
-    alternateRowStyles:{fillColor:[245,246,252]},
-    margin:{left:14,right:14},
+    alternateRowStyles:{fillColor:[245,246,252]},margin:{left:14,right:14},
   });
-  doc.save(`ASES_Lecture_History_${myFacultyName.replace(/\s+/g,'_')}.pdf`);
+  doc.save(`Lecture_History_${myFacultyName.replace(/\s+/g,'_')}.pdf`);
 });
 
-// ── History Export Excel ──────────────────────────────────────────
-document.getElementById('exportHistXls').addEventListener('click', () => {
-  if (!historyData.length) { toast('No data to export. Run a search first.', 'warn'); return; }
-  const wsData = [
+// Export Excel
+document.getElementById('exportHistXls').addEventListener('click',()=>{
+  if(!historyData.length){toast('No data. Run a search first.','warn');return;}
+  const wb=window.XLSX.utils.book_new();
+  const ws=window.XLSX.utils.aoa_to_sheet([
     ['Date','Time','Room','Course','Subject','Status'],
-    ...historyData.map(r=>[
-      fmtDate(r.schedule_date),
+    ...historyData.map(r=>[fmtDate(r.schedule_date),
       `${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}`,
-      r.room?.room_code??'—',
-      courseName(r.course),
-      r.subject?.subject_name??'—',
-      STATUS_LABEL[r.status]??'—',
-    ])
-  ];
-  const wb = window.XLSX.utils.book_new();
-  const ws = window.XLSX.utils.aoa_to_sheet(wsData);
-  ws['!cols'] = [12,12,8,16,28,14].map(w=>({wch:w}));
-  window.XLSX.utils.book_append_sheet(wb, ws, 'Lecture History');
-  window.XLSX.writeFile(wb, `ASES_Lecture_History_${myFacultyName.replace(/\s+/g,'_')}.xlsx`);
+      r.room?.room_code??'—',cName(r.course),r.subject?.subject_name??'—',SL[r.status]??'—'])
+  ]);
+  ws['!cols']=[12,12,8,16,28,14].map(w=>({wch:w}));
+  window.XLSX.utils.book_append_sheet(wb,ws,'Lecture History');
+  window.XLSX.writeFile(wb,`Lecture_History_${myFacultyName.replace(/\s+/g,'_')}.xlsx`);
 });
 
-// ══════════════════════════════════════════════════════════════════
-// TAB 3 — MY LEAVES
-// ══════════════════════════════════════════════════════════════════
-document.getElementById('leaveSearchBtn').addEventListener('click', loadLeaves);
-document.getElementById('leaveClearBtn').addEventListener('click', () => {
-  document.getElementById('leaveFrom').value = '';
-  document.getElementById('leaveTo').value   = '';
-  document.getElementById('leavesBody').innerHTML =
-    '<tr class="empty-row"><td colspan="5">Set a date range and search.</td></tr>';
+// ══ LEAVES ═══════════════════════════════════════════════════════
+document.getElementById('leaveSearchBtn').addEventListener('click',loadLeaves);
+document.getElementById('leaveClearBtn').addEventListener('click',()=>{
+  ['leaveFrom','leaveTo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('leavesBody').innerHTML='<tr class="empty-row"><td colspan="5">Set a date range and search.</td></tr>';
 });
 
-async function loadLeaves() {
-  if (!myFacultyId) return;
-  const from  = document.getElementById('leaveFrom').value;
-  const to    = document.getElementById('leaveTo').value;
-  const tbody = document.getElementById('leavesBody');
-  tbody.innerHTML = '<tr class="empty-row"><td colspan="5"><span class="spin" style="display:inline-block"></span> Loading…</td></tr>';
+async function loadLeaves(){
+  if(!myFacultyId)return;
+  const from=document.getElementById('leaveFrom').value;
+  const to=document.getElementById('leaveTo').value;
+  const tbody=document.getElementById('leavesBody');
+  tbody.innerHTML='<tr class="empty-row"><td colspan="5"><span class="spin" style="display:inline-block"></span></td></tr>';
+  try{
+    let q=supabase.from('faculty_leaves').select(`
+      leave_date,leave_type,reason,status,
+      entered_by_admin:admin_users!entered_by(full_name)`)
+      .eq('faculty_id',myFacultyId)
+      .order('leave_date',{ascending:false});
+    if(from)q=q.gte('leave_date',from);
+    if(to)  q=q.lte('leave_date',to);
+    const{data,error}=await q;if(error)throw error;
+    if(!data?.length){tbody.innerHTML='<tr class="empty-row"><td colspan="5">No leave records found.</td></tr>';return;}
+    const half=new Set(['half_day_morning','half_day_afternoon']);
+    tbody.innerHTML=data.map(r=>`<tr>
+      <td style="white-space:nowrap;font-weight:500">${fmtDate(r.leave_date)}</td>
+      <td><span class="badge ${half.has(r.leave_type)?'badge-halfday':'badge-leave'}">${LL[r.leave_type]??r.leave_type}</span></td>
+      <td style="color:var(--text-muted)">${r.reason??'—'}</td>
+      <td style="color:var(--text-muted)">${r.entered_by_admin?.full_name??'—'}</td>
+      <td><span class="badge ${r.status==='approved'?'badge-active':'badge-inactive'}">${r.status}</span></td>
+    </tr>`).join('');
+  }catch(e){toast(e.message,'error');}
+}
 
-  try {
-    let q = supabase
-      .from('faculty_leaves')
+// ══ MY SUBJECTS (CSF) ════════════════════════════════════════════
+async function loadCSF(){
+  const container=document.getElementById('csfContainer');
+  if(!myFacultyId){container.innerHTML='<div class="grid-placeholder"><div>Profile not linked.</div></div>';return;}
+  try{
+    const{data,error}=await supabase.from('course_subject_faculty')
       .select(`
-        leave_date, leave_type, reason, status,
-        entered_by_admin:admin_users!entered_by(full_name)
-      `)
-      .eq('faculty_id', myFacultyId)
-      .order('leave_date', { ascending: false });
-
-    if (from) q = q.gte('leave_date', from);
-    if (to)   q = q.lte('leave_date', to);
-
-    const { data, error } = await q;
-    if (error) throw error;
-
-    if (!data?.length) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No leave records found for this period.</td></tr>';
-      return;
+        id,is_active,
+        course:courses!course_id(id,year,program,division),
+        subject:subjects!subject_id(id,subject_name)`)
+      .eq('faculty_id',myFacultyId)
+      .eq('is_active',true)
+      .order('id');
+    if(error)throw error;
+    if(!data?.length){
+      container.innerHTML=`<div class="empty-state">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>No subject assignments found. Contact your administrator.</div>
+      </div>`;return;
     }
+    container.innerHTML=`<div class="csf-grid">${data.map(r=>`
+      <div class="csf-card">
+        <div class="csf-card-course">${cName(r.course)}</div>
+        <div class="csf-card-subject">${r.subject?.subject_name??'—'}</div>
+      </div>`).join('')}</div>`;
+  }catch(e){toast(e.message,'error');}
+}
 
-    const half = new Set(['half_day_morning','half_day_afternoon']);
-    tbody.innerHTML = data.map(r => {
-      const tc = half.has(r.leave_type) ? 'badge-halfday' : 'badge-leave';
-      const sc = r.status==='approved' ? 'badge-active' : 'badge-inactive';
-      return `<tr>
-        <td style="white-space:nowrap;font-weight:500">${fmtDate(r.leave_date)}</td>
-        <td><span class="badge ${tc}">${LEAVE_LABEL[r.leave_type]??r.leave_type}</span></td>
-        <td style="color:var(--text-muted)">${r.reason??'—'}</td>
-        <td style="color:var(--text-muted)">${r.entered_by_admin?.full_name??'—'}</td>
-        <td><span class="badge ${sc}">${r.status}</span></td>
-      </tr>`;
-    }).join('');
+// ══ TIMETABLE ════════════════════════════════════════════════════
+// My timetable day toggle
+['myTtWeekday','myTtSaturday'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',()=>{
+    document.getElementById('myTtWeekday').classList.toggle('active',id==='myTtWeekday');
+    document.getElementById('myTtSaturday').classList.toggle('active',id==='myTtSaturday');
+    loadMyTt(id==='myTtWeekday'?'weekday':'saturday');
+  });
+});
 
-  } catch(e) {
-    toast(e.message, 'error');
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Error loading leave records.</td></tr>';
+// Full timetable day toggle
+['fullTtWeekday','fullTtSaturday'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',()=>{
+    document.getElementById('fullTtWeekday').classList.toggle('active',id==='fullTtWeekday');
+    document.getElementById('fullTtSaturday').classList.toggle('active',id==='fullTtSaturday');
+    loadFullTt(id==='fullTtWeekday'?'weekday':'saturday');
+  });
+});
+
+async function fetchTimetableData(dayType){
+  const[slotsRes,roomsRes,ttRes]=await Promise.all([
+    supabase.from('time_slots').select('id,slot_label,start_time,end_time,slot_type,sort_order')
+      .eq('day_type',dayType).order('sort_order'),
+    supabase.from('rooms').select('id,room_code').eq('is_active',true).order('room_code'),
+    supabase.from('master_timetable').select(`
+      id,time_slot_id,room_id,faculty_id,
+      course:courses!course_id(year,program,division),
+      subject:subjects!subject_id(subject_name),
+      faculty:faculty!faculty_id(id,full_name)`)
+      .eq('day_type',dayType).eq('is_active',true),
+  ]);
+  if(slotsRes.error)throw slotsRes.error;
+  if(roomsRes.error)throw roomsRes.error;
+  const slots=slotsRes.data??[];
+  const rooms=roomsRes.data??[];
+  // Build map
+  const ttMap={};
+  for(const row of(ttRes.data??[])){
+    if(!ttMap[row.time_slot_id])ttMap[row.time_slot_id]={};
+    ttMap[row.time_slot_id][row.room_id]=row;
   }
+  return{slots,rooms,ttMap};
+}
+
+function renderTtGrid(slots,rooms,ttMap,myFacultyId,containerId){
+  const container=document.getElementById(containerId);
+  if(!slots.length||!rooms.length){
+    container.innerHTML='<div class="tt-grid"><div class="grid-placeholder"><div>No data found.</div></div></div>';return;
+  }
+  const cols=`grid-template-columns:84px repeat(${rooms.length},minmax(100px,1fr))`;
+  let h=`<div class="tt-grid">`;
+  h+=`<div class="tt-head" style="${cols}"><div class="th-cell">Time</div>${rooms.map(r=>`<div class="th-cell">Rm ${r.room_code}</div>`).join('')}</div>`;
+  for(const slot of slots){
+    const isB=slot.slot_type!=='lecture';
+    h+=`<div class="tt-row${isB?' is-break':''}" style="${cols}">`;
+    h+=`<div class="time-cell"><span class="tl">${slot.slot_label??''}</span><span class="tr">${slot.start_time.slice(0,5)}–${slot.end_time.slice(0,5)}</span></div>`;
+    if(isB){
+      const lbl=slot.slot_type==='lunch'?'🍽 Lunch':'☕ Recess';
+      h+=`<div class="break-span" style="grid-column:2/${rooms.length+2}">${lbl}</div>`;
+    }else{
+      for(const room of rooms){
+        const row=ttMap[slot.id]?.[room.id];
+        if(!row){h+=`<div class="lc"><div class="lc-empty">—</div></div>`;continue;}
+        const ismine=myFacultyId&&row.faculty_id===myFacultyId;
+        h+=`<div class="lc${ismine?' mine':''}">
+          <div class="lc-course">${cName(row.course)}</div>
+          <div class="lc-subject">${row.subject?.subject_name??'—'}</div>
+          <div class="lc-faculty">${row.faculty?.full_name??'—'}</div>
+          ${ismine?'<span class="mine-tag">★ You</span>':''}
+        </div>`;
+      }
+    }
+    h+=`</div>`;
+  }
+  h+=`</div>`;
+  container.innerHTML=h;
+}
+
+async function loadMyTt(dayType){
+  document.getElementById('myTtGrid').innerHTML='<div class="tt-grid"><div class="grid-placeholder"><span class="spin" style="display:inline-block"></span></div></div>';
+  try{
+    const{slots,rooms,ttMap}=await fetchTimetableData(dayType);
+    // For "my timetable" — only show rooms where I have at least one lecture
+    const myRoomIds=new Set();
+    for(const[tsId,rm]of Object.entries(ttMap)){
+      for(const[roomId,row]of Object.entries(rm)){
+        if(myFacultyId&&row.faculty_id===myFacultyId)myRoomIds.add(roomId);
+      }
+    }
+    // Show all rooms but highlight mine — or filter to only my rooms if cleaner
+    renderTtGrid(slots,rooms,ttMap,myFacultyId,'myTtGrid');
+  }catch(e){toast(e.message,'error');}
+}
+
+async function loadFullTt(dayType){
+  document.getElementById('fullTtGrid').innerHTML='<div class="tt-grid"><div class="grid-placeholder"><span class="spin" style="display:inline-block"></span></div></div>';
+  try{
+    const{slots,rooms,ttMap}=await fetchTimetableData(dayType);
+    renderTtGrid(slots,rooms,ttMap,myFacultyId,'fullTtGrid');
+  }catch(e){toast(e.message,'error');}
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────
