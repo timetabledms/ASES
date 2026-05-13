@@ -79,6 +79,12 @@
             <div class="pw-wrap"><input type="password" id="fPassword" placeholder="Min 8 characters" /><button class="pw-toggle" type="button" onclick="togglePw('fPassword',this)"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
             <div class="field-hint">Faculty will change this after first login.</div>
           </div>
+          <div class="field"><label>Faculty Type *</label>
+            <select id="fType">
+              <option value="fulltime">Full-Time</option>
+              <option value="visiting">Visiting</option>
+            </select>
+          </div>
           <div class="field"><label>Phone</label><input type="text" id="fPhone" placeholder="+91 9876543210" /></div>
           <div class="field"><label>Department</label><input type="text" id="fDept" placeholder="Commerce &amp; Management" /></div>
         </div>
@@ -93,7 +99,7 @@
         <div class="card-title" style="padding: 1.5rem 1.5rem 0;"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>All Faculty</div>
         <div class="table-wrap" style="border:none;border-radius:0;margin-top:1rem;">
           <table>
-            <thead><tr><th>Name</th><th>Employee Code</th><th>Email</th><th>Department</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Name</th><th>Employee Code</th><th>Email</th><th>Type</th><th>Department</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody id="facultyTableBody"><tr class="empty-row"><td colspan="6"><span class="spin" style="display:inline-block"></span> Loading…</td></tr></tbody>
           </table>
         </div>
@@ -182,7 +188,7 @@ function togglePw(inputId, btn) {
         <td><strong style="color:var(--text-primary)">${r.full_name}</strong></td>
         <td style="color:var(--text-muted)">${r.employee_code}</td>
         <td style="color:var(--text-muted)">${r.email ?? '—'}</td>
-        <td style="color:var(--text-muted)">${r.department ?? '—'}</td>
+        <td><span class="badge" style="background:${r.faculty_type==='visiting'?'rgba(245,166,35,.12)':'rgba(62,207,142,.12)'};color:${r.faculty_type==='visiting'?'var(--warn)':'var(--success)'}">${r.faculty_type==='visiting'?'Visiting':'Full-Time'}</span></td><td style="color:var(--text-muted)">${r.department ?? '—'}</td>
         <td><span class="badge ${r.is_active ? 'badge-active' : 'badge-inactive'}">${r.is_active ? 'Active' : 'Inactive'}</span></td>
         <td>
           ${r.is_active
@@ -241,6 +247,7 @@ function togglePw(inputId, btn) {
     const password = document.getElementById('fPassword').value;
     const phone    = document.getElementById('fPhone').value.trim();
     const dept     = document.getElementById('fDept').value.trim();
+    const fType    = document.getElementById('fType').value;
     
     if (!fullName || !email || !empCode || !password) {
       document.getElementById('fErrText').textContent = 'Full name, email, employee code and password are required.';
@@ -255,10 +262,11 @@ function togglePw(inputId, btn) {
     btn.disabled = true; document.getElementById('fSpin').style.display = 'inline-block';
     
     try {
-      await createFaculty({ fullName, email, password, employeeCode: empCode, phone, department: dept });
+      await createFaculty({ fullName, email, password, employeeCode: empCode, phone, department: dept, facultyType: fType });
       document.getElementById('fOkText').textContent = `Faculty account created for ${fullName}.`;
       document.getElementById('fOkMsg').classList.add('visible');
       ['fName','fEmail','fEmpCode','fPassword','fPhone','fDept'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('fType').value = 'fulltime';
       toast(`Faculty account created for ${fullName}.`);
       loadFaculty();
     } catch(e) {
