@@ -144,6 +144,14 @@ body { display: flex; min-height: 100vh; }
   transition: color .25s;
 }
 
+/* Style for the new department line */
+.dept-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary); /* Or a specific accent color */
+  margin-top: 2px;
+}
+
 .college-sub {
   font-size: .6rem;
   color: var(--text-muted);
