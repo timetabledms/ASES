@@ -8,7 +8,7 @@
  * Requires: window.XLSX (SheetJS) and window.jspdf (jsPDF + autoTable)
  */
 
-const COLLEGE_LOGO_URL  = 'https://i.ibb.co/wZDKbsK6/image.png';
+const COLLEGE_LOGO_URL  = 'https://i.ibb.co/9m1dn3hh/IMG-20260505-WA0001-1-jpg.jpg';
 const COLLEGE_NAME      = 'B. K. Birla College, Kalyan';
 const COLLEGE_SUB1      = '(Empowered Autonomous Status)';
 const COLLEGE_SUB2      = 'Department of Management Studies';
