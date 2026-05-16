@@ -2,121 +2,134 @@
  * ASES — Export Helpers
  * ──────────────────────
  * exportToExcel(rows, columns, filename)
- * exportToPDF(rows, columns, title, filename)
+ * exportToPDF(rows, columns, title, filename, subtitle)
+ * preloadLogoForPDF()  — call once on pages that export PDF
  *
  * Requires: window.XLSX (SheetJS) and window.jspdf (jsPDF + autoTable)
- * loaded via CDN in each HTML page that uses exports.
  */
+
+const COLLEGE_LOGO_URL  = 'https://i.ibb.co/wZDKbsK6/image.png';
+const COLLEGE_NAME      = 'B. K. Birla College, Kalyan';
+const COLLEGE_SUB1      = '(Empowered Autonomous Status)';
+const COLLEGE_SUB2      = 'Department of Management Studies';
+const HEADER_H          = 48; // mm — table starts below this
 
 // ── exportToExcel ─────────────────────────────────────────────────────────────
-/**
- * @param {object[]} rows      — flat data array
- * @param {{ header: string, key: string, width?: number }[]} columns
- * @param {string}   filename  — without .xlsx extension
- */
 export function exportToExcel(rows, columns, filename) {
-  if (!window.XLSX) {
-    alert('Excel export library not loaded. Please check your CDN links.');
-    return;
-  }
-
+  if (!window.XLSX) { alert('Excel library not loaded.'); return; }
   const headers = columns.map(c => c.header);
-  const data = rows.map(row => columns.map(c => {
-    const val = getNestedVal(row, c.key);
-    return val ?? '';
-  }));
-
-  const wb  = window.XLSX.utils.book_new();
-  const ws  = window.XLSX.utils.aoa_to_sheet([headers, ...data]);
-
-  // Column widths
+  const data = rows.map(row => columns.map(c => getNestedVal(row, c.key) ?? ''));
+  const wb = window.XLSX.utils.book_new();
+  const ws = window.XLSX.utils.aoa_to_sheet([headers, ...data]);
   ws['!cols'] = columns.map(c => ({ wch: c.width ?? Math.max(c.header.length + 2, 12) }));
-
-  // Header row styling (bold) — basic xlsx styling
-  const headerRange = window.XLSX.utils.decode_range(ws['!ref']);
-  for (let C = headerRange.s.c; C <= headerRange.e.c; C++) {
+  const range = window.XLSX.utils.decode_range(ws['!ref']);
+  for (let C = range.s.c; C <= range.e.c; C++) {
     const addr = window.XLSX.utils.encode_cell({ r: 0, c: C });
-    if (!ws[addr]) continue;
-    ws[addr].s = { font: { bold: true }, fill: { fgColor: { rgb: 'E8ECFF' } } };
+    if (ws[addr]) ws[addr].s = { font: { bold: true }, fill: { fgColor: { rgb: 'E8ECFF' } } };
   }
-
   window.XLSX.utils.book_append_sheet(wb, ws, 'Report');
   window.XLSX.writeFile(wb, `${filename}.xlsx`);
 }
 
 // ── exportToPDF ───────────────────────────────────────────────────────────────
-/**
- * @param {object[]} rows
- * @param {{ header: string, key: string }[]} columns
- * @param {string}   title     — shown at top of PDF
- * @param {string}   filename  — without .pdf extension
- * @param {string}   subtitle  — optional second line under title
- */
 export function exportToPDF(rows, columns, title, filename, subtitle = '') {
-  if (!window.jspdf) {
-    alert('PDF export library not loaded. Please check your CDN links.');
-    return;
-  }
-
+  if (!window.jspdf) { alert('PDF library not loaded.'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-  // ── Header ──────────────────────────────────────────────────────
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(30, 40, 80);
-  doc.text('B.K. Birla College — ASES', 14, 14);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(20, 30, 60);
-  doc.text(title, 14, 21);
-
-  if (subtitle) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(100, 110, 140);
-    doc.text(subtitle, 14, 27);
-  }
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(150);
-  const genText = `Generated: ${new Date().toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' })}`;
-  doc.text(genText, doc.internal.pageSize.width - 14, 14, { align: 'right' });
-  doc.text(`Total records: ${rows.length}`, doc.internal.pageSize.width - 14, 19, { align: 'right' });
-
-  // ── Table ────────────────────────────────────────────────────────
-  const startY = subtitle ? 32 : 27;
+  const pageW = doc.internal.pageSize.width;
+  _drawHeader(doc, pageW, title, subtitle);
   const tableData = rows.map(row => columns.map(c => String(getNestedVal(row, c.key) ?? '—')));
-
   doc.autoTable({
-    head:          [columns.map(c => c.header)],
-    body:          tableData,
-    startY,
-    theme:         'grid',
-    styles:        { fontSize: 7.5, cellPadding: 2, valign: 'middle' },
-    headStyles:    { fillColor: [79, 106, 245], textColor: 255, fontStyle: 'bold', fontSize: 8 },
-    alternateRowStyles: { fillColor: [245, 246, 252] },
-    columnStyles:  Object.fromEntries(columns.map((c, i) => [i, { cellWidth: c.pdfWidth ?? 'auto' }])),
-    margin:        { left: 14, right: 14 },
+    head:   [columns.map(c => c.header)],
+    body:   tableData,
+    startY: HEADER_H + 4,
+    theme:  'grid',
+    styles:              { fontSize: 7.5, cellPadding: 2, valign: 'middle' },
+    headStyles:          { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+    alternateRowStyles:  { fillColor: [245, 246, 252] },
+    columnStyles: Object.fromEntries(columns.map((c, i) => [i, { cellWidth: c.pdfWidth ?? 'auto' }])),
+    margin: { left: 14, right: 14 },
     didDrawPage(data) {
-      // Page number footer
-      doc.setFontSize(7);
-      doc.setTextColor(150);
-      doc.text(
-        `Page ${data.pageNumber}`,
-        doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 8,
-        { align: 'center' }
-      );
+      if (data.pageNumber > 1) _drawHeader(doc, pageW, title, subtitle);
+      doc.setFontSize(7); doc.setTextColor(150);
+      doc.text(`Page ${data.pageNumber}`, pageW / 2, doc.internal.pageSize.height - 5, { align: 'center' });
     },
   });
-
   doc.save(`${filename}.pdf`);
 }
 
-// ── Helper: nested key access ─────────────────────────────────────────────────
-// Supports dot notation: 'daily_schedule.course.subject_name'
+// ── _drawHeader ───────────────────────────────────────────────────────────────
+function _drawHeader(doc, pageW, reportTitle, subtitle) {
+  const cx = pageW / 2;
+
+  // Top border
+  doc.setDrawColor(26, 34, 68); doc.setLineWidth(0.6);
+  doc.line(14, 8, pageW - 14, 8);
+
+  // Logo
+  if (window._ASES_LOGO_DATA) {
+    try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 14, 10, 26, 26); } catch(e) {}
+  }
+
+  // College name
+  doc.setFont('times', 'bold'); doc.setFontSize(16); doc.setTextColor(26, 34, 68);
+  doc.text(COLLEGE_NAME, cx, 17, { align: 'center' });
+
+  doc.setFont('times', 'normal'); doc.setFontSize(10); doc.setTextColor(50, 60, 90);
+  doc.text(COLLEGE_SUB1, cx, 23, { align: 'center' });
+
+  doc.setFont('times', 'bolditalic'); doc.setFontSize(10.5);
+  doc.text(COLLEGE_SUB2, cx, 29, { align: 'center' });
+
+  // Divider
+  doc.setDrawColor(26, 34, 68); doc.setLineWidth(0.4);
+  doc.line(14, 33, pageW - 14, 33);
+
+  // Report title
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(26, 34, 68);
+  doc.text(reportTitle, cx, 39, { align: 'center' });
+
+  if (subtitle) {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(90, 100, 120);
+    doc.text(subtitle, cx, 44.5, { align: 'center' });
+  }
+
+  // Generated date top-right
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(150);
+  doc.text(
+    `Generated: ${new Date().toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' })}`,
+    pageW - 14, 12, { align: 'right' }
+  );
+
+  // Bottom border
+  doc.setDrawColor(26, 34, 68); doc.setLineWidth(0.6);
+  doc.line(14, HEADER_H, pageW - 14, HEADER_H);
+}
+
+// ── preloadLogoForPDF ─────────────────────────────────────────────────────────
+/**
+ * Call once on any page that uses PDF export.
+ * Fetches the logo and caches as base64 in window._ASES_LOGO_DATA.
+ *
+ *   import { preloadLogoForPDF } from '/js/utils/exportHelpers.js';
+ *   preloadLogoForPDF();
+ */
+export function preloadLogoForPDF() {
+  if (window._ASES_LOGO_DATA) return;
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      window._ASES_LOGO_DATA = canvas.toDataURL('image/png');
+    } catch(e) { console.warn('[ASES] Logo preload failed:', e.message); }
+  };
+  img.src = COLLEGE_LOGO_URL;
+}
+
+// ── getNestedVal ──────────────────────────────────────────────────────────────
 function getNestedVal(obj, key) {
   if (!obj || !key) return '';
   return key.split('.').reduce((acc, k) => (acc != null ? acc[k] : null), obj);
