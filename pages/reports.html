@@ -345,7 +345,8 @@
   // ── Auth ──────────────────────────────────────────────────────────
   const session = await requireRole(); // any authenticated user
   initSidebar(session, 'reports');
-  preloadLogoForPDF(); // preload logo for all PDF exports on this page
+  preloadLogoForPDF();
+  const generatedBy = session.profile.full_name ?? 'Admin';
   const isAdmin     = session.role === 'admin' || session.role === 'super_admin';
   const myFacultyId = session.profile?.faculty_id ?? null;
 
@@ -472,13 +473,7 @@
 
   document.getElementById('r1ExportPdf').addEventListener('click', () => {
     const date = document.getElementById('r1Date').value;
-    exportToPDF(r1Data,
-      [{header:'Time',key:'_time'},{header:'Room',key:'room.room_code'},{header:'Course',key:'_course'},
-       {header:'Subject',key:'subject.subject_name'},{header:'Faculty',key:'assigned_faculty.full_name'},
-       {header:'Status',key:'_status'}],
-      `Daily Summary — ${fmtDate(date)}`, `Daily_Summary_${date}`, date
-    );
-    // custom flatten since nested paths are complex
+    // flatten for PDF
     const flat = r1Data.map(r => {
       const ex = Array.isArray(r.execution) ? r.execution[0] : r.execution;
       return {
@@ -494,7 +489,7 @@
       [{header:'Time',key:'_time'},{header:'Room',key:'room.room_code'},{header:'Course',key:'_course'},
        {header:'Subject',key:'subject.subject_name'},{header:'Faculty',key:'assigned_faculty.full_name'},
        {header:'Status',key:'_status'}],
-      `Daily Summary — ${fmtDate(date)}`, `Daily_Summary_${date}`, date
+      `Daily Summary — ${fmtDate(date)}`, `Daily_Summary_${date}`, date, generatedBy
     );
   });
   document.getElementById('r1ExportXls').addEventListener('click', () => {
@@ -558,8 +553,7 @@
       course:courseLbl(r.daily_schedule?.course), subject:r.daily_schedule?.subject?.subject_name??'—',
       status:STATUS_LABELS[r.faculty_status]??'—', remarks:r.remarks??'—'}));
     exportToPDF(flat,[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Course',key:'course'},
-      {header:'Subject',key:'subject',pdfWidth:40},{header:'Status',key:'status'},{header:'Remarks',key:'remarks',pdfWidth:50}],
-      'Faculty Lectures Report','Faculty_Lectures');
+      {header:'Subject',key:'subject',pdfWidth:40},{header:'Status',key:'status'},{header:'Remarks',key:'remarks',pdfWidth:50}],'Faculty Lectures Report','Faculty_Lectures','',generatedBy);
   });
   document.getElementById('r2ExportXls').addEventListener('click', () => {
     const flat = r2Data.map(r => ({date:fmtDate(r.schedule_date),
@@ -606,8 +600,7 @@
     const flat = r3Data.map(r=>({faculty:r.faculty?.full_name??'—',date:fmtDate(r.leave_date),
       type:LEAVE_TYPE_LABELS[r.leave_type]??r.leave_type,reason:r.reason??'—',status:r.status}));
     exportToPDF(flat,[{header:'Faculty',key:'faculty'},{header:'Date',key:'date'},
-      {header:'Leave Type',key:'type'},{header:'Reason',key:'reason',pdfWidth:60},{header:'Status',key:'status'}],
-      'Faculty Leave Summary','Leave_Summary');
+      {header:'Leave Type',key:'type'},{header:'Reason',key:'reason',pdfWidth:60},{header:'Status',key:'status'}],'Faculty Leave Summary','Leave_Summary','',generatedBy);
   });
   document.getElementById('r3ExportXls').addEventListener('click', () => {
     const flat = r3Data.map(r=>({faculty:r.faculty?.full_name??'—',date:fmtDate(r.leave_date),
@@ -647,7 +640,7 @@
       room:r.daily_schedule?.room?.room_code??'—',status:STATUS_LABELS[r.faculty_status]??'—'}));
     const cols=[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Subject',key:'subject',width:28},
       {header:'Faculty',key:'faculty',width:22},{header:'Room',key:'room'},{header:'Status',key:'status'}];
-    if(id.includes('Pdf')) exportToPDF(flat,cols,'By Course Report','Report_By_Course');
+    if(id.includes('Pdf')) exportToPDF(flat,cols,'By Course Report','Report_By_Course','',generatedBy);
     else exportToExcel(flat,cols,'Report_By_Course');
   }));
 
@@ -680,7 +673,7 @@
       room:r.daily_schedule?.room?.room_code??'—',status:STATUS_LABELS[r.faculty_status]??'—'}));
     const cols=[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Course',key:'course',width:18},
       {header:'Faculty',key:'faculty',width:22},{header:'Room',key:'room'},{header:'Status',key:'status'}];
-    if(id.includes('Pdf')) exportToPDF(flat,cols,'By Subject Report','Report_By_Subject');
+    if(id.includes('Pdf')) exportToPDF(flat,cols,'By Subject Report','Report_By_Subject','',generatedBy);
     else exportToExcel(flat,cols,'Report_By_Subject');
   }));
 
@@ -712,7 +705,7 @@
       faculty:r.actual_faculty?.full_name??'—',status:STATUS_LABELS[r.faculty_status]??'—'}));
     const cols=[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Course',key:'course'},
       {header:'Subject',key:'subject',width:26},{header:'Faculty',key:'faculty',width:22},{header:'Status',key:'status'}];
-    if(id.includes('Pdf')) exportToPDF(flat,cols,'By Room Report','Report_By_Room');
+    if(id.includes('Pdf')) exportToPDF(flat,cols,'By Room Report','Report_By_Room','',generatedBy);
     else exportToExcel(flat,cols,'Report_By_Room');
   }));
 
@@ -753,7 +746,7 @@
       {header:'Subject',key:'subject',width:26},{header:'Faculty',key:'faculty',width:22},
       {header:'Time Changed',key:'timeChanged'},{header:'Room Changed',key:'roomChanged'},
       {header:'Replaced',key:'replaced'},{header:'Note',key:'note',width:30}];
-    if(id.includes('Pdf')) exportToPDF(flat,cols,'Modifications Log','Modifications_Log');
+    if(id.includes('Pdf')) exportToPDF(flat,cols,'Modifications Log','Modifications_Log','',generatedBy);
     else exportToExcel(flat,cols,'Modifications_Log');
   }));
 
@@ -793,7 +786,7 @@
     const cols=[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Course',key:'course'},
       {header:'Subject',key:'subject',width:26},{header:'Faculty',key:'faculty',width:22},
       {header:'Status',key:'status'},{header:'Remarks',key:'remarks',width:30}];
-    if(id.includes('Pdf')) exportToPDF(flat,cols,'Not Engaged / Not Marked','Not_Engaged_Report');
+    if(id.includes('Pdf')) exportToPDF(flat,cols,'Not Engaged / Not Marked','Not_Engaged_Report','',generatedBy);
     else exportToExcel(flat,cols,'Not_Engaged_Report');
   }));
 
@@ -826,7 +819,7 @@
     const cols=[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Room',key:'room'},
       {header:'Course',key:'course'},{header:'New Subject',key:'subject',width:28},
       {header:'New Faculty',key:'faculty',width:22}];
-    if(id.includes('Pdf')) exportToPDF(flat,cols,'Rescheduled Slots','Rescheduled_Slots');
+    if(id.includes('Pdf')) exportToPDF(flat,cols,'Rescheduled Slots','Rescheduled_Slots','',generatedBy);
     else exportToExcel(flat,cols,'Rescheduled_Slots');
   }));
 
