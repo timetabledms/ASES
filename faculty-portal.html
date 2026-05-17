@@ -306,9 +306,12 @@
 import { requireRole } from '/js/auth/session.js';
 import { initSidebar } from '/js/components/sidebar.js';
 import { supabase } from '/js/config/supabase.js';
+import { exportToPDF, exportToExcel, preloadLogoForPDF } from '/js/utils/exportHelpers.js';
 
 const session = await requireRole('faculty');
 initSidebar(session, 'portal');
+  preloadLogoForPDF();
+  const generatedBy = myFacultyName;
 
 function toast(msg, type='success') {
   const c=document.getElementById('toast');
@@ -475,38 +478,44 @@ async function loadHistory(){
 // Export PDF
 document.getElementById('exportHistPdf').addEventListener('click',()=>{
   if(!historyData.length){toast('No data. Run a search first.','warn');return;}
-  const{jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-  doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(30,40,80);
-  doc.text('B.K. Birla College — ASES',14,13);
-  doc.setFontSize(10);doc.text(`Lecture History — ${myFacultyName}`,14,20);
-  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120);
-  doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`,doc.internal.pageSize.width-14,13,{align:'right'});
-  doc.autoTable({
-    head:[['Date','Time','Room','Course','Subject','Status']],
-    body:historyData.map(r=>[fmtDate(r.schedule_date),
-      `${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}`,
-      r.room?.room_code??'—',cName(r.course),r.subject?.subject_name??'—',SL[r.status]??'—']),
-    startY:25,theme:'grid',styles:{fontSize:8,cellPadding:2},
-    headStyles:{fillColor:[79,106,245],textColor:255,fontStyle:'bold'},
-    alternateRowStyles:{fillColor:[245,246,252]},margin:{left:14,right:14},
-  });
-  doc.save(`Lecture_History_${myFacultyName.replace(/\s+/g,'_')}.pdf`);
+  const flat = historyData.map(r=>({
+    date:    fmtDate(r.schedule_date),
+    time:    `${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}`,
+    room:    r.room?.room_code??'—',
+    course:  cName(r.course),
+    subject: r.subject?.subject_name??'—',
+    status:  SL[r.status]??'—',
+  }));
+  exportToPDF(
+    flat,
+    [{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Room',key:'room'},
+     {header:'Course',key:'course',pdfWidth:28},{header:'Subject',key:'subject',pdfWidth:42},
+     {header:'Status',key:'status',pdfWidth:20}],
+    'Lecture History Report',
+    `Lecture_History_${myFacultyName.replace(/\s+/g,'_')}`,
+    `Faculty: ${myFacultyName}`,
+    generatedBy
+  );
 });
 
 // Export Excel
 document.getElementById('exportHistXls').addEventListener('click',()=>{
   if(!historyData.length){toast('No data. Run a search first.','warn');return;}
-  const wb=window.XLSX.utils.book_new();
-  const ws=window.XLSX.utils.aoa_to_sheet([
-    ['Date','Time','Room','Course','Subject','Status'],
-    ...historyData.map(r=>[fmtDate(r.schedule_date),
-      `${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}`,
-      r.room?.room_code??'—',cName(r.course),r.subject?.subject_name??'—',SL[r.status]??'—'])
-  ]);
-  ws['!cols']=[12,12,8,16,28,14].map(w=>({wch:w}));
-  window.XLSX.utils.book_append_sheet(wb,ws,'Lecture History');
-  window.XLSX.writeFile(wb,`Lecture_History_${myFacultyName.replace(/\s+/g,'_')}.xlsx`);
+  const flat = historyData.map(r=>({
+    date:    fmtDate(r.schedule_date),
+    time:    `${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}`,
+    room:    r.room?.room_code??'—',
+    course:  cName(r.course),
+    subject: r.subject?.subject_name??'—',
+    status:  SL[r.status]??'—',
+  }));
+  exportToExcel(
+    flat,
+    [{header:'Date',key:'date',width:12},{header:'Time',key:'time',width:12},
+     {header:'Room',key:'room',width:8},{header:'Course',key:'course',width:16},
+     {header:'Subject',key:'subject',width:28},{header:'Status',key:'status',width:14}],
+    `Lecture_History_${myFacultyName.replace(/\s+/g,'_')}`
+  );
 });
 
 // ══ LEAVES ═══════════════════════════════════════════════════════
