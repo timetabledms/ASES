@@ -105,15 +105,17 @@
         <div class="report-nav-label">Execution</div>
         <button class="report-nav-btn active" data-report="r1">1. Daily Summary</button>
         <button class="report-nav-btn" data-report="r2">2. Faculty Lectures</button>
-        <button class="report-nav-btn" data-report="r7">3. Modifications Log</button>
-        <button class="report-nav-btn" data-report="r8">4. Not Engaged / Unmarked</button>
+        <button class="report-nav-btn" data-report="r8">3. Not Engaged / Unmarked</button>
+        <div class="report-nav-label">Custom Reports</div>
+        <button class="report-nav-btn" data-report="rc1">Daily Execution Report</button>
+        <button class="report-nav-btn" data-report="rc2">Faculty Load Report</button>
         <div class="report-nav-label">Academics</div>
-        <button class="report-nav-btn" data-report="r4">5. By Course</button>
-        <button class="report-nav-btn" data-report="r5">6. By Subject</button>
-        <button class="report-nav-btn" data-report="r6">7. By Room</button>
-        <button class="report-nav-btn" data-report="r9">8. Rescheduled Slots</button>
+        <button class="report-nav-btn" data-report="r4">4. By Course</button>
+        <button class="report-nav-btn" data-report="r5">5. By Subject</button>
+        <button class="report-nav-btn" data-report="r6">6. By Room</button>
+        <button class="report-nav-btn" data-report="r9">7. Rescheduled Slots</button>
         <div class="report-nav-label">Leave</div>
-        <button class="report-nav-btn" data-report="r3">9. Leave Summary</button>
+        <button class="report-nav-btn" data-report="r3">8. Leave Summary</button>
       </div>
 
       <!-- Report panels -->
@@ -307,6 +309,55 @@
           <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Room</th><th>Course</th><th>New Subject</th><th>New Faculty</th></tr></thead><tbody id="r9Body"><tr class="empty-row"><td colspan="6">Set date range and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- RC1: Daily Execution Report -->
+        <div class="report-section" id="rc1">
+          <div class="report-header">
+            <div class="report-title">Daily Execution Report</div>
+            <div class="export-btns">
+              <button class="btn btn-ghost btn-sm" id="rc1ExportPdf">PDF</button>
+            </div>
+          </div>
+          <div class="filter-card">
+            <div class="field"><label>Date</label><input type="text" id="rc1Date" placeholder="Pick date" readonly/></div>
+            <button class="btn btn-primary btn-sm" id="rc1Run">Run Report</button>
+          </div>
+          <!-- Stat summary -->
+          <div id="rc1Stats" style="display:none;margin-bottom:1rem">
+            <div class="mini-stats" id="rc1MiniStats"></div>
+          </div>
+          <!-- Colour-coded timetable grid -->
+          <div style="overflow-x:auto"><div id="rc1Grid">
+            <div style="padding:2rem;text-align:center;color:var(--text-muted)">Select a date and run report.</div>
+          </div></div>
+        </div>
+
+        <!-- RC2: Faculty Load Report -->
+        <div class="report-section" id="rc2">
+          <div class="report-header">
+            <div class="report-title">Faculty Load Report</div>
+            <div class="export-btns">
+              <button class="btn btn-ghost btn-sm" id="rc2ExportPdf">PDF</button>
+              <button class="btn btn-ghost btn-sm" id="rc2ExportXls">Excel</button>
+            </div>
+          </div>
+          <div class="filter-card">
+            <div class="field"><label>From Date *</label><input type="text" id="rc2From" placeholder="From" readonly/></div>
+            <div class="field"><label>To Date *</label><input type="text" id="rc2To" placeholder="To" readonly/></div>
+            <div class="field"><label>Faculty</label><select id="rc2Faculty"><option value="">All Faculty</option></select></div>
+            <button class="btn btn-primary btn-sm" id="rc2Run">Run Report</button>
+          </div>
+          <div class="result-count" id="rc2Count"></div>
+          <div class="table-wrap">
+            <table id="rc2Table">
+              <thead><tr>
+                <th>Class</th><th>Subject</th><th>Load</th>
+                <th>Teacher Name</th><th>Scheduled</th><th>Late</th><th>Extra</th>
+              </tr></thead>
+              <tbody id="rc2Body"><tr class="empty-row"><td colspan="7">Set date range and run report.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
       </div><!-- /report-panel -->
     </div><!-- /report-layout -->
   </div>
@@ -377,7 +428,7 @@
   }
 
   const facultyOpts = f => `Prof. ${f.full_name}`;
-  ['r2Faculty','r3Faculty','r5Faculty','r8Faculty'].forEach(id =>
+  ['r2Faculty','r3Faculty','r5Faculty','r8Faculty','rc2Faculty'].forEach(id =>
     populateSelect(id, faculty, facultyOpts, f => f.id));
 
   const courseOpts = c => courseLbl(c);
@@ -392,12 +443,12 @@
   const today  = new Date().toISOString().slice(0,10);
   flatpickr('#r1Date',  { ...fpOpts, defaultDate: today });
   ['r2From','r2To','r3From','r3To','r4From','r4To','r5From','r5To',
-   'r6From','r6To','r7From','r7To','r8From','r8To','r9From','r9To']
+   'r6From','r6To','r8From','r8To','r9From','r9To','rc1Date','rc2From','rc2To']
     .forEach(id => flatpickr('#'+id, fpOpts));
 
   // ── Tom Select inits ──────────────────────────────────────────────
   ['r2Faculty','r3Faculty','r4Course','r5Subject','r5Faculty',
-   'r6Room','r8Faculty','r8Course'].forEach(id => {
+   'r6Room','r8Faculty','r8Course','rc2Faculty'].forEach(id => {
     try { new TomSelect('#'+id, { allowEmptyOption:true }); } catch {}
   });
 
@@ -822,6 +873,331 @@
     if(id.includes('Pdf')) exportToPDF(flat,cols,'Rescheduled Slots','Rescheduled_Slots','',generatedBy);
     else exportToExcel(flat,cols,'Rescheduled_Slots');
   }));
+
+  // ══════════════════════════════════════════════════════════════════
+  // RC1 — Daily Execution Report (colour-coded timetable grid)
+  // ══════════════════════════════════════════════════════════════════
+  let rc1Date = '';
+  let rc1Rooms = [], rc1Slots = [], rc1ScheduleMap = {}, rc1ExecMap = {};
+
+  document.getElementById('rc1Run').addEventListener('click', async () => {
+    rc1Date = document.getElementById('rc1Date').value;
+    if (!rc1Date) { toast('Select a date.', 'warn'); return; }
+    const btn = document.getElementById('rc1Run');
+    btn.disabled = true;
+    document.getElementById('rc1Grid').innerHTML =
+      '<div style="padding:2rem;text-align:center;color:var(--text-muted)"><span class="spin" style="display:inline-block"></span> Loading…</div>';
+
+    try {
+      const dayType = new Date(rc1Date+'T00:00:00').getDay()===6?'saturday':'weekday';
+      const [slotsRes, roomsRes, schedRes, execRes] = await Promise.all([
+        supabase.from('time_slots').select('id,slot_label,start_time,end_time,slot_type,sort_order').eq('day_type',dayType).order('sort_order'),
+        supabase.from('rooms').select('id,room_code').eq('is_active',true).order('room_code'),
+        supabase.from('daily_schedule').select(`
+          id,is_cancelled,is_rescheduled,time_slot_id,room_id,
+          time_slot:time_slots!time_slot_id(id,slot_label,start_time,end_time,slot_type,sort_order),
+          room:rooms!room_id(id,room_code),
+          course:courses!course_id(year,program,division),
+          subject:subjects!subject_id(subject_name),
+          assigned_faculty:faculty!assigned_faculty_id(full_name)
+        `).eq('schedule_date',rc1Date),
+        supabase.from('lecture_execution').select('daily_schedule_id,faculty_status').eq('schedule_date',rc1Date),
+      ]);
+      if(slotsRes.error) throw slotsRes.error;
+      if(roomsRes.error) throw roomsRes.error;
+      if(schedRes.error) throw schedRes.error;
+
+      rc1Slots = slotsRes.data??[];
+      rc1Rooms = roomsRes.data??[];
+      rc1ScheduleMap = {};
+      for(const row of(schedRes.data??[])){
+        if(!rc1ScheduleMap[row.time_slot_id]) rc1ScheduleMap[row.time_slot_id]={};
+        rc1ScheduleMap[row.time_slot_id][row.room_id]=row;
+      }
+      rc1ExecMap={};
+      for(const ex of(execRes.data??[])) rc1ExecMap[ex.daily_schedule_id]=ex.faculty_status;
+
+      renderRc1Grid();
+      renderRc1Stats();
+      document.getElementById('rc1Stats').style.display='';
+    } catch(e) {
+      toast(e.message,'error');
+      document.getElementById('rc1Grid').innerHTML='<div style="padding:2rem;text-align:center;color:var(--error)">Error: '+e.message+'</div>';
+    } finally { btn.disabled=false; }
+  });
+
+  function renderRc1Stats() {
+    let onTime=0,late=0,notEngaged=0,notMarked=0,cancelled=0;
+    for(const tsMap of Object.values(rc1ScheduleMap)){
+      for(const row of Object.values(tsMap)){
+        if(row.time_slot?.slot_type!=='lecture') continue;
+        if(row.is_cancelled){cancelled++;continue;}
+        const s=rc1ExecMap[row.id]??'not_marked';
+        if(s==='on_time')onTime++;
+        else if(s==='late')late++;
+        else if(s==='not_engaged')notEngaged++;
+        else notMarked++;
+      }
+    }
+    document.getElementById('rc1MiniStats').innerHTML=[
+      ['On Time',onTime,'var(--success)'],['Late',late,'var(--warn)'],
+      ['Not Engaged',notEngaged,'var(--error)'],['Not Marked',notMarked,'var(--text-muted)'],
+      ['Cancelled',cancelled,'var(--border)'],
+    ].map(([l,v,col])=>`<div class="mini-stat">
+      <div class="mini-stat-val" style="color:${col}">${v}</div>
+      <div class="mini-stat-lbl">${l}</div>
+    </div>`).join('');
+  }
+
+  // Status colours for PDF cells
+  const RC1_STATUS_BG  = {on_time:'#d4f7e7',late:'#fff3cd',not_engaged:'#fde8ea',not_marked:'#f0f0f0'};
+  const RC1_STATUS_COL = {on_time:'#1a7a4a',late:'#8a6000',not_engaged:'#a01828',not_marked:'#666'};
+  const RC1_STATUS_LBL = {on_time:'On Time',late:'Late',not_engaged:'Not Engaged',not_marked:'Not Marked'};
+
+  function renderRc1Grid() {
+    if(!rc1Slots.length||!rc1Rooms.length){
+      document.getElementById('rc1Grid').innerHTML='<div style="padding:2rem;text-align:center;color:var(--text-muted)">No data found for this date.</div>';
+      return;
+    }
+    const cols=`grid-template-columns:86px repeat(${rc1Rooms.length},minmax(108px,1fr))`;
+    let h=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden">`;
+    // Header
+    h+=`<div style="display:grid;${cols};border-bottom:1px solid var(--border);background:rgba(26,34,68,.06)">`;
+    h+=`<div style="padding:.55rem .65rem;font-size:.64rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);border-right:1px solid var(--border)">Time</div>`;
+    rc1Rooms.forEach(r=>{h+=`<div style="padding:.55rem .65rem;font-size:.64rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);border-right:1px solid var(--border)">Rm ${r.room_code}</div>`;});
+    h+=`</div>`;
+
+    for(const slot of rc1Slots){
+      const isB=slot.slot_type!=='lecture';
+      h+=`<div style="display:grid;${cols};border-bottom:1px solid rgba(200,210,230,.35);${isB?'background:var(--bg-input)':''}">`;
+      h+=`<div style="padding:.4rem .6rem;font-size:.68rem;color:var(--text-muted);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center">
+        <span style="font-weight:700;font-size:.7rem;color:var(--text-label)">${slot.slot_label??''}</span>
+        <span style="font-size:.63rem">${slot.start_time.slice(0,5)}–${slot.end_time.slice(0,5)}</span>
+      </div>`;
+      if(isB){
+        const lbl=slot.slot_type==='lunch'?'🍽 Lunch':'☕ Recess';
+        h+=`<div style="padding:.35rem .65rem;font-size:.7rem;font-style:italic;color:var(--text-muted);grid-column:2/${rc1Rooms.length+2};display:flex;align-items:center">${lbl}</div>`;
+      } else {
+        for(const room of rc1Rooms){
+          const row=rc1ScheduleMap[slot.id]?.[room.id];
+          if(!row){h+=`<div style="border-right:1px solid var(--border);min-height:64px"></div>`;continue;}
+          const s=row.is_cancelled?'cancelled':(rc1ExecMap[row.id]??'not_marked');
+          const bg=row.is_cancelled?'#f0f0f0':(RC1_STATUS_BG[s]??'#f8f8f8');
+          const col=row.is_cancelled?'#999':(RC1_STATUS_COL[s]??'#444');
+          const lbl=row.is_cancelled?'CANCELLED':(RC1_STATUS_LBL[s]??'Not Marked');
+          const cname=row.course?(row.course.division?`${row.course.year} ${row.course.program} ${row.course.division}`:`${row.course.year} ${row.course.program}`):'';
+          h+=`<div style="padding:.38rem .45rem;border-right:1px solid var(--border);min-height:64px;background:${bg};display:flex;flex-direction:column;gap:.08rem">
+            <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:${col};opacity:.75">${cname}</div>
+            <div style="font-size:.72rem;font-weight:600;color:${col};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${row.subject?.subject_name??'—'}</div>
+            <div style="font-size:.65rem;color:${col};opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${row.assigned_faculty?.full_name??'—'}</div>
+            <div style="font-size:.58rem;font-weight:700;color:${col};margin-top:.05rem">${lbl}</div>
+          </div>`;
+        }
+      }
+      h+=`</div>`;
+    }
+    h+=`</div>`;
+    document.getElementById('rc1Grid').innerHTML=h;
+  }
+
+  // RC1 PDF export — builds the same grid in PDF using autoTable
+  document.getElementById('rc1ExportPdf').addEventListener('click', () => {
+    if(!rc1Slots.length){toast('Run the report first.','warn');return;}
+    if(!window.jspdf){alert('PDF library not loaded.');return;}
+    const{jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    const pageW=doc.internal.pageSize.width;
+    const dateLabel=fmtDate(rc1Date);
+
+    // Draw college header
+    if(window._ASES_LOGO_DATA){try{doc.addImage(window._ASES_LOGO_DATA,'PNG',14,8,28,28);}catch(e){}}
+    const cx=pageW/2;
+    doc.setFont('times','bold');doc.setFontSize(16);doc.setTextColor(26,34,68);
+    doc.text('B. K. Birla College, Kalyan',cx,16,{align:'center'});
+    doc.setFont('times','normal');doc.setFontSize(10);doc.setTextColor(50,60,90);
+    doc.text('(Empowered Autonomous Status)',cx,22,{align:'center'});
+    doc.setFont('times','bolditalic');doc.setFontSize(10.5);
+    doc.text('Department of Management Studies',cx,28,{align:'center'});
+    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(26,34,68);
+    doc.text('Daily Execution Report',cx,37,{align:'center'});
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(90,100,120);
+    doc.text(`Date: ${dateLabel}`,cx,43,{align:'center'});
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(150);
+    doc.text(`Generated: ${new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})}`,pageW-14,12,{align:'right'});
+
+    // Build table: one row per lecture slot, columns = rooms
+    const lectureSlots=rc1Slots.filter(s=>s.slot_type==='lecture');
+    const head=[['Time',...rc1Rooms.map(r=>`Rm ${r.room_code}`)]];
+    const body=lectureSlots.map(slot=>{
+      const timeCell=`${slot.start_time.slice(0,5)}–${slot.end_time.slice(0,5)}`;
+      return [timeCell,...rc1Rooms.map(room=>{
+        const row=rc1ScheduleMap[slot.id]?.[room.id];
+        if(!row)return'';
+        const s=row.is_cancelled?'cancelled':(rc1ExecMap[row.id]??'not_marked');
+        const cname=row.course?(row.course.division?`${row.course.year} ${row.course.program} ${row.course.division}`:`${row.course.year} ${row.course.program}`):'';
+        const lbl=row.is_cancelled?'CANCELLED':(RC1_STATUS_LBL[s]??'Not Marked');
+        return`${cname}\n${row.subject?.subject_name??''}\n${row.assigned_faculty?.full_name??''}\n[${lbl}]`;
+      })];
+    });
+
+    const statusFill={on_time:[212,247,231],late:[255,243,205],not_engaged:[253,232,234],not_marked:[240,240,240],cancelled:[230,230,230]};
+
+    doc.autoTable({
+      head,body,startY:48,
+      theme:'grid',
+      styles:{fontSize:6.5,cellPadding:1.5,valign:'top',overflow:'linebreak',minCellHeight:18},
+      headStyles:{fillColor:[26,34,68],textColor:255,fontStyle:'bold',fontSize:7,halign:'center'},
+      columnStyles:{0:{cellWidth:16,fontStyle:'bold'}},
+      margin:{left:14,right:14},
+      didParseCell(data){
+        if(data.section==='body'&&data.column.index>0&&data.cell.raw){
+          const text=String(data.cell.raw);
+          let fill=[248,248,248];
+          if(text.includes('[On Time]'))       fill=statusFill.on_time;
+          else if(text.includes('[Late]'))     fill=statusFill.late;
+          else if(text.includes('[Not Engaged]'))fill=statusFill.not_engaged;
+          else if(text.includes('[Not Marked]'))fill=statusFill.not_marked;
+          else if(text.includes('[CANCELLED]'))fill=statusFill.cancelled;
+          data.cell.styles.fillColor=fill;
+          data.cell.styles.fontSize=6;
+        }
+      },
+      didDrawPage(data){
+        const pageH=doc.internal.pageSize.height;
+        doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(80);
+        doc.text(`Report Generated By: ${generatedBy||'ASES'}`,14,pageH-9);
+        doc.text(`Report Generated On: ${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'})}  ${new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true})}`,14,pageH-4.5);
+        doc.setTextColor(150);
+        doc.text(`Page ${data.pageNumber}`,pageW/2,pageH-4.5,{align:'center'});
+      },
+    });
+    doc.save(`Daily_Execution_Report_${rc1Date}.pdf`);
+  });
+
+  // ══════════════════════════════════════════════════════════════════
+  // RC2 — Faculty Load Report
+  // Class | Subject | Load | Teacher | Scheduled | Late | Extra
+  // ══════════════════════════════════════════════════════════════════
+  let rc2Data=[];
+
+  document.getElementById('rc2Run').addEventListener('click', async () => {
+    const from=document.getElementById('rc2From').value;
+    const to=document.getElementById('rc2To').value;
+    const facId=document.getElementById('rc2Faculty').value||null;
+    if(!from||!to){toast('From and To dates are required.','warn');return;}
+    const btn=document.getElementById('rc2Run');btn.disabled=true;
+    loadingRow('rc2Body',7);
+
+    try {
+      // 1. Get all master_timetable rows (load = how many times per week * weeks in period)
+      //    We calculate Load as count of daily_schedule rows for that csf_id in the period
+      //    that came from master (is_rescheduled=false, is_cancelled=false)
+
+      // Step 1: Get daily_schedule rows in period (not cancelled)
+      let schedQ = supabase.from('daily_schedule').select(`
+        id, schedule_date, is_cancelled, is_rescheduled, assigned_faculty_id, csf_id,
+        course:courses!course_id(id,year,program,division),
+        subject:subjects!subject_id(id,subject_name),
+        assigned_faculty:faculty!assigned_faculty_id(id,full_name)
+      `)
+      .gte('schedule_date', from)
+      .lte('schedule_date', to)
+      .eq('is_cancelled', false);
+      if(facId) schedQ=schedQ.eq('assigned_faculty_id',facId);
+      const {data:schedRows,error:schedErr}=await schedQ;
+      if(schedErr)throw schedErr;
+
+      // Step 2: Get execution rows for these schedule IDs
+      const ids=(schedRows??[]).map(r=>r.id);
+      let execRows=[];
+      if(ids.length){
+        const{data:ex}=await supabase.from('lecture_execution')
+          .select('daily_schedule_id,faculty_status')
+          .in('daily_schedule_id',ids);
+        execRows=ex??[];
+      }
+      const execMap={};
+      for(const ex of execRows) execMap[ex.daily_schedule_id]=ex.faculty_status;
+
+      // Step 3: Group by faculty + course + subject
+      // Key: facultyId|courseId|subjectId
+      const groupMap={};
+      for(const row of(schedRows??[])){
+        const fId=row.assigned_faculty_id;
+        const courseKey=row.course?(row.course.division?`${row.course.year} ${row.course.program} ${row.course.division}`:`${row.course.year} ${row.course.program}`):'Unknown';
+        const subKey=row.subject?.subject_name??'Unknown';
+        const key=`${fId}|||${courseKey}|||${subKey}`;
+        if(!groupMap[key]){
+          groupMap[key]={
+            course:    courseKey,
+            subject:   subKey,
+            faculty:   row.assigned_faculty?.full_name??'—',
+            scheduled: 0,
+            late:      0,
+            // Load = count of master (non-rescheduled) rows for this faculty+course+subject
+            load:      0,
+          };
+        }
+        groupMap[key].scheduled++;
+        if(!row.is_rescheduled) groupMap[key].load++;  // original master assignments = load
+        const status=execMap[row.id]??'not_marked';
+        if(status==='late') groupMap[key].late++;
+      }
+
+      // Step 4: Calculate Extra = scheduled beyond load
+      rc2Data=Object.values(groupMap).map(g=>({
+        ...g,
+        extra: Math.max(0, g.scheduled - g.load),
+      })).sort((a,b)=>a.faculty.localeCompare(b.faculty)||a.course.localeCompare(b.course));
+
+      document.getElementById('rc2Count').textContent=`${rc2Data.length} row(s) found`;
+
+      if(!rc2Data.length){emptyRow('rc2Body',7,'No data found for this period.');return;}
+
+      document.getElementById('rc2Body').innerHTML=rc2Data.map(r=>`<tr>
+        <td><strong>${r.course}</strong></td>
+        <td>${r.subject}</td>
+        <td style="text-align:center;font-weight:600">${r.load}</td>
+        <td>${r.faculty}</td>
+        <td style="text-align:center;color:var(--success);font-weight:600">${r.scheduled}</td>
+        <td style="text-align:center;color:${r.late>0?'var(--warn)':'var(--text-muted)'};font-weight:600">${r.late}</td>
+        <td style="text-align:center;color:${r.extra>0?'var(--accent)':'var(--text-muted)'};font-weight:600">${r.extra}</td>
+      </tr>`).join('');
+
+    }catch(e){toast(e.message,'error');emptyRow('rc2Body',7,'Error: '+e.message);}
+    finally{btn.disabled=false;}
+  });
+
+  // RC2 PDF
+  document.getElementById('rc2ExportPdf').addEventListener('click',()=>{
+    if(!rc2Data.length){toast('Run report first.','warn');return;}
+    const from=document.getElementById('rc2From').value;
+    const to=document.getElementById('rc2To').value;
+    exportToPDF(
+      rc2Data,
+      [{header:'Class',key:'course',pdfWidth:28},{header:'Subject',key:'subject',pdfWidth:50},
+       {header:'Load',key:'load',pdfWidth:12},{header:'Teacher Name',key:'faculty',pdfWidth:38},
+       {header:'Scheduled',key:'scheduled',pdfWidth:16},{header:'Late',key:'late',pdfWidth:10},
+       {header:'Extra',key:'extra',pdfWidth:10}],
+      'Faculty Load Report',
+      'Faculty_Load_Report',
+      `Period: ${fmtDate(from)} to ${fmtDate(to)}`,
+      generatedBy
+    );
+  });
+
+  // RC2 Excel
+  document.getElementById('rc2ExportXls').addEventListener('click',()=>{
+    if(!rc2Data.length){toast('Run report first.','warn');return;}
+    exportToExcel(
+      rc2Data,
+      [{header:'Class',key:'course',width:20},{header:'Subject',key:'subject',width:35},
+       {header:'Load',key:'load',width:8},{header:'Teacher Name',key:'faculty',width:28},
+       {header:'Scheduled',key:'scheduled',width:12},{header:'Late',key:'late',width:8},
+       {header:'Extra',key:'extra',width:8}],
+      'Faculty_Load_Report'
+    );
+  });
 
 </script>
 </body>
