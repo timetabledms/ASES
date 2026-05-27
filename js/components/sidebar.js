@@ -9,8 +9,8 @@
 import { logout } from '../auth/session.js';
 
 const COLLEGE_LOGO = 'https://i.ibb.co/Q3sckzSm/square-crop.png';
-const COLLEGE_NAME = 'B. K. Birla College, Kalyan';
-const COLLEGE_SUB  = '(Empowered Autonomous Status)';
+const COLLEGE_NAME = 'B. K. Birla College of Arts, Science & Commerce';
+const COLLEGE_SUB  = 'Empowered Autonomous Status';
 
 /**
  * @param {object} session  — from requireRole()
@@ -102,11 +102,12 @@ function buildNav(isAdmin, active) {
     timetable: `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
     csf:       `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/></svg>`,
     leaves:    `<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="9" y1="13" x2="15" y2="13"/></svg>`,
+    holidays:  `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="15" x2="8" y2="15" stroke-width="2.5"/><line x1="12" y1="15" x2="12" y2="15" stroke-width="2.5"/><line x1="16" y1="15" x2="16" y2="15" stroke-width="2.5"/><line x1="8" y1="19" x2="8" y2="19" stroke-width="2.5"/><line x1="12" y1="19" x2="12" y2="19" stroke-width="2.5"/></svg>`,
     scheduler: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>`,
     execution: `<svg viewBox="0 0 24 24"><polyline points="9,11 12,14 22,4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,
     reports:   `<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
-    password:  `<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
     portal:    `<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>`,
+    password:  `<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
   };
 
   if (isAdmin) {
@@ -117,6 +118,7 @@ function buildNav(isAdmin, active) {
       ${link('/pages/master-timetable.html', 'timetable', icons.timetable, 'Master Timetable')}
       ${link('/pages/csf-mapping.html',      'csf',       icons.csf,       'CSF Mapping')}
       ${link('/pages/leaves.html',           'leaves',    icons.leaves,    'Leave Management')}
+      ${link('/pages/holidays.html',         'holidays',  icons.holidays,  'Holidays')}
       ${link('/pages/daily-scheduler.html',  'scheduler', icons.scheduler, 'Daily Scheduler')}
       ${link('/pages/execution.html',        'execution', icons.execution, 'Execution Log')}
       ${link('/pages/reports.html',          'reports',   icons.reports,   'Reports')}
