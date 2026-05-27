@@ -1093,7 +1093,12 @@
       //    We calculate Load as count of daily_schedule rows for that csf_id in the period
       //    that came from master (is_rescheduled=false, is_cancelled=false)
 
-      // Step 1: Get daily_schedule rows in period (not cancelled)
+      // Step 0: Fetch holidays in period — exclude these dates from all counts
+      const{data:holRows}=await supabase.from('holidays')
+        .select('holiday_date').gte('holiday_date',from).lte('holiday_date',to);
+      const holidayDates=new Set((holRows??[]).map(h=>h.holiday_date));
+
+      // Step 1: Get daily_schedule rows in period (not cancelled, not holidays)
       let schedQ = supabase.from('daily_schedule').select(`
         id, schedule_date, is_cancelled, is_rescheduled, assigned_faculty_id, csf_id,
         course:courses!course_id(id,year,program,division),
@@ -1104,8 +1109,10 @@
       .lte('schedule_date', to)
       .eq('is_cancelled', false);
       if(facId) schedQ=schedQ.eq('assigned_faculty_id',facId);
-      const {data:schedRows,error:schedErr}=await schedQ;
+      const {data:schedRowsAll,error:schedErr}=await schedQ;
       if(schedErr)throw schedErr;
+      // Exclude holiday dates
+      const schedRows=(schedRowsAll??[]).filter(r=>!holidayDates.has(r.schedule_date));
 
       // Step 2: Get execution rows for these schedule IDs
       const ids=(schedRows??[]).map(r=>r.id);
