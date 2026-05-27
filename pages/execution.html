@@ -239,12 +239,19 @@ async function loadDay(date) {
   gridLoading();
 
   try {
-    const dayType = new Date(loadDate+'T00:00:00').getDay()===6 ? 'saturday' : 'weekday';
+    const DAY_MAP_E=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+    const dayType = DAY_MAP_E[new Date(loadDate+'T00:00:00').getDay()];
+    const slotDt  = dayType==='saturday'?'saturday':'weekday';
+    // Block Sunday
+    if(dayType==='sunday'){gridEmpty('No schedule on Sundays.');document.getElementById('statChips').style.display='none';document.getElementById('legendRow').style.display='none';return;}
+    // Block holiday
+    const{data:holChk}=await supabase.from('holidays').select('name').eq('holiday_date',loadDate).maybeSingle();
+    if(holChk){gridEmpty(`🎉 Holiday: ${holChk.name}. No execution log for this day.`);document.getElementById('statChips').style.display='none';document.getElementById('legendRow').style.display='none';return;}
 
     const [slotsRes, roomsRes, schedRes, execRes] = await Promise.all([
       supabase.from('time_slots')
         .select('id,slot_label,start_time,end_time,slot_type,sort_order')
-        .eq('day_type', dayType).order('sort_order'),
+        .eq('day_type', slotDt).order('sort_order'),
       supabase.from('rooms')
         .select('id,room_code').eq('is_active',true).order('room_code'),
       supabase.from('daily_schedule')
