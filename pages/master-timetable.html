@@ -97,8 +97,12 @@
 <main class="main">
   <div class="topbar">
     <div><h1 class="page-title">Master Timetable</h1><p class="page-subtitle">Edit the fixed weekly timetable — click any cell to assign or change</p></div>
-    <div class="day-toggle">
-      <button class="day-btn active" data-day="weekday">Weekday (Mon–Fri)</button>
+    <div class="day-toggle" style="flex-wrap:wrap">
+      <button class="day-btn active" data-day="monday">Monday</button>
+      <button class="day-btn" data-day="tuesday">Tuesday</button>
+      <button class="day-btn" data-day="wednesday">Wednesday</button>
+      <button class="day-btn" data-day="thursday">Thursday</button>
+      <button class="day-btn" data-day="friday">Friday</button>
       <button class="day-btn" data-day="saturday">Saturday</button>
     </div>
   </div>
@@ -179,7 +183,12 @@
   }
 
   // ── State ──────────────────────────────────────────────────────────
-  let currentDayType = 'weekday';
+  let currentDayType = 'monday';
+
+  // Map master timetable day_type to time_slots day_type
+  function slotDayType(day) {
+    return day === 'saturday' ? 'saturday' : 'weekday';
+  }
   let courses = [];
   let timeSlots = [], rooms = [], ttMap = {};
   // Modal state
@@ -205,7 +214,7 @@
     try {
       [courses, timeSlots, rooms, ttMap] = await Promise.all([
         getAllActiveCourses(),
-        getTimeSlots(currentDayType),
+        getTimeSlots(slotDayType(currentDayType)),
         getActiveRooms(),
         getMasterTimetable(currentDayType),
       ]);
