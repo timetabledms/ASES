@@ -237,15 +237,29 @@ flatpickr('#datePicker',{dateFormat:'Y-m-d',defaultDate:new Date(),disableMobile
 });
 
 async function autoLoadIfExists(date){
-  // Always use the passed date parameter — never read selectedDate from closure here
   const checkDate = date ?? selectedDate;
+  const dayType=getDayType(checkDate);
+  // Sunday — no schedule
+  if(dayType==='sunday'){
+    document.getElementById('dangerBar').style.display='none';
+    document.getElementById('statChips').style.display='none';
+    document.getElementById('legendRow').style.display='none';
+    gridEmpty('No schedule on Sundays.');return;
+  }
+  // Holiday check
+  const{data:hol}=await supabase.from('holidays').select('name').eq('holiday_date',checkDate).maybeSingle();
+  if(hol){
+    document.getElementById('dangerBar').style.display='none';
+    document.getElementById('statChips').style.display='none';
+    document.getElementById('legendRow').style.display='none';
+    gridEmpty(`🎉 Holiday: ${hol.name}. No schedule for this day.`);return;
+  }
   const{data}=await supabase.from('daily_schedule').select('id').eq('schedule_date',checkDate).limit(1);
   if(data&&data.length>0){
     document.getElementById('dangerBar').style.display='';
     document.getElementById('reloadBtn').style.display='';
     await loadSchedule();
   } else {
-    // No schedule yet — clear the grid, hide status bars
     document.getElementById('dangerBar').style.display='none';
     document.getElementById('statChips').style.display='none';
     document.getElementById('legendRow').style.display='none';
@@ -253,7 +267,9 @@ async function autoLoadIfExists(date){
   }
 }
 
-function getDayType(ds){return new Date(ds+'T00:00:00').getDay()===6?'saturday':'weekday';}
+const DAY_MAP=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+function getDayType(ds){return DAY_MAP[new Date(ds+'T00:00:00').getDay()];}
+function slotDayType(day){return day==='saturday'?'saturday':'weekday';}
 
 function courseName(c){
   if(!c)return'—';
@@ -285,6 +301,10 @@ async function generateOrLoad(force=false){
       if(de)throw de;
     }
     const dayType=getDayType(selectedDate);
+    if(dayType==='sunday'){toast('No schedule on Sundays.','warn');gridEmpty('No schedule on Sundays.');return;}
+    // Check holiday
+    const{data:hol}=await supabase.from('holidays').select('name').eq('holiday_date',selectedDate).maybeSingle();
+    if(hol){toast(`${selectedDate} is a holiday: ${hol.name}. Cannot generate schedule.`,'warn');gridEmpty(`🎉 Holiday: ${hol.name}. No schedule for this day.`);document.getElementById('dangerBar').style.display='none';return;}
     const{data:master,error:me}=await supabase.from('master_timetable')
       .select('id,time_slot_id,room_id,course_id,subject_id,csf_id,faculty_id')
       .eq('day_type',dayType).eq('is_active',true);
