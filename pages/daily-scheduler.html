@@ -334,7 +334,7 @@ async function loadSchedule(){
   try{
     const dayType=getDayType(selectedDate);
     const[sR,rR,scR,lR]=await Promise.all([
-      supabase.from('time_slots').select('id,slot_label,start_time,end_time,slot_type,sort_order').eq('day_type',dayType).order('sort_order'),
+      supabase.from('time_slots').select('id,slot_label,start_time,end_time,slot_type,sort_order').eq('day_type',slotDayType(dayType)).order('sort_order'),
       supabase.from('rooms').select('id,room_code').eq('is_active',true).order('room_code'),
       supabase.from('daily_schedule').select(`
         id,is_cancelled,cancel_reason,is_rescheduled,original_faculty_id,
