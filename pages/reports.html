@@ -66,6 +66,15 @@
     .ts-wrapper.single .ts-control input {
       min-width: 0 !important;
     }
+    /* Force tables to occupy full container width */
+        .table-wrap {
+          width: 100%;
+          overflow-x: auto;
+        }
+        .table-wrap table {
+          width: 100% !important;
+          table-layout: fixed;
+        }
   </style>
 </head>
 <body>
