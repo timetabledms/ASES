@@ -38,17 +38,29 @@ export function exportToPDF(rows, columns, title, filename, subtitle = '', gener
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.width;
   _drawHeader(doc, pageW, title, subtitle);
+  
   const tableData = rows.map(row => columns.map(c => String(getNestedVal(row, c.key) ?? '—')));
-doc.autoTable({
+
+  // 1. Calculate the total requested width from the columns
+  const totalWidth = columns.reduce((sum, c) => sum + (c.pdfWidth || 0), 0);
+  
+  // 2. If a specific width is provided and it's smaller than the page, calculate the exact center margin. 
+  // Otherwise, default to standard 14mm margins.
+  const sideMargin = (totalWidth > 0 && totalWidth < (pageW - 28)) 
+    ? (pageW - totalWidth) / 2 
+    : 14;
+
+  doc.autoTable({
     head:   [columns.map(c => c.header)],
     body:   tableData,
     startY: HEADER_H + 4,
     theme:  'grid',
-    styles:              { fontSize: 7.5, cellPadding: 2, valign: 'middle', halign: 'center' }, // Added halign: 'center'
-    headStyles:          { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', fontSize: 8, halign: 'center' }, // Added halign: 'center'
+    tableWidth: totalWidth > 0 ? totalWidth : 'auto', // Prevent stretching if width is known
+    styles:              { fontSize: 7.5, cellPadding: 2, valign: 'middle' },
+    headStyles:          { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', fontSize: 8 },
     alternateRowStyles:  { fillColor: [245, 246, 252] },
     columnStyles: Object.fromEntries(columns.map((c, i) => [i, { cellWidth: c.pdfWidth ?? 'auto' }])),
-    margin: { left: 14, right: 14 },
+    margin: { left: sideMargin, right: sideMargin }, // Apply perfectly centered margins
     didDrawPage(data) {
       if (data.pageNumber > 1) _drawHeader(doc, pageW, title, subtitle);
       const pageH = doc.internal.pageSize.height;
