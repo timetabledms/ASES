@@ -564,57 +564,150 @@
   });
 
   // ── R2: Faculty Lectures ──────────────────────────────────────────
-  let r2Data = [];
-  document.getElementById('r2Run').addEventListener('click', async () => {
-    const fId    = document.getElementById('r2Faculty').value;
-    const from   = document.getElementById('r2From').value;
-    const to     = document.getElementById('r2To').value;
-    const status = document.getElementById('r2Status').value;
-    loadingRow('r2Body', 7);
+ document.getElementById('rc2Run').addEventListener('click', async () => {
+    const from = document.getElementById('rc2From').value;
+    const to = document.getElementById('rc2To').value;
+    const facId = document.getElementById('rc2Faculty').value || null;
+    
+    if (!from || !to) { toast('From and To dates are required.', 'warn'); return; }
+    
+    const btn = document.getElementById('rc2Run'); 
+    btn.disabled = true;
+    loadingRow('rc2Body', 7);
+
     try {
-      const rows = await getFilteredReport(
-        { fromDate:from||null, toDate:to||null, facultyId:fId||null, faculty_status:status||null },
-        session.role, myFacultyId
-      );
-      r2Data = rows;
-      setCount('r2Count', rows.length);
-      // mini stats
-      const ms = document.getElementById('r2MiniStats');
-      if (rows.length) {
-        ms.style.display='';
-        const cnt = (s) => rows.filter(r=>r.faculty_status===s).length;
-        ms.innerHTML = [['On Time',cnt('on_time'),'green'],['Late',cnt('late'),'amber'],
-          ['Not Engaged',cnt('not_engaged'),'red'],['Not Marked',cnt('not_marked'),'grey']]
-          .map(([l,v,c])=>`<div class="mini-stat"><div class="mini-stat-val" style="color:var(--status-${c==='green'?'on-time':c==='amber'?'late':c==='red'?'not-engaged':'not-marked'})">${v}</div><div class="mini-stat-lbl">${l}</div></div>`).join('');
+      // Step 0: Fetch holidays in period — exclude these dates from all counts
+      const { data: holRows } = await supabase.from('holidays')
+        .select('holiday_date').gte('holiday_date', from).lte('holiday_date', to);
+      const holidayDates = new Set((holRows ?? []).map(h => h.holiday_date));
+
+      // Step 1: Count exact number of each weekday in the date range
+      const dayCounts = { monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0 };
+      const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      
+      let curr = new Date(from);
+      const end = new Date(to);
+      
+      while (curr <= end) {
+          // Adjust timezone offset to get correct YYYY-MM-DD
+          const d = new Date(curr.getTime() - (curr.getTimezoneOffset() * 60000));
+          const dateStr = d.toISOString().split('T')[0];
+          
+          // Exclude holidays & Sundays
+          if (!holidayDates.has(dateStr) && curr.getDay() !== 0) { 
+              const dayName = daysMap[curr.getDay()];
+              dayCounts[dayName]++;
+          }
+          curr.setDate(curr.getDate() + 1);
       }
-      if (!rows.length) { emptyRow('r2Body',7,'No records found.'); return; }
-      document.getElementById('r2Body').innerHTML = rows.map(r => `<tr>
-        <td>${fmtDate(r.schedule_date)}</td>
-        <td>${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}</td>
-        <td>${courseLbl(r.daily_schedule?.course)}</td>
-        <td>${r.daily_schedule?.subject?.subject_name??'—'}</td>
-        <td>${sBadge(r.faculty_status)}</td>
-        <td>${modFlags(r)}</td>
-        <td style="color:var(--text-muted);font-size:.8rem">${r.remarks??'—'}</td>
+
+      // Step 2: Fetch Master Timetable to calculate true base LOAD
+      let masterQuery = supabase.from('master_timetable').select(`
+          day_type,
+          course:courses!course_id ( id, year, program, division ),
+          subject:subjects!subject_id ( id, subject_name ),
+          assigned_faculty:faculty!faculty_id ( id, full_name )
+      `);
+      if (facId) masterQuery = masterQuery.eq('faculty_id', facId);
+      
+      const { data: masterData, error: masterError } = await masterQuery;
+      if (masterError) throw masterError;
+
+      // Step 3: Fetch Daily Schedule to calculate ACTUAL SCHEDULED and LATE
+      let dailyQuery = supabase.from('daily_schedule').select(`
+          id, schedule_date, is_cancelled,
+          course:courses!course_id ( id, year, program, division ),
+          subject:subjects!subject_id ( id, subject_name ),
+          assigned_faculty:faculty!assigned_faculty_id ( id, full_name )
+      `)
+      .gte('schedule_date', from)
+      .lte('schedule_date', to)
+      .eq('is_cancelled', false); 
+      
+      if (facId) dailyQuery = dailyQuery.eq('assigned_faculty_id', facId);
+      
+      const { data: dailyDataAll, error: dailyError } = await dailyQuery;
+      if (dailyError) throw dailyError;
+      
+      // Ignore holidays from daily schedule 
+      const dailyData = (dailyDataAll ?? []).filter(r => !holidayDates.has(r.schedule_date));
+
+      // Get Execution data for Late status
+      const ids = dailyData.map(r => r.id);
+      let execRows = [];
+      if (ids.length) {
+          const { data: ex } = await supabase.from('lecture_execution')
+              .select('daily_schedule_id, faculty_status')
+              .in('daily_schedule_id', ids);
+          execRows = ex ?? [];
+      }
+      const execMap = {};
+      for (const ex of execRows) execMap[ex.daily_schedule_id] = ex.faculty_status;
+
+      // Step 4: Aggregate the stats into Group Map
+      const groupMap = {};
+      const getCourseKey = (c) => c ? (c.division ? `${c.year} ${c.program} ${c.division}` : `${c.year} ${c.program}`) : 'Unknown';
+      
+      // Process Load from Master
+      (masterData ?? []).forEach(row => {
+          const courseKey = getCourseKey(row.course);
+          const subKey = row.subject?.subject_name ?? 'Unknown';
+          const fName = row.assigned_faculty?.full_name ?? '—';
+          const key = `${fName}|||${courseKey}|||${subKey}`;
+          
+          if (!groupMap[key]) {
+              groupMap[key] = { course: courseKey, subject: subKey, faculty: fName, load: 0, scheduled: 0, late: 0 };
+          }
+          // Multiply master slots by the number of times that weekday occurred in the date range
+          groupMap[key].load += (dayCounts[row.day_type] || 0);
+      });
+
+      // Process Scheduled from Daily
+      dailyData.forEach(row => {
+          const courseKey = getCourseKey(row.course);
+          const subKey = row.subject?.subject_name ?? 'Unknown';
+          const fName = row.assigned_faculty?.full_name ?? '—';
+          const key = `${fName}|||${courseKey}|||${subKey}`;
+          
+          if (!groupMap[key]) {
+              // If a slot exists in daily but not master, it initializes with 0 load
+              groupMap[key] = { course: courseKey, subject: subKey, faculty: fName, load: 0, scheduled: 0, late: 0 };
+          }
+          groupMap[key].scheduled++;
+          
+          if (execMap[row.id] === 'late') groupMap[key].late++;
+      });
+
+      // Step 5: Calculate Extra = Math.max(0, scheduled - load)
+      rc2Data = Object.values(groupMap).map(g => ({
+          ...g,
+          extra: Math.max(0, g.scheduled - g.load)
+      })).sort((a,b) => a.faculty.localeCompare(b.faculty) || a.course.localeCompare(b.course));
+
+      // Build the UI
+      document.getElementById('rc2Count').textContent = `${rc2Data.length} row(s) found`;
+
+      if (!rc2Data.length) { emptyRow('rc2Body', 7, 'No data found for this period.'); return; }
+
+      document.getElementById('rc2Body').innerHTML = rc2Data.map(r => `<tr>
+          <td><strong>${r.course}</strong></td>
+          <td>${r.subject}</td>
+          <td style="text-align:center;font-weight:600">${r.load}</td>
+          <td>${r.faculty}</td>
+          <td style="text-align:center;color:var(--success);font-weight:600">${r.scheduled}</td>
+          <td style="text-align:center;color:${r.late > 0 ? 'var(--warn)' : 'var(--text-muted)'};font-weight:600">${r.late}</td>
+          <td style="text-align:center;color:${r.extra > 0 ? 'var(--accent)' : 'var(--text-muted)'};font-weight:600">${r.extra}</td>
       </tr>`).join('');
-    } catch(e) { toast(e.message,'error'); emptyRow('r2Body',7,'Error.'); }
-  });
-  document.getElementById('r2ExportPdf').addEventListener('click', () => {
-    const flat = r2Data.map(r => ({date:fmtDate(r.schedule_date),
-      time:`${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}`,
-      course:courseLbl(r.daily_schedule?.course), subject:r.daily_schedule?.subject?.subject_name??'—',
-      status:STATUS_LABELS[r.faculty_status]??'—', remarks:r.remarks??'—'}));
-    exportToPDF(flat,[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Course',key:'course'},
-      {header:'Subject',key:'subject',pdfWidth:40},{header:'Status',key:'status'},{header:'Remarks',key:'remarks',pdfWidth:50}],'Faculty Lectures Report','Faculty_Lectures','',generatedBy);
-  });
-  document.getElementById('r2ExportXls').addEventListener('click', () => {
-    const flat = r2Data.map(r => ({date:fmtDate(r.schedule_date),
-      time:`${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}`,
-      course:courseLbl(r.daily_schedule?.course), subject:r.daily_schedule?.subject?.subject_name??'—',
-      status:STATUS_LABELS[r.faculty_status]??'—', remarks:r.remarks??'—'}));
-    exportToExcel(flat,[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Course',key:'course'},
-      {header:'Subject',key:'subject',width:28},{header:'Status',key:'status'},{header:'Remarks',key:'remarks',width:32}],
-      'Faculty_Lectures');
+      
+      // Force table to full width
+      document.getElementById('rc2Table').style.width = '100%';
+
+    } catch (e) {
+        toast(e.message, 'error');
+        emptyRow('rc2Body', 7, 'Error: ' + e.message);
+    } finally {
+        btn.disabled = false;
+    }
   });
 
   // ── R3: Leave Summary ─────────────────────────────────────────────
