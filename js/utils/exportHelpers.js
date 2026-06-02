@@ -8,7 +8,7 @@
  * Requires: window.XLSX (SheetJS) and window.jspdf (jsPDF + autoTable)
  */
 
-const COLLEGE_LOGO_URL  = 'https://i.ibb.co/wZDKbsK6/image.png';
+const COLLEGE_LOGO_URL  = 'https://i.ibb.co/9m1dn3hh/IMG-20260505-WA0001-1-jpg.jpg';
 const COLLEGE_NAME      = 'B. K. Birla College, Kalyan';
 const COLLEGE_SUB1      = '(Empowered Autonomous Status)';
 const COLLEGE_SUB2      = 'Department of Management Studies';
@@ -39,13 +39,13 @@ export function exportToPDF(rows, columns, title, filename, subtitle = '', gener
   const pageW = doc.internal.pageSize.width;
   _drawHeader(doc, pageW, title, subtitle);
   const tableData = rows.map(row => columns.map(c => String(getNestedVal(row, c.key) ?? '—')));
-  doc.autoTable({
+doc.autoTable({
     head:   [columns.map(c => c.header)],
     body:   tableData,
     startY: HEADER_H + 4,
     theme:  'grid',
-    styles:              { fontSize: 7.5, cellPadding: 2, valign: 'middle' },
-    headStyles:          { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+    styles:              { fontSize: 7.5, cellPadding: 2, valign: 'middle', halign: 'center' }, // Added halign: 'center'
+    headStyles:          { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', fontSize: 8, halign: 'center' }, // Added halign: 'center'
     alternateRowStyles:  { fillColor: [245, 246, 252] },
     columnStyles: Object.fromEntries(columns.map((c, i) => [i, { cellWidth: c.pdfWidth ?? 'auto' }])),
     margin: { left: 14, right: 14 },
