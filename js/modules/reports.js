@@ -6,7 +6,7 @@
 
 import { supabase } from '../config/supabase.js';
 
-// ── getFilteredReport ────────────────────────────────────────────────────────…
+// ── getFilteredReport ─────────────────────────────────────────────────────────
 /**
  * Master query for lecture execution reports.
  * Faculty role forces facultyId = myFacultyId (enforced client-side + RLS).
@@ -114,7 +114,7 @@ export async function getFacultyLeaveSummary(facultyId = null, fromDate = null, 
   return { rows, summary: Object.values(summaryMap) };
 }
 
-// ── getDailyStats ─────────────────────────────────────────────────────────…
+// ── getDailyStats ─────────────────────────────────────────────────────────────
 /**
  * Stats for a single date.
  */
@@ -175,7 +175,7 @@ export async function getRescheduledSlots(fromDate, toDate) {
   return data ?? [];
 }
 
-// ── getDailyFullTable ───────────────────────────────────────────────────────…
+// ── getDailyFullTable ─────────────────────────────────────────────────────────
 export async function getDailyFullTable(date) {
   const { data, error } = await supabase
     .from('daily_schedule')
@@ -199,184 +199,6 @@ export async function getDailyFullTable(date) {
     .sort((a,b) => (a.time_slot?.sort_order ?? 0) - (b.time_slot?.sort_order ?? 0));
 }
 
-// --- RC2: Faculty Load Report Generation ---
-async function generateRC2() {
-    const fromDate = document.getElementById('rc2From').value;
-    const toDate = document.getElementById('rc2To').value;
-    const facultyId = document.getElementById('rc2Faculty').value;
-
-    if (!fromDate || !toDate) {
-        showToast("Please select a date range", "error");
-        return;
-    }
-
-    const reportDiv = document.getElementById('rc2Report');
-    reportDiv.innerHTML = '<p class="text-gray-500">Loading report...</p>';
-
-    try {
-        // 1. Fetch holidays in the date range
-        const { data: holidays, error: holError } = await supabase
-            .from('holidays')
-            .select('holiday_date')
-            .gte('holiday_date', fromDate)
-            .lte('holiday_date', toDate);
-            
-        if (holError) throw holError;
-        const holidayDates = new Set(holidays.map(h => h.holiday_date));
-
-        // 2. Count exact number of each weekday in the date range (excluding holidays)
-        const dayCounts = { monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0 };
-        const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        
-        let curr = new Date(fromDate);
-        const end = new Date(toDate);
-        
-        while (curr <= end) {
-            const dateStr = localDateStr(curr); 
-            if (!holidayDates.has(dateStr) && curr.getDay() !== 0) { // Exclude holidays and Sundays
-                const dayName = daysMap[curr.getDay()];
-                dayCounts[dayName]++;
-            }
-            curr.setDate(curr.getDate() + 1);
-        }
-
-        // 3. Fetch Master Timetable to calculate base LOAD
-        let masterQuery = supabase.from('master_timetable').select(`
-            day_type,
-            courses ( id, course_code, year, program, division ),
-            subjects ( id, subject_name ),
-            faculty_id,
-            faculty ( id, full_name )
-        `);
-        if (facultyId) masterQuery = masterQuery.eq('faculty_id', facultyId);
-        
-        const { data: masterData, error: masterError } = await masterQuery;
-        if (masterError) throw masterError;
-
-        // 4. Fetch Daily Schedule to calculate SCHEDULED and LATE
-        let dailyQuery = supabase.from('daily_schedule').select(`
-            assigned_faculty_id,
-            courses ( id, course_code, year, program, division ),
-            subjects ( id, subject_name ),
-            faculty!assigned_faculty_id ( id, full_name ),
-            lecture_execution ( status )
-        `)
-        .gte('schedule_date', fromDate)
-        .lte('schedule_date', toDate);
-        
-        if (facultyId) dailyQuery = dailyQuery.eq('assigned_faculty_id', facultyId);
-        
-        const { data: dailyData, error: dailyError } = await dailyQuery;
-        if (dailyError) throw dailyError;
-
-        // 5. Aggregate the stats
-        const stats = {};
-        const getKey = (fId, cId, sId) => `${fId}_${cId}_${sId}`;
-
-        // Process Load from Master
-        masterData.forEach(row => {
-            const key = getKey(row.faculty_id, row.courses.id, row.subjects.id);
-            if (!stats[key]) {
-                stats[key] = {
-                    facultyName: row.faculty.full_name,
-                    courseInfo: formatCourse(row.courses), // assuming formatCourse helper exists
-                    subjectName: row.subjects.subject_name,
-                    load: 0,
-                    scheduled: 0,
-                    late: 0
-                };
-            }
-            // Add to load based on how many times this weekday occurred in the date range
-            stats[key].load += (dayCounts[row.day_type] || 0);
-        });
-
-        // Process Actual Scheduled from Daily
-        dailyData.forEach(row => {
-            // Ignore holidays from daily schedule just in case they were generated before a holiday was declared
-            // (Assuming you've filtered that on UI, but safe to count here)
-            const key = getKey(row.assigned_faculty_id, row.courses.id, row.subjects.id);
-            if (!stats[key]) {
-                stats[key] = {
-                    facultyName: row.faculty.full_name,
-                    courseInfo: formatCourse(row.courses),
-                    subjectName: row.subjects.subject_name,
-                    load: 0, // 0 load because they aren't in master for this
-                    scheduled: 0,
-                    late: 0
-                };
-            }
-            
-            stats[key].scheduled++;
-            
-            // Check execution status for Late
-            if (row.lecture_execution && row.lecture_execution.length > 0) {
-                if (row.lecture_execution[0].status === 'Late') {
-                    stats[key].late++;
-                }
-            }
-        });
-
-        // 6. Build the HTML with FULL WIDTH table styling
-        if (Object.keys(stats).length === 0) {
-            reportDiv.innerHTML = '<p class="text-gray-500">No data found for the selected period.</p>';
-            return;
-        }
-
-        let html = `
-            <div class="overflow-x-auto w-full">
-                <!-- Added w-full and style="width: 100%;" to force full width -->
-                <table class="table-auto w-full text-left border-collapse border border-gray-300" style="width: 100%;">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th class="border border-gray-300 px-4 py-2">Class</th>
-                            <th class="border border-gray-300 px-4 py-2">Subject</th>
-                            <th class="border border-gray-300 px-4 py-2">Load</th>
-                            <th class="border border-gray-300 px-4 py-2">Teacher Name</th>
-                            <th class="border border-gray-300 px-4 py-2">Scheduled</th>
-                            <th class="border border-gray-300 px-4 py-2">Late</th>
-                            <th class="border border-gray-300 px-4 py-2">Extra</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        // Sort by Faculty Name -> Class
-        const sortedKeys = Object.keys(stats).sort((a, b) => {
-            if (stats[a].facultyName !== stats[b].facultyName) return stats[a].facultyName.localeCompare(stats[b].facultyName);
-            return stats[a].courseInfo.localeCompare(stats[b].courseInfo);
-        });
-
-        sortedKeys.forEach(key => {
-            const s = stats[key];
-            const extra = Math.max(0, s.scheduled - s.load);
-            
-            html += `
-                <tr>
-                    <td class="border border-gray-300 px-4 py-2 font-medium">${s.courseInfo}</td>
-                    <td class="border border-gray-300 px-4 py-2">${s.subjectName}</td>
-                    <td class="border border-gray-300 px-4 py-2 text-center">${s.load}</td>
-                    <td class="border border-gray-300 px-4 py-2">${s.facultyName}</td>
-                    <td class="border border-gray-300 px-4 py-2 text-center text-blue-600 font-semibold">${s.scheduled}</td>
-                    <td class="border border-gray-300 px-4 py-2 text-center text-amber-500">${s.late > 0 ? s.late : '-'}</td>
-                    <td class="border border-gray-300 px-4 py-2 text-center text-green-600 font-semibold">${extra > 0 ? extra : '-'}</td>
-                </tr>
-            `;
-        });
-
-        html += `
-                    </tbody>
-                </table>
-            </div>
-        `;
-        
-        reportDiv.innerHTML = html;
-
-    } catch (error) {
-        console.error("RC2 Error:", error);
-        reportDiv.innerHTML = '<p class="text-red-500">Error loading report. Check console.</p>';
-    }
-}
-
 // ── Dropdown helpers for report filters ───────────────────────────────────────
 export async function getReportDropdowns() {
   const [facultyRes, courseRes, subjectRes, roomRes] = await Promise.all([
@@ -394,7 +216,7 @@ export async function getReportDropdowns() {
   };
 }
 
-// ── Formatters ──────────────────────────────────────────────────────────…
+// ── Formatters ────────────────────────────────────────────────────────────────
 export function courseLbl(c) {
   if (!c) return '—';
   return c.division ? `${c.year} ${c.program} ${c.division}` : `${c.year} ${c.program}`;
