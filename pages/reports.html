@@ -1278,24 +1278,28 @@
     finally{btn.disabled=false;}
   });
 
-  // RC2 PDF
+ // RC2 PDF
   document.getElementById('rc2ExportPdf').addEventListener('click',()=>{
     if(!rc2Data.length){toast('Run report first.','warn');return;}
     const from=document.getElementById('rc2From').value;
     const to=document.getElementById('rc2To').value;
     exportToPDF(
       rc2Data,
-      [{header:'Class',key:'course',pdfWidth:28},{header:'Subject',key:'subject',pdfWidth:50},
-       {header:'Load',key:'load',pdfWidth:12},{header:'Teacher Name',key:'faculty',pdfWidth:38},
-       {header:'Scheduled',key:'scheduled',pdfWidth:16},{header:'Late',key:'late',pdfWidth:10},
-       {header:'Extra',key:'extra',pdfWidth:10}],
+      [
+       {header:'Class',key:'course',pdfWidth:30},
+       {header:'Subject',key:'subject',pdfWidth:56},
+       {header:'Load',key:'load',pdfWidth:12},
+       {header:'Teacher Name',key:'faculty',pdfWidth:44},
+       {header:'Scheduled',key:'scheduled',pdfWidth:18},
+       {header:'Late',key:'late',pdfWidth:11},
+       {header:'Extra',key:'extra',pdfWidth:11}
+      ],
       'Faculty Load Report',
       'Faculty_Load_Report',
       `Period: ${fmtDate(from)} to ${fmtDate(to)}`,
       generatedBy
     );
   });
-
   // RC2 Excel
   document.getElementById('rc2ExportXls').addEventListener('click',()=>{
     if(!rc2Data.length){toast('Run report first.','warn');return;}
