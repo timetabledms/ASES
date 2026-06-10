@@ -4,7 +4,6 @@
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>ASES — Master Timetable</title>
   
-  <!-- Shared Theme CSS -->
   <link rel="stylesheet" href="/css/theme.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
   
@@ -67,11 +66,41 @@
     /* placeholder */
     .grid-placeholder{padding:4rem;text-align:center;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:1rem}
     .grid-placeholder svg{width:36px;height:36px;stroke:var(--border);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+    /* Export Actions Container Custom Rules */
+    .export-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .btn-export {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.55rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--ff-body);
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-export:hover {
+      background: var(--bg-hover);
+    }
+    .btn-export svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
   </style>
 </head>
 <body>
 
-<!-- ── Sidebar ── -->
 <aside class="sidebar">
   <div class="sidebar-college" id="sidebarCollege"></div>
   <nav id="sideNav"></nav>
@@ -93,17 +122,36 @@
   </div>
 </aside>
 
-<!-- ── Main ── -->
 <main class="main">
-  <div class="topbar">
-    <div><h1 class="page-title">Master Timetable</h1><p class="page-subtitle">Edit the fixed weekly timetable — click any cell to assign or change</p></div>
-    <div class="day-toggle" style="flex-wrap:wrap">
-      <button class="day-btn active" data-day="monday">Monday</button>
-      <button class="day-btn" data-day="tuesday">Tuesday</button>
-      <button class="day-btn" data-day="wednesday">Wednesday</button>
-      <button class="day-btn" data-day="thursday">Thursday</button>
-      <button class="day-btn" data-day="friday">Friday</button>
-      <button class="day-btn" data-day="saturday">Saturday</button>
+  <div class="topbar" style="flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 class="page-title">Master Timetable</h1>
+      <p class="page-subtitle">Edit the fixed weekly timetable — click any cell to assign or change</p>
+    </div>
+    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+      <div class="day-toggle" style="flex-wrap:wrap">
+        <button class="day-btn active" data-day="monday">Monday</button>
+        <button class="day-btn" data-day="tuesday">Tuesday</button>
+        <button class="day-btn" data-day="wednesday">Wednesday</button>
+        <button class="day-btn" data-day="thursday">Thursday</button>
+        <button class="day-btn" data-day="friday">Friday</button>
+        <button class="day-btn" data-day="saturday">Saturday</button>
+      </div>
+      
+      <div class="export-actions">
+        <button class="btn-export" id="exportExcelBtn" title="Export current day to Excel">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Excel
+        </button>
+        <button class="btn-export" id="exportPdfBtn" title="Export current day to PDF">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          PDF
+        </button>
+        <button class="btn-export" id="exportPngBtn" title="Download current day as Image">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          PNG
+        </button>
+      </div>
     </div>
   </div>
   <div class="content">
@@ -116,7 +164,6 @@
   </div>
 </main>
 
-<!-- Cell edit modal -->
 <div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
@@ -158,6 +205,11 @@
 
 <div id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.6.0/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 <script type="module">
   import { requireRole } from '../js/auth/session.js';
@@ -167,11 +219,17 @@
     upsertMasterEntry, clearMasterEntry,
     getCSFForCourse, getAllActiveCourses
   } from '../js/modules/masterTimetable.js';
+  
+  // Import utility export helpers
+  import { preloadLogoForPDF, exportToExcel, exportToPDF } from '../js/utils/exportHelpers.js';
 
   const session = await requireRole('admin');
   
   // Initialize shared sidebar component
   initSidebar(session, 'timetable');
+  
+  // Preload and cache logo in memory for PDF builds
+  preloadLogoForPDF();
 
   function toast(msg, type='success') {
     const c = document.getElementById('toast');
@@ -272,6 +330,121 @@
       cell.addEventListener('click', () => openModal(cell.dataset.ts, cell.dataset.room, cell.dataset.entry));
     });
   }
+
+  // ── Data Transformation for Exports ────────────────────────────────
+  function getActiveDayExportData() {
+    // Generate structural definitions matching standard utility expectations
+    const columns = [
+      { header: 'Time Slot', key: 'timeSlot', pdfWidth: 35 },
+      ...rooms.map(r => ({ header: `Room ${r.room_code}`, key: `room_${r.id}`, pdfWidth: 42 }))
+    ];
+
+    // Map time slot datasets to dynamic linear cell records
+    const rows = timeSlots.map(slot => {
+      const dataRow = {
+        timeSlot: `${slot.slot_label}\n(${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)})`
+      };
+
+      if (slot.slot_type !== 'lecture') {
+        const breakName = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+        rooms.forEach(r => {
+          dataRow[`room_${r.id}`] = breakName;
+        });
+      } else {
+        rooms.forEach(r => {
+          const entry = ttMap[slot.id]?.[r.id];
+          if (entry) {
+            const courseStr = entry.course
+              ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`)
+              : '';
+            const subjectStr = entry.subject?.subject_name ?? '';
+            const facultyStr = entry.faculty?.full_name ? `Prof. ${entry.faculty.full_name}` : '';
+            
+            dataRow[`room_${r.id}`] = `${courseStr}\n${subjectStr}\n${facultyStr}`.trim();
+          } else {
+            dataRow[`room_${r.id}`] = '—';
+          }
+        });
+      }
+      return dataRow;
+    });
+
+    return { rows, columns };
+  }
+
+  // ── Export Event Listeners ─────────────────────────────────────────
+  document.getElementById('exportExcelBtn').addEventListener('click', () => {
+    try {
+      const { rows, columns } = getActiveDayExportData();
+      const friendlyDay = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
+      exportToExcel(rows, columns, `Master_Timetable_${friendlyDay}`);
+      toast(`Exported ${friendlyDay} timetable to Excel.`);
+    } catch (e) {
+      console.error(e);
+      toast('Failed to export to Excel.', 'error');
+    }
+  });
+
+  document.getElementById('exportPdfBtn').addEventListener('click', () => {
+    try {
+      const { rows, columns } = getActiveDayExportData();
+      const friendlyDay = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
+      
+      exportToPDF(
+        rows,
+        columns,
+        `Master Timetable — ${friendlyDay}`,
+        `Master_Timetable_${friendlyDay}`,
+        'Weekly Fixed Schedule Matrix',
+        session?.user?.email || 'Admin'
+      );
+      toast(`Exported ${friendlyDay} timetable to PDF.`);
+    } catch (e) {
+      console.error(e);
+      toast('Failed to export to PDF.', 'error');
+    }
+  });
+
+  document.getElementById('exportPngBtn').addEventListener('click', async () => {
+    const target = document.getElementById('gridContainer');
+    if (!target) return;
+
+    const btn = document.getElementById('exportPngBtn');
+    const oldText = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+
+    try {
+      // Apply clean rendering styles to container for snapshot capture
+      const originalStyle = target.style.cssText;
+      target.style.padding = '16px';
+      target.style.background = 'var(--bg-card)';
+      target.style.borderRadius = '14px';
+
+      const canvas = await html2canvas(target, {
+        scale: 2, // High resolution crisp output scaling
+        useCORS: true,
+        backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg-card').trim() || '#ffffff'
+      });
+
+      // Restore inline styling container constraints
+      target.style.cssText = originalStyle;
+
+      const friendlyDay = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
+      const link = document.createElement('a');
+      link.download = `Master_Timetable_${friendlyDay}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+
+      toast(`Downloaded ${friendlyDay} timetable snapshot.`);
+    } catch (e) {
+      console.error(e);
+      toast('Failed to capture image snapshot.', 'error');
+    } finally {
+      btn.innerHTML = oldText;
+      btn.disabled = false;
+    }
+  });
 
   // ── Modal ──────────────────────────────────────────────────────────
   async function openModal(timeSlotId, roomId, entryId) {
