@@ -143,11 +143,11 @@
           <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
           Excel
         </button>
-        <button class="btn-export" id="exportPdfBtn" title="Export current day to 1-Page PDF">
+        <button class="btn-export" id="exportPdfBtn" title="Export current day to Vector PDF">
           <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
           PDF
         </button>
-        <button class="btn-export" id="exportPngBtn" title="Download current day as Image">
+        <button class="btn-export" id="exportPngBtn" title="Download High-Res Image">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
           PNG
         </button>
@@ -207,6 +207,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.6.0/dist/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
@@ -219,13 +220,12 @@
     getCSFForCourse, getAllActiveCourses
   } from '../js/modules/masterTimetable.js';
   
-  // Import utility export helper for Excel
-  import { exportToExcel } from '../js/utils/exportHelpers.js';
+  // Import utility export helpers
+  import { preloadLogoForPDF, exportToExcel } from '../js/utils/exportHelpers.js';
 
   const session = await requireRole('admin');
-  
-  // Initialize shared sidebar component
   initSidebar(session, 'timetable');
+  preloadLogoForPDF(); // Fetches and caches College Logo as Base64
 
   function toast(msg, type='success') {
     const c = document.getElementById('toast');
@@ -239,13 +239,9 @@
   // ── State ──────────────────────────────────────────────────────────
   let currentDayType = 'monday';
 
-  // Map master timetable day_type to time_slots day_type
-  function slotDayType(day) {
-    return day === 'saturday' ? 'saturday' : 'weekday';
-  }
-  let courses = [];
-  let timeSlots = [], rooms = [], ttMap = {};
-  // Modal state
+  function slotDayType(day) { return day === 'saturday' ? 'saturday' : 'weekday'; }
+  let courses = [], timeSlots = [], rooms = [], ttMap = {};
+  
   let modalTimeSlotId = null, modalRoomId = null, modalRoomCode = '';
   let existingEntry = null;
   let tsCourse = null, tsCSF = null;
@@ -267,10 +263,8 @@
       '<div class="grid-placeholder grid-wrap"><div><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading…</div></div>';
     try {
       [courses, timeSlots, rooms, ttMap] = await Promise.all([
-        getAllActiveCourses(),
-        getTimeSlots(slotDayType(currentDayType)),
-        getActiveRooms(),
-        getMasterTimetable(currentDayType),
+        getAllActiveCourses(), getTimeSlots(slotDayType(currentDayType)),
+        getActiveRooms(), getMasterTimetable(currentDayType),
       ]);
       renderGrid();
     } catch(e) {
@@ -320,64 +314,49 @@
     html += '</div>';
     document.getElementById('gridContainer').innerHTML = html;
 
-    // Bind cell clicks
     document.querySelectorAll('.cell[data-ts]').forEach(cell => {
       cell.addEventListener('click', () => openModal(cell.dataset.ts, cell.dataset.room, cell.dataset.entry));
     });
   }
 
-  // ── Excel Data Format Builder ──────────────────────────────────────
-  function getExcelExportData() {
-    // Generate structural definitions
-    const columns = [
-      { header: 'Time Slot', key: 'timeSlot', width: 20 },
-      ...rooms.map(r => ({ header: `Room ${r.room_code}`, key: `room_${r.id}`, width: 25 }))
-    ];
-
-    const rows = [];
-    timeSlots.forEach(slot => {
-      const timeLabel = `${slot.slot_label} (${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)})`;
-
-      if (slot.slot_type !== 'lecture') {
-        const breakName = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
-        const breakRow = { timeSlot: timeLabel };
-        rooms.forEach(r => { breakRow[`room_${r.id}`] = breakName; });
-        rows.push(breakRow);
-      } else {
-        // Create 3 distinctly separated rows for Course, Subject, and Faculty
-        const rowCourse = { timeSlot: timeLabel };
-        const rowSubject = { timeSlot: '' };
-        const rowFaculty = { timeSlot: '' };
-
-        rooms.forEach(r => {
-          const entry = ttMap[slot.id]?.[r.id];
-          if (entry) {
-            rowCourse[`room_${r.id}`] = entry.course
-              ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`)
-              : '—';
-            rowSubject[`room_${r.id}`] = entry.subject?.subject_name ?? '—';
-            rowFaculty[`room_${r.id}`] = entry.faculty?.full_name ? `Prof. ${entry.faculty.full_name}` : '—';
-          } else {
-            rowCourse[`room_${r.id}`] = '—';
-            rowSubject[`room_${r.id}`] = '';
-            rowFaculty[`room_${r.id}`] = '';
-          }
-        });
-
-        // Push sequentially to force into separate cells vertically
-        rows.push(rowCourse, rowSubject, rowFaculty);
-      }
-    });
-
-    return { rows, columns };
-  }
-
-  // ── Export Event Listeners ─────────────────────────────────────────
-
-  // EXCEL EXPORT (Proper multiple distinct cells)
+  // ── EXCEL EXPORT (Divided Vertically) ────────────────────────────────
   document.getElementById('exportExcelBtn').addEventListener('click', () => {
     try {
-      const { rows, columns } = getExcelExportData();
+      const columns = [
+        { header: 'Time Slot', key: 'timeSlot', width: 22 },
+        ...rooms.map(r => ({ header: `Room ${r.room_code}`, key: `room_${r.id}`, width: 28 }))
+      ];
+
+      const rows = [];
+      timeSlots.forEach(slot => {
+        const timeLabel = `${slot.slot_label} (${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)})`;
+
+        if (slot.slot_type !== 'lecture') {
+          const breakRow = { timeSlot: timeLabel };
+          rooms.forEach(r => { breakRow[`room_${r.id}`] = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess'; });
+          rows.push(breakRow);
+        } else {
+          // Three totally distinct rows ensuring proper vertical cell separation
+          const rowCourse = { timeSlot: timeLabel };
+          const rowSubject = { timeSlot: '' };
+          const rowFaculty = { timeSlot: '' };
+
+          rooms.forEach(r => {
+            const entry = ttMap[slot.id]?.[r.id];
+            if (entry) {
+              rowCourse[`room_${r.id}`] = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '—';
+              rowSubject[`room_${r.id}`] = entry.subject?.subject_name ?? '';
+              rowFaculty[`room_${r.id}`] = entry.faculty?.full_name ? `Prof. ${entry.faculty.full_name}` : '';
+            } else {
+              rowCourse[`room_${r.id}`] = '—';
+              rowSubject[`room_${r.id}`] = '';
+              rowFaculty[`room_${r.id}`] = '';
+            }
+          });
+          rows.push(rowCourse, rowSubject, rowFaculty);
+        }
+      });
+
       const friendlyDay = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
       exportToExcel(rows, columns, `Master_Timetable_${friendlyDay}`);
       toast(`Exported ${friendlyDay} timetable to Excel.`);
@@ -387,80 +366,112 @@
     }
   });
 
-  // PDF EXPORT (Forced fit onto exactly 1 Page using Canvas Scaling)
-  document.getElementById('exportPdfBtn').addEventListener('click', async () => {
-    const target = document.getElementById('gridContainer');
-    if (!target) return;
-
-    const btn = document.getElementById('exportPdfBtn');
-    const oldText = btn.innerHTML;
-    btn.disabled = true;
-    btn.textContent = 'Processing...';
-
+  // ── HIGH-QUALITY VECTOR PDF EXPORT ─────────────────────────────────
+  document.getElementById('exportPdfBtn').addEventListener('click', () => {
     try {
-      // Temporarily set rendering constraints to guarantee clean text capture
-      const originalStyle = target.style.cssText;
-      target.style.padding = '20px';
-      target.style.background = '#ffffff'; 
-      target.style.borderRadius = '0';
-
-      const canvas = await html2canvas(target, {
-        scale: 2, 
-        useCORS: true,
-        backgroundColor: '#ffffff'
-      });
-
-      target.style.cssText = originalStyle;
-
-      // Use jsPDF to place the image perfectly on a single landscape A4 page
+      const friendlyDay = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
       const { jsPDF } = window.jspdf;
+      
+      // Initialize Landscape A4
       const doc = new jsPDF('landscape', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
-      
-      const imgData = canvas.toDataURL('image/png');
-      const imgProps = doc.getImageProperties(imgData);
-      
-      // Calculate sizes to fit within constraints
-      const marginX = 14;
-      const marginY = 20;
-      const availableWidth = pageWidth - (marginX * 2);
-      const availableHeight = pageHeight - (marginY * 2);
-      
-      let finalWidth = availableWidth;
-      let finalHeight = (imgProps.height * finalWidth) / imgProps.width;
-      
-      // If the image is extremely tall, shrink it uniformly based on vertical constraint
-      if (finalHeight > availableHeight) {
-        finalHeight = availableHeight;
-        finalWidth = (imgProps.width * finalHeight) / imgProps.height;
+      const cx = pageWidth / 2;
+
+      // 1. Draw High-Quality College Header (Infinite Vector Zoom Text)
+      if (window._ASES_LOGO_DATA) {
+        try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 14, 8, 26, 26); } catch(e) {}
       }
       
-      // Center offsets
-      const xOffset = marginX + (availableWidth - finalWidth) / 2;
-      const yOffset = marginY + (availableHeight - finalHeight) / 2 + 5; 
-      
-      // Add standard institutional header
-      const friendlyDay = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.setTextColor(26, 34, 68);
-      doc.text(`Master Timetable — ${friendlyDay}`, pageWidth / 2, 14, { align: 'center' });
-      
-      doc.addImage(imgData, 'PNG', xOffset, yOffset, finalWidth, finalHeight);
-      doc.save(`Master_Timetable_${friendlyDay}.pdf`);
+      doc.setFont('times', 'bold'); doc.setFontSize(16); doc.setTextColor(26, 34, 68);
+      doc.text('B. K. Birla College, Kalyan', cx, 16, { align: 'center' });
 
-      toast(`Exported ${friendlyDay} timetable to PDF (1-page fit).`);
+      doc.setFont('times', 'normal'); doc.setFontSize(10); doc.setTextColor(50, 60, 90);
+      doc.text('(Empowered Autonomous Status)', cx, 22, { align: 'center' });
+
+      doc.setFont('times', 'bolditalic'); doc.setFontSize(11);
+      doc.text('Department of Management Studies', cx, 28, { align: 'center' });
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(26, 34, 68);
+      doc.text(`Master Timetable — ${friendlyDay}`, cx, 38, { align: 'center' });
+
+      // 2. Prepare Vector Map Data Format
+      const headers = ['Time Slot', ...rooms.map(r => `Room ${r.room_code}`)];
+      const dataRows = timeSlots.map(slot => {
+        const timeStr = `${slot.slot_label}\n(${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)})`;
+        const row = [timeStr];
+
+        if (slot.slot_type !== 'lecture') {
+          const bName = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+          rooms.forEach(() => row.push(bName));
+        } else {
+          rooms.forEach(r => {
+            const entry = ttMap[slot.id]?.[r.id];
+            if (entry) {
+              const cStr = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '';
+              const sStr = entry.subject?.subject_name ?? '';
+              const fStr = entry.faculty?.full_name ? `Prof. ${entry.faculty.full_name}` : '';
+              // Merge with line breaks \n - AutoTable natively structures vector lines!
+              row.push(`${cStr}\n${sStr}\n${fStr}`.trim());
+            } else {
+              row.push('—');
+            }
+          });
+        }
+        return row;
+      });
+
+      // 3. Render 1-Page Guaranteed AutoTable
+      doc.autoTable({
+        startY: 45,
+        head: [headers],
+        body: dataRows,
+        theme: 'grid',
+        styles: {
+          fontSize: 7.5,           // Small font ensures 10+ vertical slots fit easily
+          cellPadding: 2,          // Tight but readable padding
+          valign: 'middle',
+          halign: 'center',
+          lineColor: [200, 210, 230],
+          lineWidth: 0.1,
+          textColor: [30, 40, 60]
+        },
+        headStyles: {
+          fillColor: [26, 34, 68],
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 8,
+          halign: 'center'
+        },
+        columnStyles: {
+          0: { cellWidth: 26, fontStyle: 'bold', fillColor: [248, 249, 252] }
+        },
+        alternateRowStyles: { fillColor: [250, 251, 254] },
+        margin: { left: 10, right: 10, bottom: 10 },
+        willDrawCell: function(data) {
+          if (data.row.section === 'body' && (data.row.raw[1] === 'Lunch Break' || data.row.raw[1] === 'Recess')) {
+            data.cell.styles.fillColor = [240, 242, 250];
+            data.cell.styles.fontStyle = 'italic';
+            data.cell.styles.textColor = [100, 110, 140];
+          }
+        },
+        didDrawPage: function(data) {
+          const now = new Date();
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(100);
+          doc.text(`Generated by: ${session?.user?.email || 'Admin'}`, 14, pageHeight - 6);
+          doc.text(`On: ${now.toLocaleString()}`, 14, pageHeight - 3);
+        }
+      });
+
+      doc.save(`Master_Timetable_${friendlyDay}.pdf`);
+      toast(`Exported ${friendlyDay} timetable to Vector PDF.`);
     } catch (e) {
       console.error(e);
-      toast('Failed to generate PDF.', 'error');
-    } finally {
-      btn.innerHTML = oldText;
-      btn.disabled = false;
+      toast('Failed to export to PDF.', 'error');
     }
   });
 
-  // PNG EXPORT
+  // ── HIGH-RESOLUTION PNG EXPORT (With Injected Header) ──────────────
   document.getElementById('exportPngBtn').addEventListener('click', async () => {
     const target = document.getElementById('gridContainer');
     if (!target) return;
@@ -471,26 +482,44 @@
     btn.textContent = 'Processing...';
 
     try {
+      const friendlyDay = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
+      
+      // Inject College Header into the DOM temporarily for the snapshot
+      const headerHtml = document.createElement('div');
+      headerHtml.innerHTML = `
+        <div style="text-align:center; padding: 20px 20px 15px; border-bottom: 1px solid var(--border); margin-bottom: 15px; position:relative;">
+          ${window._ASES_LOGO_DATA ? `<img src="${window._ASES_LOGO_DATA}" style="position:absolute; left:25px; top:20px; height:60px;" />` : ''}
+          <h2 style="margin:0; font-family:'Times New Roman', serif; font-size:24px; color:#1a2244;">B. K. Birla College, Kalyan</h2>
+          <p style="margin:4px 0 0; font-family:'Times New Roman', serif; font-size:14px; color:#555;">(Empowered Autonomous Status)</p>
+          <p style="margin:4px 0 0; font-family:'Times New Roman', serif; font-size:15px; font-weight:bold; font-style:italic;">Department of Management Studies</p>
+          <h3 style="margin:16px 0 0; font-family:var(--ff-body); font-size:16px; color:#1a2244;">Master Timetable — ${friendlyDay}</h3>
+        </div>
+      `;
+      
       const originalStyle = target.style.cssText;
-      target.style.padding = '16px';
-      target.style.background = 'var(--bg-card)';
-      target.style.borderRadius = '14px';
+      target.style.padding = '0';
+      target.style.background = '#ffffff'; // Force white background for official document look
+      target.style.borderRadius = '0';
+      
+      target.insertBefore(headerHtml, target.firstChild);
 
+      // Render at extreme scale (4K resolution density) to prevent blur
       const canvas = await html2canvas(target, {
-        scale: 2, 
+        scale: 4, 
         useCORS: true,
-        backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg-card').trim() || '#ffffff'
+        backgroundColor: '#ffffff'
       });
 
+      // Cleanup DOM
+      headerHtml.remove();
       target.style.cssText = originalStyle;
 
-      const friendlyDay = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
       const link = document.createElement('a');
       link.download = `Master_Timetable_${friendlyDay}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
 
-      toast(`Downloaded ${friendlyDay} timetable snapshot.`);
+      toast(`Downloaded high-res ${friendlyDay} timetable.`);
     } catch (e) {
       console.error(e);
       toast('Failed to capture image snapshot.', 'error');
@@ -516,14 +545,11 @@
     document.getElementById('modalSave').disabled = true;
     document.getElementById('csfField').style.display = 'none';
 
-    // Destroy old Tom Selects
     if (tsCourse) { tsCourse.destroy(); tsCourse = null; }
     if (tsCSF)    { tsCSF.destroy();    tsCSF    = null; }
 
-    // Populate course dropdown
     const cSelect = document.getElementById('modalCourse');
-    cSelect.innerHTML = '<option value="">— select course —</option>' +
-      courses.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+    cSelect.innerHTML = '<option value="">— select course —</option>' + courses.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
 
     tsCourse = new TomSelect('#modalCourse', {
       placeholder: 'Search course…',
@@ -536,8 +562,7 @@
           csfOptions = await getCSFForCourse(val);
           if (tsCSF) { tsCSF.destroy(); tsCSF = null; }
           const csfSel = document.getElementById('modalCSF');
-          csfSel.innerHTML = '<option value="">— select subject / faculty —</option>' +
-            csfOptions.map(o => `<option value="${o.csfId}">${o.label}</option>`).join('');
+          csfSel.innerHTML = '<option value="">— select subject / faculty —</option>' + csfOptions.map(o => `<option value="${o.csfId}">${o.label}</option>`).join('');
           tsCSF = new TomSelect('#modalCSF', {
             placeholder: 'Search subject / faculty…',
             onChange: (v) => { document.getElementById('modalSave').disabled = !v; }
@@ -551,14 +576,10 @@
       }
     });
 
-    // Pre-fill if editing
     if (entryId) {
       existingEntry = ttMap[timeSlotId]?.[roomId];
-      if (existingEntry?.course_id) {
-        tsCourse.setValue(existingEntry.course_id, true);
-      }
+      if (existingEntry?.course_id) { tsCourse.setValue(existingEntry.course_id, true); }
     }
-
     document.getElementById('cellModal').classList.add('open');
   }
 
@@ -569,9 +590,7 @@
 
   document.getElementById('modalClose').addEventListener('click', closeModal);
   document.getElementById('modalCancel').addEventListener('click', closeModal);
-  document.getElementById('cellModal').addEventListener('click', e => {
-    if (e.target === document.getElementById('cellModal')) closeModal();
-  });
+  document.getElementById('cellModal').addEventListener('click', e => { if (e.target === document.getElementById('cellModal')) closeModal(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
   // ── Save ────────────────────────────────────────────────────────────
@@ -588,15 +607,7 @@
     btn.innerHTML = '<span class="spin"></span> Saving…';
 
     try {
-      await upsertMasterEntry({
-        dayType:     currentDayType,
-        timeSlotId:  modalTimeSlotId,
-        roomId:      modalRoomId,
-        csfId,
-        courseId,
-        subjectId:   opt.subjectId,
-        facultyId:   opt.facultyId,
-      });
+      await upsertMasterEntry({ dayType: currentDayType, timeSlotId: modalTimeSlotId, roomId: modalRoomId, csfId, courseId, subjectId: opt.subjectId, facultyId: opt.facultyId });
       toast('Timetable cell saved.');
       closeModal();
       await loadGrid();
@@ -618,9 +629,8 @@
       toast('Cell cleared.', 'warn');
       closeModal();
       await loadGrid();
-    } catch(e) {
-      toast(e.message, 'error');
-    } finally { btn.disabled = false; }
+    } catch(e) { toast(e.message, 'error'); } 
+    finally { btn.disabled = false; }
   });
 
   // ── Bootstrap ────────────────────────────────────────────────────────
