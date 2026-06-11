@@ -271,8 +271,8 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
     if (!timeSlots.length || !rooms.length) return toast('No timetable data to export', 'error');
     
     const { jsPDF } = window.jspdf;
-    // Use 'a3' instead of 'a4' for a significantly larger page size
-    const doc = new jsPDF('l', 'pt', 'a3'); 
+    // 'l' = Landscape, 'pt' = points, 'a1' = massive page size
+    const doc = new jsPDF('l', 'pt', 'a1'); 
     const dayCapitalized = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
 
     // 1. Build Header Row
@@ -310,18 +310,18 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
     });
 
     // 3. Render Table
-    doc.setFontSize(16);
-    doc.text(`Master Timetable — ${dayCapitalized}`, 40, 40);
+    // A1 is very large, so we increase title font size and table padding for better scaling
+    doc.setFontSize(24);
+    doc.text(`Master Timetable — ${dayCapitalized}`, 60, 80);
 
     doc.autoTable({
-      startY: 60,
+      startY: 120,
       head: head,
       body: body,
       theme: 'grid',
-      // Since A3 is larger, we can use a slightly more comfortable font size and padding
       styles: { 
-        fontSize: 8, 
-        cellPadding: 6, 
+        fontSize: 12, // Increased for readability on A1
+        cellPadding: 12, 
         lineWidth: 0.5, 
         lineColor: [200, 200, 200] 
       }, 
@@ -330,9 +330,9 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
         textColor: 255, 
         halign: 'center', 
         valign: 'middle',
-        fontSize: 9
+        fontSize: 14
       },
-      margin: { top: 60, right: 20, bottom: 20, left: 20 },
+      margin: { top: 120, right: 60, bottom: 60, left: 60 },
       tableWidth: 'auto' 
     });
 
