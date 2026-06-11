@@ -8,9 +8,10 @@
   <link rel="stylesheet" href="/css/theme.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
   
-  <!-- PDF Export Libraries (Vector Output) -->
+  <!-- PDF & Excel Export Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
   <style>
     /* Prevent Tom Select from wrapping text to the next line */
@@ -269,12 +270,14 @@
     });
   }
 
-  // ── Exports (Room ↓ / Time →) ──────────────────────────────────────────
+  // ── Exports ──────────────────────────────────────────────────────────
+
   document.getElementById('exportPdfBtn').addEventListener('click', () => {
     if (!timeSlots.length || !rooms.length) return toast('No timetable data to export', 'error');
     
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('landscape', 'pt', 'a4');
+    // Switch to 'p' (portrait) so rooms stack vertically on one page.
+    const doc = new jsPDF('p', 'pt', 'a4'); 
     const dayCapitalized = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
 
     // Build Table (Room ↓ / Time →)
@@ -291,7 +294,7 @@
       timeSlots.forEach(slot => {
         if (slot.slot_type !== 'lecture') {
           const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
-          rowData.push({ content: lbl, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [120, 120, 120] } });
+          rowData.push({ content: lbl, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140] } });
         } else {
           const entry = ttMap[slot.id]?.[room.id];
           if (entry) {
@@ -307,37 +310,37 @@
       body.push(rowData);
     });
 
-    // Simple Clean Title
+    // Simple Header
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(`Master Timetable — ${dayCapitalized}`, 30, 30);
 
     doc.autoTable({
-      startY: 45, // Moved up since the large header is removed
+      startY: 45,
       head: head,
       body: body,
       theme: 'grid',
       styles: { 
-        fontSize: 9, 
-        cellPadding: 8, 
+        fontSize: 8, // Smaller font helps all rooms fit vertically
+        cellPadding: 6, 
         lineWidth: 0.5, 
         lineColor: [220, 220, 220], 
-        minCellWidth: 150 // Forces a clean split across pages for high quality zoom
+        minCellWidth: 120 // Prevents time columns from squeezing too tight
       }, 
       headStyles: { 
         fillColor: [50, 58, 70], // Sleek Dark Header 
         textColor: 255, 
         halign: 'center', 
         valign: 'middle',
-        fontSize: 10,
+        fontSize: 9,
         fontStyle: 'bold'
       },
       bodyStyles: {
         valign: 'middle',
       },
       horizontalPageBreak: true, 
-      horizontalPageBreakRepeat: 0, // Keeps the "Room / Time" column visible on every split page
+      horizontalPageBreakRepeat: 0, // Keeps "Room / Time" column visible on every split page
       margin: { top: 45, right: 30, bottom: 40, left: 30 },
     });
 
@@ -348,43 +351,63 @@
     if (!timeSlots.length || !rooms.length) return toast('No timetable data to export', 'error');
     const dayCapitalized = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
     
-    let csv = [];
-    // Header (Room ↓ / Time →)
-    let headRow = ['"Room / Time"'];
-    timeSlots.forEach(s => headRow.push(`"${s.slot_label}\n${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}"`));
-    csv.push(headRow.join(','));
+    // Build Excel Data Array (Time ↓ / Room →) matching the Web UI
+    const wsData = [];
+    
+    // Headers
+    const headRow = ["Time"];
+    rooms.forEach(r => headRow.push(`Room ${r.room_code}`));
+    wsData.push(headRow);
 
     // Body
-    rooms.forEach(room => {
-      let row = [`"Room ${room.room_code}"`];
-      timeSlots.forEach(slot => {
-        if (slot.slot_type !== 'lecture') {
-           const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
-           row.push(`"${lbl}"`);
-        } else {
+    timeSlots.forEach(slot => {
+      const timeLabel = `${slot.slot_label}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
+      const row = [timeLabel];
+
+      if (slot.slot_type !== 'lecture') {
+         const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+         row.push(lbl);
+         // Fill remaining columns with empty strings so merge works properly
+         for (let i = 1; i < rooms.length; i++) row.push(""); 
+      } else {
+         rooms.forEach(room => {
            const entry = ttMap[slot.id]?.[room.id];
            if (entry) {
               const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : 'No Class';
               const s = entry.subject?.subject_name || 'No Subject';
               const f = entry.faculty?.full_name || 'No Faculty';
-              
-              // Explicitly label the data and use newlines inside the Excel cell. 
-              // Replace quotes to ensure valid CSV formatting.
-              const cellText = `Class: ${c}\nSubject: ${s}\nFaculty: ${f}`.replace(/"/g, '""');
-              row.push(`"${cellText}"`);
+              // \n is natively supported in .xlsx cells
+              row.push(`Class: ${c}\nSubject: ${s}\nFaculty: ${f}`); 
            } else {
-              row.push('""'); // Empty string for blank cells
+              row.push("-");
            }
-        }
-      });
-      csv.push(row.join(','));
+         });
+      }
+      wsData.push(row);
     });
 
-    const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = window.URL.createObjectURL(blob);
-    a.download = `Master_Timetable_${dayCapitalized}.csv`;
-    a.click();
+    // Create Worksheet
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Add merges for break rows
+    if (!ws['!merges']) ws['!merges'] = [];
+    let rowIndex = 1; // Start at 1 (0 is header row)
+    timeSlots.forEach(slot => {
+       if (slot.slot_type !== 'lecture') {
+          // Merge from column index 1 to rooms.length for this row
+          ws['!merges'].push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: rooms.length } });
+       }
+       rowIndex++;
+    });
+
+    // Set column widths for better readability
+    ws['!cols'] = [{ wch: 15 }]; // Time column width
+    rooms.forEach(() => ws['!cols'].push({ wch: 30 })); // Room column width
+
+    // Create Workbook and save
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Timetable");
+    XLSX.writeFile(wb, `Master_Timetable_${dayCapitalized}.xlsx`);
   });
 
   // ── Modal Handlers ──────────────────────────────────────────────────
