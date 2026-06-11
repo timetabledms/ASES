@@ -1103,78 +1103,139 @@
     document.getElementById('rc1Grid').innerHTML=h;
   }
 
-  // RC1 PDF export — builds the same grid in PDF using autoTable
+// RC1 PDF export — A0 Sized Grid with Status Colors and Headers
   document.getElementById('rc1ExportPdf').addEventListener('click', () => {
     if(!rc1Slots.length){toast('Run the report first.','warn');return;}
     if(!window.jspdf){alert('PDF library not loaded.');return;}
-    const{jsPDF}=window.jspdf;
-    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-    const pageW=doc.internal.pageSize.width;
-    const dateLabel=fmtDate(rc1Date);
+    const { jsPDF } = window.jspdf;
+    
+    // Switch to A0, Landscape, using Points (pt) for massive high-res grid
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a0' });
+    const pageW = doc.internal.pageSize.width;
+    const pageH = doc.internal.pageSize.height;
+    const dateLabel = fmtDate(rc1Date);
 
-    // Draw college header
-    if(window._ASES_LOGO_DATA){try{doc.addImage(window._ASES_LOGO_DATA,'PNG',14,8,28,28);}catch(e){}}
-    const cx=pageW/2;
-    doc.setFont('times','bold');doc.setFontSize(16);doc.setTextColor(26,34,68);
-    doc.text('B. K. Birla College, Kalyan',cx,16,{align:'center'});
-    doc.setFont('times','normal');doc.setFontSize(10);doc.setTextColor(50,60,90);
-    doc.text('(Empowered Autonomous Status)',cx,22,{align:'center'});
-    doc.setFont('times','bolditalic');doc.setFontSize(10.5);
-    doc.text('Department of Management Studies',cx,28,{align:'center'});
-    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(26,34,68);
-    doc.text('Daily Execution Report',cx,37,{align:'center'});
-    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(90,100,120);
-    doc.text(`Date: ${dateLabel}`,cx,43,{align:'center'});
-    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(150);
-    doc.text(`Generated: ${new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})}`,pageW-14,12,{align:'right'});
+    // 1. Draw College Header (Scaled up for A0)
+    if(window._ASES_LOGO_DATA){
+      try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 80, 70, 120, 120); } catch(e){}
+    }
+    const cx = pageW / 2;
+    
+    doc.setFont('times', 'bold'); doc.setFontSize(46); doc.setTextColor(26, 34, 68);
+    doc.text('B. K. Birla College, Kalyan', cx, 100, { align: 'center' });
+    
+    doc.setFont('times', 'normal'); doc.setFontSize(26); doc.setTextColor(50, 60, 90);
+    doc.text('(Empowered Autonomous Status)', cx, 140, { align: 'center' });
+    
+    doc.setFont('times', 'bolditalic'); doc.setFontSize(30);
+    doc.text('Department of Management Studies', cx, 185, { align: 'center' });
+    
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(34); doc.setTextColor(26, 34, 68);
+    doc.text('Daily Execution Report', cx, 250, { align: 'center' });
+    
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(22); doc.setTextColor(90, 100, 120);
+    doc.text(`Date: ${dateLabel}`, cx, 290, { align: 'center' });
+    
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(16); doc.setTextColor(150);
+    doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`, pageW - 80, 80, { align: 'right' });
 
-    // Build table: one row per lecture slot, columns = rooms
-    const lectureSlots=rc1Slots.filter(s=>s.slot_type==='lecture');
-    const head=[['Time',...rc1Rooms.map(r=>`Rm ${r.room_code}`)]];
-    const body=lectureSlots.map(slot=>{
-      const timeCell=`${slot.start_time.slice(0,5)}–${slot.end_time.slice(0,5)}`;
-      return [timeCell,...rc1Rooms.map(room=>{
-        const row=rc1ScheduleMap[slot.id]?.[room.id];
-        if(!row)return'';
-        const s=row.is_cancelled?'cancelled':(rc1ExecMap[row.id]??'not_marked');
-        const cname=row.course?(row.course.division?`${row.course.year} ${row.course.program} ${row.course.division}`:`${row.course.year} ${row.course.program}`):'';
-        const lbl=row.is_cancelled?'CANCELLED':(RC1_STATUS_LBL[s]??'Not Marked');
-        return`${cname}\n${row.subject?.subject_name??''}\n${row.assigned_faculty?.full_name??''}\n[${lbl}]`;
-      })];
+    // 2. Build Table Data
+    const head = [['Time', ...rc1Rooms.map(r => `Rm ${r.room_code}`)]];
+    const body = [];
+
+    rc1Slots.forEach(slot => {
+      // Add extra spacing to time blocks
+      const timeLabel = slot.slot_type === 'lecture'
+          ? `${slot.slot_label}\n\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`
+          : `${slot.slot_label}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
+
+      if (slot.slot_type !== 'lecture') {
+        const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+        body.push([
+          { content: timeLabel, styles: { fontStyle: 'bold', valign: 'middle', halign: 'center', fillColor: [240, 240, 245] } },
+          { content: lbl, colSpan: rc1Rooms.length, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140] } }
+        ]);
+      } else {
+        const rowData = [{ content: timeLabel, styles: { fontStyle: 'bold', valign: 'middle', halign: 'center', fillColor: [240, 240, 245] } }];
+        
+        rc1Rooms.forEach(room => {
+          const row = rc1ScheduleMap[slot.id]?.[room.id];
+          if (!row) {
+            rowData.push(''); // Empty cell
+            return;
+          }
+          
+          const s = row.is_cancelled ? 'cancelled' : (rc1ExecMap[row.id] ?? 'not_marked');
+          const cname = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
+          const sub = row.subject?.subject_name ?? '';
+          const fac = row.assigned_faculty?.full_name ?? '';
+          const lbl = row.is_cancelled ? 'CANCELLED' : (RC1_STATUS_LBL[s] ?? 'Not Marked');
+          
+          // Dump cell content
+          rowData.push(`${cname}\n${sub}\n${fac}\n[${lbl}]`);
+        });
+        body.push(rowData);
+      }
     });
 
-    const statusFill={on_time:[212,247,231],late:[255,243,205],not_engaged:[253,232,234],not_marked:[240,240,240],cancelled:[230,230,230]};
+    // Color definitions
+    const statusFill = {
+      on_time: [212, 247, 231], late: [255, 243, 205],
+      not_engaged: [253, 232, 234], not_marked: [240, 240, 240], cancelled: [230, 230, 230]
+    };
 
+    // 3. Render Table
     doc.autoTable({
-      head,body,startY:48,
-      theme:'grid',
-      styles:{fontSize:6.5,cellPadding:1.5,valign:'top',overflow:'linebreak',minCellHeight:18},
-      headStyles:{fillColor:[26,34,68],textColor:255,fontStyle:'bold',fontSize:7,halign:'center'},
-      columnStyles:{0:{cellWidth:16,fontStyle:'bold'}},
-      // Added top: 48 so page breaks start below the custom header
-      margin:{top:48, left:14, right:14},
-      didParseCell(data){
-        if(data.section==='body'&&data.column.index>0&&data.cell.raw){
-          const text=String(data.cell.raw);
-          let fill=[248,248,248];
-          if(text.includes('[On Time]'))       fill=statusFill.on_time;
-          else if(text.includes('[Late]'))     fill=statusFill.late;
-          else if(text.includes('[Not Engaged]'))fill=statusFill.not_engaged;
-          else if(text.includes('[Not Marked]'))fill=statusFill.not_marked;
-          else if(text.includes('[CANCELLED]'))fill=statusFill.cancelled;
-          data.cell.styles.fillColor=fill;
-          data.cell.styles.fontSize=6;
+      head, body,
+      startY: 330,
+      theme: 'grid',
+      styles: { 
+        fontSize: 14,          // Scaled for A0
+        cellPadding: 16, 
+        valign: 'middle', 
+        halign: 'center',
+        overflow: 'linebreak',
+        lineColor: [180, 180, 180],
+        lineWidth: 1
+      },
+      headStyles: { 
+        fillColor: [26, 34, 68], 
+        textColor: 255, 
+        fontStyle: 'bold', 
+        fontSize: 16, 
+        halign: 'center' 
+      },
+      columnStyles: { 0: { cellWidth: 160, fontStyle: 'bold' } },
+      margin: { top: 330, left: 80, right: 80, bottom: 80 },
+      tableWidth: 'auto',
+      didParseCell(data) {
+        if (data.section === 'body' && data.column.index > 0 && data.cell.raw) {
+          const text = String(data.cell.raw.content || data.cell.raw);
+          if (!text || text === '') return;
+          
+          // Determine color based on tag
+          let fill = [255, 255, 255];
+          if (text.includes('[On Time]')) fill = statusFill.on_time;
+          else if (text.includes('[Late]')) fill = statusFill.late;
+          else if (text.includes('[Not Engaged]')) fill = statusFill.not_engaged;
+          else if (text.includes('[Not Marked]')) fill = statusFill.not_marked;
+          else if (text.includes('[CANCELLED]')) fill = statusFill.cancelled;
+
+          // Don't color the merged break rows with these status tags
+          if (!text.includes('Lunch Break') && !text.includes('Recess') && text !== '-') {
+             data.cell.styles.fillColor = fill;
+          }
         }
       },
-      didDrawPage(data){
-        const pageH=doc.internal.pageSize.height;
-        doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(80);
-        doc.text(`Report Generated By: ${generatedBy||'ASES'}`,14,pageH-9);
-        doc.text(`Report Generated On: ${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'})}  ${new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true})}`,14,pageH-4.5);
-        doc.setTextColor(150);
-        doc.text(`Page ${data.pageNumber}`,pageW/2,pageH-4.5,{align:'center'});
+      didDrawPage(data) {
+        const pageH = doc.internal.pageSize.height;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(16); doc.setTextColor(120);
+        doc.text(`Report Generated By: ${generatedBy || 'ASES'}`, 80, pageH - 40);
+        doc.text(`Report Generated On: ${new Date().toLocaleString('en-IN')}`, 80, pageH - 20);
+        doc.text(`Page ${data.pageNumber}`, pageW / 2, pageH - 20, { align: 'center' });
       },
     });
+
     doc.save(`Daily_Execution_Report_${rc1Date}.pdf`);
   });
 
