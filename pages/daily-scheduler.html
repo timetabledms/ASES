@@ -474,32 +474,39 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
   if (!timeSlots.length || !rooms.length || Object.keys(scheduleMap).length === 0) return toast('No schedule data to export', 'error');
   
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p', 'pt', 'a4'); // Portrait orientation
 
-  // 1. Group Time Slots by "Slot" labels (Slot 1, Slot 2, Slot 3)
+  // 1. Group Time Slots rigorously by Lecture block (+ attached break)
   const slotGroups = [];
-  let currentGroupName = 'Schedule';
-  let currentGroupSlots = [];
+  let currentGroup = null;
 
   timeSlots.forEach(slot => {
-      const match = (slot.slot_label || '').match(/Slot\s*\d+/i);
-      if (match) {
-          const newName = match[0];
-          if (newName !== currentGroupName && currentGroupSlots.length > 0) {
-              slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
-              currentGroupSlots = [];
-              currentGroupName = newName;
+      if (slot.slot_type === 'lecture') {
+          if (currentGroup) slotGroups.push(currentGroup);
+          currentGroup = { name: slot.slot_label || 'Lecture', slots: [slot] };
+      } else {
+          if (currentGroup) {
+              currentGroup.slots.push(slot);
+          } else {
+              currentGroup = { name: slot.slot_label || 'Break', slots: [slot] };
           }
       }
-      currentGroupSlots.push(slot);
   });
-  if (currentGroupSlots.length > 0) {
-      slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
-  }
+  if (currentGroup) slotGroups.push(currentGroup);
 
-  // 2. Generate Separate Portrait Page per Slot Group
+  // 2. DYNAMIC PAGE HEIGHT CALCULATION
+  // Ensures ALL rooms fit exactly onto ONE single page without splitting.
+  // 30pt base padding + (45pt row height * number of rooms)
+  const requiredHeight = 120 + (rooms.length * 45); 
+  const pageHeight = Math.max(842, requiredHeight); // Never smaller than standard A4 (842)
+  const pageWidth = 595.28; // Standard A4 Width
+
+  // Initialize PDF with the custom dynamic size
+  const doc = new jsPDF('p', 'pt', [pageWidth, pageHeight]);
+
+  // 3. Generate One Group Per Page
   slotGroups.forEach((group, index) => {
-    if (index > 0) doc.addPage();
+    // For pages after the first, add a page with the exact same custom height
+    if (index > 0) doc.addPage([pageWidth, pageHeight], 'p');
 
     const headRow = ['Room / Time'];
     group.slots.forEach(slot => {
@@ -544,17 +551,17 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     const displayGroup = group.name === 'Schedule' ? '' : ` (${group.name})`;
-    doc.text(`Daily Schedule — ${selectedDate}${displayGroup}`, 30, 30);
+    doc.text(`Daily Schedule — ${selectedDate}${displayGroup}`, 30, 40);
 
     // Auto-scaling single page table
     doc.autoTable({
-      startY: 45,
+      startY: 60,
       head: head,
       body: body,
       theme: 'grid',
       styles: { 
-        fontSize: 7.5, // Small enough to fit all rooms vertically
-        cellPadding: 2.5, // Tight padding prevents vertical overflow
+        fontSize: 8, 
+        cellPadding: 6, 
         lineWidth: 0.5, 
         lineColor: [220, 220, 220]
       }, 
@@ -563,12 +570,12 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
         textColor: 255, 
         halign: 'center', 
         valign: 'middle',
-        fontSize: 8.5,
+        fontSize: 9,
         fontStyle: 'bold'
       },
       bodyStyles: { valign: 'middle' },
-      margin: { top: 45, right: 20, bottom: 20, left: 20 }
-      // Removed horizontalPageBreak config entirely so autoTable naturally shrinks text to fit one page width
+      margin: { top: 60, right: 30, bottom: 40, left: 30 },
+      pageBreak: 'avoid' // Explicitly prevent any internal splitting
     });
   });
 
