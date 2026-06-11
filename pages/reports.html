@@ -1151,7 +1151,8 @@
       styles:{fontSize:6.5,cellPadding:1.5,valign:'top',overflow:'linebreak',minCellHeight:18},
       headStyles:{fillColor:[26,34,68],textColor:255,fontStyle:'bold',fontSize:7,halign:'center'},
       columnStyles:{0:{cellWidth:16,fontStyle:'bold'}},
-      margin:{left:14,right:14},
+      // Added top: 48 so page breaks start below the custom header
+      margin:{top:48, left:14, right:14},
       didParseCell(data){
         if(data.section==='body'&&data.column.index>0&&data.cell.raw){
           const text=String(data.cell.raw);
