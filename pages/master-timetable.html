@@ -4,9 +4,11 @@
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>ASES — Master Timetable</title>
   
+  <!-- Shared Theme CSS -->
   <link rel="stylesheet" href="/css/theme.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
   
+  <!-- PDF Export Libraries (Vector Output) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 
@@ -63,6 +65,7 @@
 </head>
 <body>
 
+<!-- ── Sidebar ── -->
 <aside class="sidebar">
   <div class="sidebar-college" id="sidebarCollege"></div>
   <nav id="sideNav"></nav>
@@ -84,6 +87,7 @@
   </div>
 </aside>
 
+<!-- ── Main ── -->
 <main class="main">
   <div class="topbar">
     <div style="width: 100%;">
@@ -120,6 +124,7 @@
   </div>
 </main>
 
+<!-- Cell edit modal -->
 <div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
@@ -281,7 +286,7 @@
     
     const body = [];
     rooms.forEach(room => {
-      const rowData = [{ content: `Room ${room.room_code}`, styles: { fontStyle: 'bold', halign: 'center', valign: 'middle', fillColor: [240, 240, 245] } }];
+      const rowData = [{ content: `Room ${room.room_code}`, styles: { fontStyle: 'bold', halign: 'center', valign: 'middle', fillColor: [240, 240, 245], textColor: [40, 40, 40] } }];
       
       timeSlots.forEach(slot => {
         if (slot.slot_type !== 'lecture') {
@@ -293,7 +298,7 @@
             const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '';
             const s = entry.subject?.subject_name || '';
             const f = entry.faculty?.full_name || '';
-            rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle' } });
+            rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
           } else {
             rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
           }
@@ -302,39 +307,38 @@
       body.push(rowData);
     });
 
+    // Simple Clean Title
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text(`Master Timetable — ${dayCapitalized}`, 30, 30);
+
     doc.autoTable({
-      startY: 120, // Start table below the large header
+      startY: 45, // Moved up since the large header is removed
       head: head,
       body: body,
       theme: 'grid',
-      // minCellWidth: 160 forces time slots to be wide and readable, automatically overflowing cleanly onto exactly 2-3 pages.
-      styles: { fontSize: 8, cellPadding: 6, lineWidth: 0.5, lineColor: [210, 210, 210], minCellWidth: 160 }, 
-      headStyles: { fillColor: [79, 106, 245], textColor: 255, halign: 'center', valign: 'middle' },
+      styles: { 
+        fontSize: 9, 
+        cellPadding: 8, 
+        lineWidth: 0.5, 
+        lineColor: [220, 220, 220], 
+        minCellWidth: 150 // Forces a clean split across pages for high quality zoom
+      }, 
+      headStyles: { 
+        fillColor: [50, 58, 70], // Sleek Dark Header 
+        textColor: 255, 
+        halign: 'center', 
+        valign: 'middle',
+        fontSize: 10,
+        fontStyle: 'bold'
+      },
+      bodyStyles: {
+        valign: 'middle',
+      },
       horizontalPageBreak: true, 
       horizontalPageBreakRepeat: 0, // Keeps the "Room / Time" column visible on every split page
-      margin: { top: 120, right: 30, bottom: 40, left: 30 },
-      didDrawPage: function (data) {
-        // --- Official College Header (Repeats on every generated page) ---
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(50, 50, 50);
-        doc.text("Kalyan Citizens' Education Society's", doc.internal.pageSize.width / 2, 35, { align: 'center' });
-        
-        doc.setFontSize(16);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(20, 20, 20);
-        doc.text("B. K. Birla College of Arts, Science & Commerce, Kalyan", doc.internal.pageSize.width / 2, 55, { align: 'center' });
-        
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(50, 50, 50);
-        doc.text("(Empowered Autonomous Status)", doc.internal.pageSize.width / 2, 70, { align: 'center' });
-
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        const pageInfo = data.pageCount > 1 ? ` (Part ${data.pageNumber})` : '';
-        doc.text(`Master Timetable — ${dayCapitalized}${pageInfo}`, doc.internal.pageSize.width / 2, 95, { align: 'center' });
-      }
+      margin: { top: 45, right: 30, bottom: 40, left: 30 },
     });
 
     doc.save(`Master_Timetable_${dayCapitalized}.pdf`);
@@ -360,10 +364,14 @@
         } else {
            const entry = ttMap[slot.id]?.[room.id];
            if (entry) {
-              const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '';
-              const s = entry.subject?.subject_name || '';
-              const f = entry.faculty?.full_name || '';
-              row.push(`"${c}\n${s}\n${f}"`);
+              const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : 'No Class';
+              const s = entry.subject?.subject_name || 'No Subject';
+              const f = entry.faculty?.full_name || 'No Faculty';
+              
+              // Explicitly label the data and use newlines inside the Excel cell. 
+              // Replace quotes to ensure valid CSV formatting.
+              const cellText = `Class: ${c}\nSubject: ${s}\nFaculty: ${f}`.replace(/"/g, '""');
+              row.push(`"${cellText}"`);
            } else {
               row.push('""'); // Empty string for blank cells
            }
