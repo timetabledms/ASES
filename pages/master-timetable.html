@@ -267,11 +267,12 @@
 
   // ── Exports (PDF & Excel) ──────────────────────────────────────────────
 
-  document.getElementById('exportPdfBtn').addEventListener('click', () => {
+document.getElementById('exportPdfBtn').addEventListener('click', () => {
     if (!timeSlots.length || !rooms.length) return toast('No timetable data to export', 'error');
     
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'pt', 'a4'); // 'l' sets it to Landscape orientation
+    // 'l' = Landscape, 'pt' = points, 'a4' = page size
+    const doc = new jsPDF('l', 'pt', 'a4'); 
     const dayCapitalized = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
 
     // 1. Build Header Row (Time ↓ / Room →)
@@ -285,17 +286,13 @@
       const timeLabel = `${slot.slot_label}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
       
       if (slot.slot_type !== 'lecture') {
-        // Break Row: Time block on left, merged cell across all rooms on right
         const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
         body.push([
-          { content: timeLabel, styles: { fontStyle: 'bold', valign: 'middle', halign: 'center', fillColor: [240, 240, 245], textColor: [40, 40, 40] } },
-          { content: lbl, colSpan: rooms.length, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140], fillColor: [245, 245, 250] } }
+          { content: timeLabel, styles: { fontStyle: 'bold', valign: 'middle', halign: 'center', fillColor: [240, 240, 245] } },
+          { content: lbl, colSpan: rooms.length, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140] } }
         ]);
       } else {
-        // Lecture Row
-        const rowData = [
-          { content: timeLabel, styles: { fontStyle: 'bold', valign: 'middle', halign: 'center', fillColor: [240, 240, 245], textColor: [40, 40, 40] } }
-        ];
+        const rowData = [{ content: timeLabel, styles: { fontStyle: 'bold', valign: 'middle', halign: 'center', fillColor: [240, 240, 245] } }];
         
         rooms.forEach(room => {
           const entry = ttMap[slot.id]?.[room.id];
@@ -303,8 +300,7 @@
             const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '';
             const s = entry.subject?.subject_name || '';
             const f = entry.faculty?.full_name || '';
-            // Newlines natively stack the content inside the PDF cell
-            rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
+            rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle' } });
           } else {
             rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
           }
@@ -313,34 +309,28 @@
       }
     });
 
-    // Simple Clean Title
+    // Render Table
     doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 30, 30);
-    doc.text(`Master Timetable — ${dayCapitalized}`, 30, 30);
+    doc.text(`Master Timetable — ${dayCapitalized}`, 40, 40);
 
-    // 3. Render Table
     doc.autoTable({
-      startY: 45,
+      startY: 60,
       head: head,
       body: body,
       theme: 'grid',
       styles: { 
-        fontSize: 7.5, 
+        fontSize: 7.5, // Smaller font to fit more columns
         cellPadding: 4, 
         lineWidth: 0.5, 
         lineColor: [220, 220, 220] 
       }, 
       headStyles: { 
-        fillColor: [50, 58, 70], // Sleek Dark Header
+        fillColor: [50, 58, 70], 
         textColor: 255, 
         halign: 'center', 
-        valign: 'middle',
-        fontSize: 8.5,
-        fontStyle: 'bold'
+        fontSize: 8.5 
       },
-      bodyStyles: { valign: 'middle' },
-      margin: { top: 45, right: 30, bottom: 40, left: 30 },
+      margin: { top: 60, right: 30, bottom: 30, left: 30 },
     });
 
     doc.save(`Master_Timetable_${dayCapitalized}.pdf`);
