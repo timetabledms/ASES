@@ -4,11 +4,9 @@
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>ASES — Master Timetable</title>
   
-  <!-- Shared Theme CSS -->
   <link rel="stylesheet" href="/css/theme.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
   
-  <!-- PDF & Excel Export Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -66,7 +64,6 @@
 </head>
 <body>
 
-<!-- ── Sidebar ── -->
 <aside class="sidebar">
   <div class="sidebar-college" id="sidebarCollege"></div>
   <nav id="sideNav"></nav>
@@ -88,7 +85,6 @@
   </div>
 </aside>
 
-<!-- ── Main ── -->
 <main class="main">
   <div class="topbar">
     <div style="width: 100%;">
@@ -125,7 +121,6 @@
   </div>
 </main>
 
-<!-- Cell edit modal -->
 <div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
@@ -383,7 +378,10 @@
     let rowIndex = 1;
 
     timeSlots.forEach(slot => {
-       const timeLabel = `${slot.slot_label}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
+       // ADDED: Extra newline space \n\n for lecture slots to visually space out the slot name and time
+       const timeLabel = slot.slot_type === 'lecture'
+            ? `${slot.slot_label}\n\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`
+            : `${slot.slot_label}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
 
        if (slot.slot_type !== 'lecture') {
           // Break row (1 row high)
