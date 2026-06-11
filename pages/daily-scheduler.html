@@ -3,17 +3,31 @@
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>ASES — Daily Scheduler</title>
+  
   <link rel="stylesheet" href="/css/theme.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
   <style>
-    .controls-bar{display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.35rem;margin-bottom:1.25rem;transition:background .25s,border-color .25s}
+    .controls-bar{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.35rem;margin-bottom:1.25rem;transition:background .25s,border-color .25s}
+    .controls-group{display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap}
+    
+    .btn-export { display: flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); font-size: 0.85rem; cursor: pointer; transition: background 0.2s; font-weight: 500; height: 38px;}
+    .btn-export:hover { background: var(--bg-hover); }
+    .btn-export svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
     .stat-chips{display:flex;gap:.65rem;flex-wrap:wrap;margin-bottom:1.1rem}
     .stat-chip{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:.5rem .9rem;display:flex;align-items:center;gap:.5rem;font-size:.82rem;transition:background .25s,border-color .25s}
     .chip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    
     .legend{display:flex;gap:1.1rem;flex-wrap:wrap;margin-bottom:1rem;font-size:.75rem;color:var(--text-muted)}
     .leg-item{display:flex;align-items:center;gap:.35rem}
     .leg-sw{width:12px;height:12px;border-radius:3px;border:2px solid}
+    
     .tt-grid{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:700px;transition:background .25s,border-color .25s}
     .tt-head{display:grid;border-bottom:1px solid var(--border);background:rgba(127,127,200,.04)}
     .th-cell{padding:.6rem .7rem;font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);border-right:1px solid var(--border)}
@@ -22,11 +36,13 @@
     [data-theme="dark"] .tt-row{border-bottom-color:rgba(37,41,53,.5)}
     .tt-row:last-child{border-bottom:none}
     .tt-row.is-break{background:var(--bg-input)}
+    
     .time-cell{padding:.45rem .65rem;font-size:.7rem;color:var(--text-muted);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;min-width:86px;flex-shrink:0}
     .time-cell .tl{font-weight:700;font-size:.72rem;color:var(--text-label)}
     .time-cell .tr{font-size:.65rem;margin-top:.05rem}
     .break-span{padding:.38rem .7rem;font-size:.72rem;font-style:italic;color:var(--text-muted);display:flex;align-items:center;border-right:1px solid var(--border)}
     .break-span:last-child{border-right:none}
+    
     .lc{padding:.42rem .5rem;border-right:1px solid var(--border);min-height:66px;position:relative;transition:background .15s;cursor:pointer;display:flex;flex-direction:column;gap:.1rem}
     .lc:last-child{border-right:none}
     .lc:hover{background:var(--bg-hover)}
@@ -36,6 +52,7 @@
     .lc.s-cancelled{background:rgba(107,112,137,.08)!important;border-left:3px solid var(--text-muted)!important;opacity:.6}
     .lc.s-warn{background:rgba(245,166,35,.1)!important;border-left:3px solid var(--warn)!important}
     .lc.s-empty:hover{background:rgba(79,106,245,.06)}
+    
     .lc-course{font-size:.62rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted)}
     .lc-subject{font-size:.77rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .lc-faculty{font-size:.7rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -44,28 +61,35 @@
     .lc-badge.warn{background:rgba(245,166,35,.15);color:var(--warn)}
     .lc-badge.resolved{background:rgba(62,207,142,.15);color:var(--success)}
     .lc-badge.cancelled{background:rgba(107,112,137,.15);color:var(--text-muted)}
+    
     .lc-add{height:100%;display:flex;align-items:center;justify-content:center;color:var(--border);transition:color .15s}
     .lc:hover .lc-add{color:var(--accent)}
     .lc-add svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    
     .grid-placeholder{padding:3.5rem;text-align:center;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:.75rem}
     .grid-placeholder svg{width:36px;height:36px;stroke:var(--border);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+    
     .danger-bar{background:rgba(224,92,107,.07);border:1px solid rgba(224,92,107,.2);border-radius:10px;padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem;font-size:.83rem;color:var(--error);flex-wrap:wrap}
+    
     .modal-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(7px);z-index:200;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto}
     .modal-back.open{display:flex}
     .modal{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:500px;margin:auto;box-shadow:var(--shadow-modal);animation:mIn .22s ease both;transition:background .25s,border-color .25s}
     @keyframes mIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+    
     .modal-header{padding:1.25rem 1.5rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start}
     .modal-title{font-family:var(--ff-display);font-size:1.2rem;color:var(--text-primary)}
     .modal-sub{font-size:.78rem;color:var(--text-muted);margin-top:.18rem}
     .modal-xbtn{background:none;border:none;cursor:pointer;color:var(--text-muted);padding:3px;border-radius:5px;transition:color .15s;display:flex}
     .modal-xbtn:hover{color:var(--text-primary)}
     .modal-xbtn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    
     .modal-body{padding:1.1rem 1.5rem}
     .modal-footer{padding:.9rem 1.5rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap}
     .msec-title{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-label);margin-bottom:.65rem}
     .info-box{background:var(--bg-input);border:1px solid var(--border);border-radius:9px;padding:.85rem 1rem;margin-bottom:1rem;font-size:.84rem;display:grid;grid-template-columns:auto 1fr;gap:.3rem .75rem}
     .info-lbl{color:var(--text-muted);font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
     .info-val{color:var(--text-primary)}
+    
     .option-list{display:flex;flex-direction:column;gap:.4rem;max-height:250px;overflow-y:auto}
     .opt-item{display:flex;align-items:center;gap:.65rem;padding:.65rem .85rem;background:var(--bg-input);border:1px solid var(--border);border-radius:9px;cursor:pointer;transition:border-color .15s,background .15s}
     .opt-item:hover{border-color:var(--border-focus);background:var(--bg-hover)}
@@ -77,11 +101,13 @@
     .opt-text{flex:1;min-width:0}
     .opt-subject{font-size:.86rem;font-weight:600;color:var(--text-primary)}
     .opt-faculty{font-size:.75rem;color:var(--text-muted)}
+    
     .opt-warns{display:flex;gap:.25rem;flex-shrink:0}
     .warn-tag{font-size:.6rem;font-weight:700;padding:.1rem .35rem;border-radius:3px;background:rgba(245,166,35,.15);color:var(--warn)}
     .absent-tag{background:rgba(224,92,107,.15)!important;color:var(--error)!important}
     .cancel-area{margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--border)}
-    @media(max-width:768px){.sidebar{display:none}.content{padding:1rem}.topbar{padding:1rem}}
+    
+    @media(max-width:768px){.sidebar{display:none}.content{padding:1rem}.topbar{padding:1rem}.controls-bar{flex-direction:column;align-items:stretch}}
   </style>
 </head>
 <body>
@@ -106,16 +132,28 @@
     <div><h1 class="page-title">Daily Scheduler</h1><p class="page-subtitle">Generate and manage the working schedule for any date</p></div>
   </div>
   <div class="content">
+    
     <div class="controls-bar">
-      <div class="field"><label>Schedule Date</label><input type="text" id="datePicker" style="width:160px" readonly/></div>
-      <button class="btn btn-primary" id="generateBtn">
-        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-.08-6.07"/></svg>
-        Create Schedule
-      </button>
-      <button class="btn btn-ghost" id="reloadBtn" style="display:none">
-        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="1,4 1,10 7,10"/><path d="M3.51 15a9 9 0 1 0 .08-6.07"/></svg>
-        Reload
-      </button>
+      <div class="controls-group">
+        <div class="field"><label>Schedule Date</label><input type="text" id="datePicker" style="width:160px" readonly/></div>
+        <button class="btn btn-primary" id="generateBtn" style="height: 38px;">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-.08-6.07"/></svg>
+          Create Schedule
+        </button>
+        <button class="btn btn-ghost" id="reloadBtn" style="display:none; height: 38px;">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="1,4 1,10 7,10"/><path d="M3.51 15a9 9 0 1 0 .08-6.07"/></svg>
+          Reload
+        </button>
+      </div>
+
+      <div class="controls-group" style="gap: 0.75rem;">
+        <button class="btn-export" id="exportExcelBtn">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> Excel
+        </button>
+        <button class="btn-export" id="exportPdfBtn">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h2v4H9z"/><path d="M13 15h3v4"/><path d="M13 17h2"/></svg> PDF
+        </button>
+      </div>
     </div>
 
     <div class="danger-bar" id="dangerBar" style="display:none">
@@ -148,7 +186,6 @@
   </div>
 </main>
 
-<!-- Cell modal -->
 <div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
@@ -182,7 +219,6 @@
   </div>
 </div>
 
-<!-- Regenerate confirm modal -->
 <div class="modal-back" id="regenModal">
   <div class="modal" style="max-width:400px">
     <div class="modal-header">
@@ -230,7 +266,6 @@ let activeCell=null,selectedOpt=null;
 flatpickr('#datePicker',{dateFormat:'Y-m-d',defaultDate:new Date(),disableMobile:true,
   onChange([d]){
     if(!d)return;
-    // Set selectedDate FIRST, then pass it explicitly to avoid closure timing bug
     selectedDate=localDateStr(d);
     autoLoadIfExists(selectedDate);
   }
@@ -239,14 +274,12 @@ flatpickr('#datePicker',{dateFormat:'Y-m-d',defaultDate:new Date(),disableMobile
 async function autoLoadIfExists(date){
   const checkDate = date ?? selectedDate;
   const dayType=getDayType(checkDate);
-  // Sunday — no schedule
   if(dayType==='sunday'){
     document.getElementById('dangerBar').style.display='none';
     document.getElementById('statChips').style.display='none';
     document.getElementById('legendRow').style.display='none';
     gridEmpty('No schedule on Sundays.');return;
   }
-  // Holiday check
   const{data:hol}=await supabase.from('holidays').select('name').eq('holiday_date',checkDate).maybeSingle();
   if(hol){
     document.getElementById('dangerBar').style.display='none';
@@ -302,7 +335,6 @@ async function generateOrLoad(force=false){
     }
     const dayType=getDayType(selectedDate);
     if(dayType==='sunday'){toast('No schedule on Sundays.','warn');gridEmpty('No schedule on Sundays.');return;}
-    // Check holiday
     const{data:hol}=await supabase.from('holidays').select('name').eq('holiday_date',selectedDate).maybeSingle();
     if(hol){toast(`${selectedDate} is a holiday: ${hol.name}. Cannot generate schedule.`,'warn');gridEmpty(`🎉 Holiday: ${hol.name}. No schedule for this day.`);document.getElementById('dangerBar').style.display='none';return;}
     const{data:master,error:me}=await supabase.from('master_timetable')
@@ -440,6 +472,203 @@ function updateStats(){
   document.getElementById('cntTotal').textContent=total;
 }
 
+// ── PDF & EXCEL Export ──────────────────────────────────────────────
+document.getElementById('exportPdfBtn').addEventListener('click', () => {
+  if (!timeSlots.length || !rooms.length || Object.keys(scheduleMap).length === 0) return toast('No schedule data to export', 'error');
+  
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'pt', 'a4'); // Portrait orientation
+
+  // 1. Group Time Slots by "Slot" labels (Slot 1, Slot 2, Slot 3)
+  const slotGroups = [];
+  let currentGroupName = 'Schedule';
+  let currentGroupSlots = [];
+
+  timeSlots.forEach(slot => {
+      const match = (slot.slot_label || '').match(/Slot\s*\d+/i);
+      if (match) {
+          const newName = match[0];
+          if (newName !== currentGroupName && currentGroupSlots.length > 0) {
+              slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
+              currentGroupSlots = [];
+              currentGroupName = newName;
+          }
+      }
+      currentGroupSlots.push(slot);
+  });
+  if (currentGroupSlots.length > 0) {
+      slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
+  }
+
+  // 2. Generate Pages
+  slotGroups.forEach((group, index) => {
+    if (index > 0) doc.addPage();
+
+    const headRow = ['Room / Time'];
+    group.slots.forEach(slot => {
+      headRow.push(`${slot.slot_label || ''}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`);
+    });
+    const head = [headRow];
+    
+    const body = [];
+    rooms.forEach(room => {
+      const rowData = [{ content: `Room ${room.room_code}`, styles: { fontStyle: 'bold', halign: 'center', valign: 'middle', fillColor: [240, 240, 245], textColor: [40, 40, 40] } }];
+      
+      group.slots.forEach(slot => {
+        if (slot.slot_type !== 'lecture') {
+          const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+          rowData.push({ content: lbl, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140] } });
+        } else {
+          const row = scheduleMap[slot.id]?.[room.id];
+          if (row) {
+             if(row.is_cancelled){
+               rowData.push({ content: `CANCELLED\n${row.cancel_reason || ''}`, styles: { halign: 'center', valign: 'middle', textColor: [200, 50, 50], fontStyle: 'bold' } });
+             } else {
+               const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
+               const s = row.subject?.subject_name || '';
+               let f = row.assigned_faculty?.full_name || '';
+               
+               // Warning tag for absences directly in PDF
+               if(row.assigned_faculty && absentIds.has(row.assigned_faculty.id)){
+                  f += '\n(ABSENT)';
+               }
+               
+               rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
+             }
+          } else {
+            rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
+          }
+        }
+      });
+      body.push(rowData);
+    });
+
+    // College Header
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(50, 50, 50);
+    doc.text("Kalyan Citizens' Education Society's", doc.internal.pageSize.width / 2, 35, { align: 'center' });
+    
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(20, 20, 20);
+    doc.text("B. K. Birla College of Arts, Science & Commerce, Kalyan", doc.internal.pageSize.width / 2, 55, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(50, 50, 50);
+    doc.text("(Empowered Autonomous Status)", doc.internal.pageSize.width / 2, 70, { align: 'center' });
+
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    const displayGroup = group.name === 'Schedule' ? '' : ` (${group.name})`;
+    doc.text(`Daily Schedule — ${selectedDate}${displayGroup}`, doc.internal.pageSize.width / 2, 100, { align: 'center' });
+
+    doc.autoTable({
+      startY: 125,
+      head: head,
+      body: body,
+      theme: 'grid',
+      styles: { 
+        fontSize: 8, 
+        cellPadding: 6, 
+        lineWidth: 0.5, 
+        lineColor: [220, 220, 220],
+        minCellWidth: 100
+      }, 
+      headStyles: { 
+        fillColor: [50, 58, 70], 
+        textColor: 255, 
+        halign: 'center', 
+        valign: 'middle',
+        fontSize: 9,
+        fontStyle: 'bold'
+      },
+      bodyStyles: { valign: 'middle' },
+      horizontalPageBreak: true, 
+      horizontalPageBreakRepeat: 0,
+      margin: { top: 125, right: 30, bottom: 40, left: 30 },
+    });
+  });
+
+  doc.save(`Daily_Schedule_${selectedDate}.pdf`);
+});
+
+document.getElementById('exportExcelBtn').addEventListener('click', () => {
+  if (!timeSlots.length || !rooms.length || Object.keys(scheduleMap).length === 0) return toast('No schedule data to export', 'error');
+  
+  const wsData = [];
+  const merges = [];
+
+  // Header Row
+  const headRow = ["Time"];
+  rooms.forEach(r => headRow.push(`Room ${r.room_code}`));
+  wsData.push(headRow);
+
+  let rowIndex = 1;
+
+  timeSlots.forEach(slot => {
+     // Extra newline space \n\n for lecture slots
+     const timeLabel = slot.slot_type === 'lecture'
+          ? `${slot.slot_label || ''}\n\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`
+          : `${slot.slot_label || ''}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
+
+     if (slot.slot_type !== 'lecture') {
+        const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+        const row = [timeLabel, lbl];
+        for (let i = 1; i < rooms.length; i++) row.push("");
+        wsData.push(row);
+        merges.push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: rooms.length } });
+        rowIndex += 1;
+     } else {
+        // Lecture block (3 separate vertical rows per time slot)
+        const row1 = [timeLabel]; // Contains Class
+        const row2 = [""];        // Contains Subject
+        const row3 = [""];        // Contains Teacher
+
+        rooms.forEach(room => {
+           const row = scheduleMap[slot.id]?.[room.id];
+           if (row) {
+              if(row.is_cancelled){
+                 row1.push("CANCELLED");
+                 row2.push(row.cancel_reason || "");
+                 row3.push("");
+              } else {
+                 const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '-';
+                 const s = row.subject?.subject_name || '-';
+                 let f = row.assigned_faculty?.full_name || '-';
+                 if(row.assigned_faculty && absentIds.has(row.assigned_faculty.id)) f += ' (ABSENT)';
+                 
+                 row1.push(c);
+                 row2.push(s);
+                 row3.push(f);
+              }
+           } else {
+              row1.push("-");
+              row2.push("");
+              row3.push("");
+           }
+        });
+        
+        wsData.push(row1, row2, row3);
+        merges.push({ s: { r: rowIndex, c: 0 }, e: { r: rowIndex + 2, c: 0 } });
+        rowIndex += 3;
+     }
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!merges'] = merges;
+
+  const cols = [{ wch: 18 }]; // Time column
+  rooms.forEach(() => cols.push({ wch: 30 })); // Room columns
+  ws['!cols'] = cols;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Daily Schedule");
+  XLSX.writeFile(wb, `Daily_Schedule_${selectedDate}.xlsx`);
+});
+
 // ── Modal ──────────────────────────────────────────────────────────
 async function openModal(cell){
   selectedOpt=null;
@@ -462,13 +691,11 @@ async function openModal(cell){
   document.getElementById('cancelReason').value='';
 
   if(!row){
-    // Empty — add lecture
     document.getElementById('modalTitle').textContent='Add Lecture';
     document.getElementById('infoSection').style.display='none';
     document.getElementById('replSection').style.display='';
     document.getElementById('replTitle').textContent='Choose Subject & Faculty';
     document.getElementById('saveBtn').style.display='';
-    // Show course picker first
     document.getElementById('coursePickWrap').style.display='';
     await populateCoursePicker(tsId);
     document.getElementById('optionList').innerHTML='<div style="color:var(--text-muted);font-size:.82rem;padding:.5rem">Select a course above to see options.</div>';
@@ -553,7 +780,6 @@ async function fillOptions(courseId,tsId){
   }catch(e){list.innerHTML=`<div style="color:var(--error);padding:1rem;font-size:.83rem">${e.message}</div>`;}
 }
 
-// Save
 document.getElementById('saveBtn').addEventListener('click',async()=>{
   if(!selectedOpt){toast('Please select a subject & faculty.','warn');return;}
   if(!activeCell.courseId){toast('Please select a course.','warn');return;}
@@ -568,7 +794,6 @@ document.getElementById('saveBtn').addEventListener('click',async()=>{
       }).eq('id',activeCell.scheduleId);
       if(error)throw error;
 
-      // Reset execution status to not_marked — lecture has changed, old status is invalid
       await supabase.from('lecture_execution')
         .update({
           faculty_status:     'not_marked',
@@ -576,7 +801,6 @@ document.getElementById('saveBtn').addEventListener('click',async()=>{
           updated_at:         new Date().toISOString(),
         })
         .eq('daily_schedule_id', activeCell.scheduleId);
-      // Note: if no execution row exists yet, the update simply affects 0 rows — that's fine
 
     }else{
       const{error}=await supabase.from('daily_schedule').insert({
@@ -629,7 +853,6 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 function gridLoading(){document.getElementById('gridContainer').innerHTML=`<div class="tt-grid"><div class="grid-placeholder"><span class="spin" style="display:inline-block;width:24px;height:24px;border-width:3px"></span><div>Loading…</div></div></div>`;}
 function gridEmpty(msg){document.getElementById('gridContainer').innerHTML=`<div class="tt-grid"><div class="grid-placeholder"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><div>${msg}</div></div></div>`;}
 
-// Auto-load on page open if schedule exists for today
 autoLoadIfExists(selectedDate);
 </script>
 </body>
