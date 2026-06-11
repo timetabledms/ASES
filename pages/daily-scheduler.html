@@ -500,7 +500,7 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
       slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
   }
 
-  // 2. Generate Pages
+  // 2. Generate Separate Portrait Page per Slot Group
   slotGroups.forEach((group, index) => {
     if (index > 0) doc.addPage();
 
@@ -542,24 +542,25 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
       body.push(rowData);
     });
 
-    // Simple Clean Title (No heavy college header)
+    // Clean Simple Title (No college header)
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     const displayGroup = group.name === 'Schedule' ? '' : ` (${group.name})`;
-    doc.text(`Daily Schedule — ${selectedDate}${displayGroup}`, 30, 30);
+    doc.text(`Daily Schedule — ${selectedDate}${displayGroup}`, 30, 40);
 
-    // Generate single comprehensive table
+    // Auto-scaling single page table
     doc.autoTable({
-      startY: 45,
+      startY: 60,
       head: head,
       body: body,
       theme: 'grid',
       styles: { 
         fontSize: 8, 
-        cellPadding: 6, 
+        cellPadding: 5, 
         lineWidth: 0.5, 
         lineColor: [220, 220, 220]
+        // minCellWidth is purposefully omitted here so autoTable calculates optimal column sizes to fit on a single portrait page width.
       }, 
       headStyles: { 
         fillColor: [50, 58, 70], 
@@ -570,7 +571,8 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
         fontStyle: 'bold'
       },
       bodyStyles: { valign: 'middle' },
-      margin: { top: 45, right: 30, bottom: 40, left: 30 },
+      margin: { top: 60, right: 30, bottom: 40, left: 30 },
+      // horizontalPageBreak is omitted so the table shrinks to fit width rather than splitting
     });
   });
 
