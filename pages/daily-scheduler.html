@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
   
-  <!-- PDF & Excel Export Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -184,7 +183,6 @@
   </div>
 </main>
 
-<!-- Cell modal -->
 <div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
@@ -218,7 +216,6 @@
   </div>
 </div>
 
-<!-- Regenerate confirm modal -->
 <div class="modal-back" id="regenModal">
   <div class="modal" style="max-width:400px">
     <div class="modal-header">
@@ -547,32 +544,31 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     const displayGroup = group.name === 'Schedule' ? '' : ` (${group.name})`;
-    doc.text(`Daily Schedule — ${selectedDate}${displayGroup}`, 30, 40);
+    doc.text(`Daily Schedule — ${selectedDate}${displayGroup}`, 30, 30);
 
     // Auto-scaling single page table
     doc.autoTable({
-      startY: 60,
+      startY: 45,
       head: head,
       body: body,
       theme: 'grid',
       styles: { 
-        fontSize: 8, 
-        cellPadding: 5, 
+        fontSize: 7.5, // Small enough to fit all rooms vertically
+        cellPadding: 2.5, // Tight padding prevents vertical overflow
         lineWidth: 0.5, 
         lineColor: [220, 220, 220]
-        // minCellWidth is purposefully omitted here so autoTable calculates optimal column sizes to fit on a single portrait page width.
       }, 
       headStyles: { 
         fillColor: [50, 58, 70], 
         textColor: 255, 
         halign: 'center', 
         valign: 'middle',
-        fontSize: 9,
+        fontSize: 8.5,
         fontStyle: 'bold'
       },
       bodyStyles: { valign: 'middle' },
-      margin: { top: 60, right: 30, bottom: 40, left: 30 },
-      // horizontalPageBreak is omitted so the table shrinks to fit width rather than splitting
+      margin: { top: 45, right: 20, bottom: 20, left: 20 }
+      // Removed horizontalPageBreak config entirely so autoTable naturally shrinks text to fit one page width
     });
   });
 
