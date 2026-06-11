@@ -271,93 +271,76 @@
     if (!timeSlots.length || !rooms.length) return toast('No timetable data to export', 'error');
     
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'pt', 'a4'); // Portrait orientation
+    const doc = new jsPDF('l', 'pt', 'a4'); // 'l' sets it to Landscape orientation
     const dayCapitalized = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
 
-    // 1. Group Time Slots by "Slot" labels (Slot 1, Slot 2, Slot 3)
-    const slotGroups = [];
-    let currentGroupName = 'Slot 1';
-    let currentGroupSlots = [];
-
+    // 1. Build Header Row (Time ↓ / Room →)
+    const headRow = ["Time"];
+    rooms.forEach(r => headRow.push(`Room ${r.room_code}`));
+    const head = [headRow];
+    
+    // 2. Build Body Rows
+    const body = [];
     timeSlots.forEach(slot => {
-        // Detect if label contains 'Slot X'
-        const match = slot.slot_label.match(/Slot\s*\d+/i);
-        if (match) {
-            const newName = match[0];
-            if (newName !== currentGroupName && currentGroupSlots.length > 0) {
-                slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
-                currentGroupSlots = [];
-                currentGroupName = newName;
-            }
-        }
-        currentGroupSlots.push(slot);
-    });
-    if (currentGroupSlots.length > 0) {
-        slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
-    }
-
-    // 2. Generate 1 Page Per Group
-    slotGroups.forEach((group, index) => {
-      if (index > 0) doc.addPage();
-
-      // Headers (Room ↓ / Time →)
-      const headRow = ['Room / Time'];
-      group.slots.forEach(slot => {
-        headRow.push(`${slot.slot_label}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`);
-      });
-      const head = [headRow];
+      const timeLabel = `${slot.slot_label}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
       
-      const body = [];
-      rooms.forEach(room => {
-        const rowData = [{ content: `Room ${room.room_code}`, styles: { fontStyle: 'bold', halign: 'center', valign: 'middle', fillColor: [240, 240, 245], textColor: [40, 40, 40] } }];
+      if (slot.slot_type !== 'lecture') {
+        // Break Row: Time block on left, merged cell across all rooms on right
+        const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+        body.push([
+          { content: timeLabel, styles: { fontStyle: 'bold', valign: 'middle', halign: 'center', fillColor: [240, 240, 245], textColor: [40, 40, 40] } },
+          { content: lbl, colSpan: rooms.length, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140], fillColor: [245, 245, 250] } }
+        ]);
+      } else {
+        // Lecture Row
+        const rowData = [
+          { content: timeLabel, styles: { fontStyle: 'bold', valign: 'middle', halign: 'center', fillColor: [240, 240, 245], textColor: [40, 40, 40] } }
+        ];
         
-        group.slots.forEach(slot => {
-          if (slot.slot_type !== 'lecture') {
-            const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
-            rowData.push({ content: lbl, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140] } });
+        rooms.forEach(room => {
+          const entry = ttMap[slot.id]?.[room.id];
+          if (entry) {
+            const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '';
+            const s = entry.subject?.subject_name || '';
+            const f = entry.faculty?.full_name || '';
+            // Newlines natively stack the content inside the PDF cell
+            rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
           } else {
-            const entry = ttMap[slot.id]?.[room.id];
-            if (entry) {
-              const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '';
-              const s = entry.subject?.subject_name || '';
-              const f = entry.faculty?.full_name || '';
-              rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
-            } else {
-              rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
-            }
+            rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
           }
         });
         body.push(rowData);
-      });
+      }
+    });
 
-      // Simple Clean Title (No heavy college header)
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(30, 30, 30);
-      doc.text(`Master Timetable — ${dayCapitalized} (${group.name})`, 30, 30);
+    // Simple Clean Title
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text(`Master Timetable — ${dayCapitalized}`, 30, 30);
 
-      doc.autoTable({
-        startY: 45,
-        head: head,
-        body: body,
-        theme: 'grid',
-        styles: { 
-          fontSize: 8, 
-          cellPadding: 6, 
-          lineWidth: 0.5, 
-          lineColor: [220, 220, 220] 
-        }, 
-        headStyles: { 
-          fillColor: [50, 58, 70], // Sleek Dark Header 
-          textColor: 255, 
-          halign: 'center', 
-          valign: 'middle',
-          fontSize: 9,
-          fontStyle: 'bold'
-        },
-        bodyStyles: { valign: 'middle' },
-        margin: { top: 45, right: 30, bottom: 40, left: 30 },
-      });
+    // 3. Render Table
+    doc.autoTable({
+      startY: 45,
+      head: head,
+      body: body,
+      theme: 'grid',
+      styles: { 
+        fontSize: 7.5, 
+        cellPadding: 4, 
+        lineWidth: 0.5, 
+        lineColor: [220, 220, 220] 
+      }, 
+      headStyles: { 
+        fillColor: [50, 58, 70], // Sleek Dark Header
+        textColor: 255, 
+        halign: 'center', 
+        valign: 'middle',
+        fontSize: 8.5,
+        fontStyle: 'bold'
+      },
+      bodyStyles: { valign: 'middle' },
+      margin: { top: 45, right: 30, bottom: 40, left: 30 },
     });
 
     doc.save(`Master_Timetable_${dayCapitalized}.pdf`);
