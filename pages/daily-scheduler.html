@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>ASES — Daily Scheduler</title>
-  
   <link rel="stylesheet" href="/css/theme.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
@@ -23,7 +22,6 @@
     .stat-chips{display:flex;gap:.65rem;flex-wrap:wrap;margin-bottom:1.1rem}
     .stat-chip{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:.5rem .9rem;display:flex;align-items:center;gap:.5rem;font-size:.82rem;transition:background .25s,border-color .25s}
     .chip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-    
     .legend{display:flex;gap:1.1rem;flex-wrap:wrap;margin-bottom:1rem;font-size:.75rem;color:var(--text-muted)}
     .leg-item{display:flex;align-items:center;gap:.35rem}
     .leg-sw{width:12px;height:12px;border-radius:3px;border:2px solid}
@@ -65,7 +63,6 @@
     .lc-add{height:100%;display:flex;align-items:center;justify-content:center;color:var(--border);transition:color .15s}
     .lc:hover .lc-add{color:var(--accent)}
     .lc-add svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-    
     .grid-placeholder{padding:3.5rem;text-align:center;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:.75rem}
     .grid-placeholder svg{width:36px;height:36px;stroke:var(--border);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
     
@@ -479,117 +476,88 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('p', 'pt', 'a4'); // Portrait orientation
 
-  // 1. Group Time Slots by "Slot" labels (Slot 1, Slot 2, Slot 3)
-  const slotGroups = [];
-  let currentGroupName = 'Schedule';
-  let currentGroupSlots = [];
-
+  // Build Table (Room ↓ / Time →)
+  const headRow = ['Room / Time'];
   timeSlots.forEach(slot => {
-      const match = (slot.slot_label || '').match(/Slot\s*\d+/i);
-      if (match) {
-          const newName = match[0];
-          if (newName !== currentGroupName && currentGroupSlots.length > 0) {
-              slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
-              currentGroupSlots = [];
-              currentGroupName = newName;
-          }
-      }
-      currentGroupSlots.push(slot);
+    headRow.push(`${slot.slot_label || ''}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`);
   });
-  if (currentGroupSlots.length > 0) {
-      slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
-  }
-
-  // 2. Generate Pages
-  slotGroups.forEach((group, index) => {
-    if (index > 0) doc.addPage();
-
-    const headRow = ['Room / Time'];
-    group.slots.forEach(slot => {
-      headRow.push(`${slot.slot_label || ''}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`);
-    });
-    const head = [headRow];
+  const head = [headRow];
+  
+  const body = [];
+  rooms.forEach(room => {
+    const rowData = [{ content: `Room ${room.room_code}`, styles: { fontStyle: 'bold', halign: 'center', valign: 'middle', fillColor: [240, 240, 245], textColor: [40, 40, 40] } }];
     
-    const body = [];
-    rooms.forEach(room => {
-      const rowData = [{ content: `Room ${room.room_code}`, styles: { fontStyle: 'bold', halign: 'center', valign: 'middle', fillColor: [240, 240, 245], textColor: [40, 40, 40] } }];
-      
-      group.slots.forEach(slot => {
-        if (slot.slot_type !== 'lecture') {
-          const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
-          rowData.push({ content: lbl, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140] } });
-        } else {
-          const row = scheduleMap[slot.id]?.[room.id];
-          if (row) {
-             if(row.is_cancelled){
-               rowData.push({ content: `CANCELLED\n${row.cancel_reason || ''}`, styles: { halign: 'center', valign: 'middle', textColor: [200, 50, 50], fontStyle: 'bold' } });
-             } else {
-               const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
-               const s = row.subject?.subject_name || '';
-               let f = row.assigned_faculty?.full_name || '';
-               
-               // Warning tag for absences directly in PDF
-               if(row.assigned_faculty && absentIds.has(row.assigned_faculty.id)){
-                  f += '\n(ABSENT)';
-               }
-               
-               rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
+    timeSlots.forEach(slot => {
+      if (slot.slot_type !== 'lecture') {
+        const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+        rowData.push({ content: lbl, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140] } });
+      } else {
+        const row = scheduleMap[slot.id]?.[room.id];
+        if (row) {
+           if(row.is_cancelled){
+             rowData.push({ content: `CANCELLED\n${row.cancel_reason || ''}`, styles: { halign: 'center', valign: 'middle', textColor: [200, 50, 50], fontStyle: 'bold' } });
+           } else {
+             const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
+             const s = row.subject?.subject_name || '';
+             let f = row.assigned_faculty?.full_name || '';
+             
+             if(row.assigned_faculty && absentIds.has(row.assigned_faculty.id)){
+                f += '\n(ABSENT)';
              }
-          } else {
-            rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
-          }
+             
+             rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
+           }
+        } else {
+          rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
         }
-      });
-      body.push(rowData);
+      }
     });
+    body.push(rowData);
+  });
 
-    // College Header
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(50, 50, 50);
-    doc.text("Kalyan Citizens' Education Society's", doc.internal.pageSize.width / 2, 35, { align: 'center' });
-    
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(20, 20, 20);
-    doc.text("B. K. Birla College of Arts, Science & Commerce, Kalyan", doc.internal.pageSize.width / 2, 55, { align: 'center' });
-    
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(50, 50, 50);
-    doc.text("(Empowered Autonomous Status)", doc.internal.pageSize.width / 2, 70, { align: 'center' });
+  // College Header
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(50, 50, 50);
+  doc.text("Kalyan Citizens' Education Society's", doc.internal.pageSize.width / 2, 35, { align: 'center' });
+  
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(20, 20, 20);
+  doc.text("B. K. Birla College of Arts, Science & Commerce, Kalyan", doc.internal.pageSize.width / 2, 55, { align: 'center' });
+  
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(50, 50, 50);
+  doc.text("(Empowered Autonomous Status)", doc.internal.pageSize.width / 2, 70, { align: 'center' });
 
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 30, 30);
-    const displayGroup = group.name === 'Schedule' ? '' : ` (${group.name})`;
-    doc.text(`Daily Schedule — ${selectedDate}${displayGroup}`, doc.internal.pageSize.width / 2, 100, { align: 'center' });
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text(`Daily Schedule — ${selectedDate}`, doc.internal.pageSize.width / 2, 100, { align: 'center' });
 
-    doc.autoTable({
-      startY: 125,
-      head: head,
-      body: body,
-      theme: 'grid',
-      styles: { 
-        fontSize: 8, 
-        cellPadding: 6, 
-        lineWidth: 0.5, 
-        lineColor: [220, 220, 220],
-        minCellWidth: 100
-      }, 
-      headStyles: { 
-        fillColor: [50, 58, 70], 
-        textColor: 255, 
-        halign: 'center', 
-        valign: 'middle',
-        fontSize: 9,
-        fontStyle: 'bold'
-      },
-      bodyStyles: { valign: 'middle' },
-      horizontalPageBreak: true, 
-      horizontalPageBreakRepeat: 0,
-      margin: { top: 125, right: 30, bottom: 40, left: 30 },
-    });
+  // Generate single comprehensive table
+  doc.autoTable({
+    startY: 125,
+    head: head,
+    body: body,
+    theme: 'grid',
+    styles: { 
+      fontSize: 7, // Highly optimized to easily fit many rooms on 1 page vertically
+      cellPadding: 4, 
+      lineWidth: 0.5, 
+      lineColor: [220, 220, 220]
+    }, 
+    headStyles: { 
+      fillColor: [50, 58, 70], 
+      textColor: 255, 
+      halign: 'center', 
+      valign: 'middle',
+      fontSize: 8,
+      fontStyle: 'bold'
+    },
+    bodyStyles: { valign: 'middle' },
+    margin: { top: 125, right: 20, bottom: 20, left: 20 },
   });
 
   doc.save(`Daily_Schedule_${selectedDate}.pdf`);
