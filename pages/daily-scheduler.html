@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
   
+  <!-- PDF & Excel Export Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -183,6 +184,7 @@
   </div>
 </main>
 
+<!-- Cell modal -->
 <div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
@@ -216,6 +218,7 @@
   </div>
 </div>
 
+<!-- Regenerate confirm modal -->
 <div class="modal-back" id="regenModal">
   <div class="modal" style="max-width:400px">
     <div class="modal-header">
@@ -476,88 +479,99 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('p', 'pt', 'a4'); // Portrait orientation
 
-  // Build Table (Room ↓ / Time →)
-  const headRow = ['Room / Time'];
+  // 1. Group Time Slots by "Slot" labels (Slot 1, Slot 2, Slot 3)
+  const slotGroups = [];
+  let currentGroupName = 'Schedule';
+  let currentGroupSlots = [];
+
   timeSlots.forEach(slot => {
-    headRow.push(`${slot.slot_label || ''}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`);
-  });
-  const head = [headRow];
-  
-  const body = [];
-  rooms.forEach(room => {
-    const rowData = [{ content: `Room ${room.room_code}`, styles: { fontStyle: 'bold', halign: 'center', valign: 'middle', fillColor: [240, 240, 245], textColor: [40, 40, 40] } }];
-    
-    timeSlots.forEach(slot => {
-      if (slot.slot_type !== 'lecture') {
-        const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
-        rowData.push({ content: lbl, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140] } });
-      } else {
-        const row = scheduleMap[slot.id]?.[room.id];
-        if (row) {
-           if(row.is_cancelled){
-             rowData.push({ content: `CANCELLED\n${row.cancel_reason || ''}`, styles: { halign: 'center', valign: 'middle', textColor: [200, 50, 50], fontStyle: 'bold' } });
-           } else {
-             const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
-             const s = row.subject?.subject_name || '';
-             let f = row.assigned_faculty?.full_name || '';
-             
-             if(row.assigned_faculty && absentIds.has(row.assigned_faculty.id)){
-                f += '\n(ABSENT)';
-             }
-             
-             rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
-           }
-        } else {
-          rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
-        }
+      const match = (slot.slot_label || '').match(/Slot\s*\d+/i);
+      if (match) {
+          const newName = match[0];
+          if (newName !== currentGroupName && currentGroupSlots.length > 0) {
+              slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
+              currentGroupSlots = [];
+              currentGroupName = newName;
+          }
       }
-    });
-    body.push(rowData);
+      currentGroupSlots.push(slot);
   });
+  if (currentGroupSlots.length > 0) {
+      slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
+  }
 
-  // College Header
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(50, 50, 50);
-  doc.text("Kalyan Citizens' Education Society's", doc.internal.pageSize.width / 2, 35, { align: 'center' });
-  
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(20, 20, 20);
-  doc.text("B. K. Birla College of Arts, Science & Commerce, Kalyan", doc.internal.pageSize.width / 2, 55, { align: 'center' });
-  
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(50, 50, 50);
-  doc.text("(Empowered Autonomous Status)", doc.internal.pageSize.width / 2, 70, { align: 'center' });
+  // 2. Generate Pages
+  slotGroups.forEach((group, index) => {
+    if (index > 0) doc.addPage();
 
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
-  doc.text(`Daily Schedule — ${selectedDate}`, doc.internal.pageSize.width / 2, 100, { align: 'center' });
+    const headRow = ['Room / Time'];
+    group.slots.forEach(slot => {
+      headRow.push(`${slot.slot_label || ''}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`);
+    });
+    const head = [headRow];
+    
+    const body = [];
+    rooms.forEach(room => {
+      const rowData = [{ content: `Room ${room.room_code}`, styles: { fontStyle: 'bold', halign: 'center', valign: 'middle', fillColor: [240, 240, 245], textColor: [40, 40, 40] } }];
+      
+      group.slots.forEach(slot => {
+        if (slot.slot_type !== 'lecture') {
+          const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+          rowData.push({ content: lbl, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140] } });
+        } else {
+          const row = scheduleMap[slot.id]?.[room.id];
+          if (row) {
+             if(row.is_cancelled){
+               rowData.push({ content: `CANCELLED\n${row.cancel_reason || ''}`, styles: { halign: 'center', valign: 'middle', textColor: [200, 50, 50], fontStyle: 'bold' } });
+             } else {
+               const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
+               const s = row.subject?.subject_name || '';
+               let f = row.assigned_faculty?.full_name || '';
+               
+               if(row.assigned_faculty && absentIds.has(row.assigned_faculty.id)){
+                  f += '\n(ABSENT)';
+               }
+               
+               rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
+             }
+          } else {
+            rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
+          }
+        }
+      });
+      body.push(rowData);
+    });
 
-  // Generate single comprehensive table
-  doc.autoTable({
-    startY: 125,
-    head: head,
-    body: body,
-    theme: 'grid',
-    styles: { 
-      fontSize: 7, // Highly optimized to easily fit many rooms on 1 page vertically
-      cellPadding: 4, 
-      lineWidth: 0.5, 
-      lineColor: [220, 220, 220]
-    }, 
-    headStyles: { 
-      fillColor: [50, 58, 70], 
-      textColor: 255, 
-      halign: 'center', 
-      valign: 'middle',
-      fontSize: 8,
-      fontStyle: 'bold'
-    },
-    bodyStyles: { valign: 'middle' },
-    margin: { top: 125, right: 20, bottom: 20, left: 20 },
+    // Simple Clean Title (No heavy college header)
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    const displayGroup = group.name === 'Schedule' ? '' : ` (${group.name})`;
+    doc.text(`Daily Schedule — ${selectedDate}${displayGroup}`, 30, 30);
+
+    // Generate single comprehensive table
+    doc.autoTable({
+      startY: 45,
+      head: head,
+      body: body,
+      theme: 'grid',
+      styles: { 
+        fontSize: 8, 
+        cellPadding: 6, 
+        lineWidth: 0.5, 
+        lineColor: [220, 220, 220]
+      }, 
+      headStyles: { 
+        fillColor: [50, 58, 70], 
+        textColor: 255, 
+        halign: 'center', 
+        valign: 'middle',
+        fontSize: 9,
+        fontStyle: 'bold'
+      },
+      bodyStyles: { valign: 'middle' },
+      margin: { top: 45, right: 30, bottom: 40, left: 30 },
+    });
   });
 
   doc.save(`Daily_Schedule_${selectedDate}.pdf`);
