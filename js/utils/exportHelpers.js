@@ -60,8 +60,9 @@ export function exportToPDF(rows, columns, title, filename, subtitle = '', gener
     headStyles:          { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', fontSize: 8 },
     alternateRowStyles:  { fillColor: [245, 246, 252] },
     columnStyles: Object.fromEntries(columns.map((c, i) => [i, { cellWidth: c.pdfWidth ?? 'auto' }])),
-    margin: { left: sideMargin, right: sideMargin }, // Apply perfectly centered margins
-    didDrawPage(data) {
+        // Added top margin so page 2 starts below the header
+        margin: { top: HEADER_H + 4, left: sideMargin, right: sideMargin }, 
+        didDrawPage(data) {
       if (data.pageNumber > 1) _drawHeader(doc, pageW, title, subtitle);
       const pageH = doc.internal.pageSize.height;
       const now   = new Date();
