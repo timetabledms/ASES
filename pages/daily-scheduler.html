@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
   
-  <!-- PDF & Excel Export Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -184,7 +183,6 @@
   </div>
 </main>
 
-<!-- Cell modal -->
 <div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
@@ -218,7 +216,6 @@
   </div>
 </div>
 
-<!-- Regenerate confirm modal -->
 <div class="modal-back" id="regenModal">
   <div class="modal" style="max-width:400px">
     <div class="modal-header">
@@ -472,99 +469,79 @@ function updateStats(){
   document.getElementById('cntTotal').textContent=total;
 }
 
-// ── PDF & EXCEL Export ──────────────────────────────────────────────
+// ── PDF Export Logic (A1 Landscape) ──────────────────────────────────────────
 document.getElementById('exportPdfBtn').addEventListener('click', () => {
   if (!timeSlots.length || !rooms.length || Object.keys(scheduleMap).length === 0) return toast('No schedule data to export', 'error');
   
   const { jsPDF } = window.jspdf;
-  // Use 'l' for Landscape, 'pt' for points, and 'a1' for massive page size
+  // 'l' = Landscape, 'pt' = points, 'a1' = massive page size
   const doc = new jsPDF('l', 'pt', 'a1'); 
 
-  // 1. Group Time Slots rigorously
-  const slotGroups = [];
-  let currentGroupName = 'Slot 1'; 
-  let currentGroupSlots = [];
-
+  // Build Header
+  const headRow = ['Time'];
+  rooms.forEach(r => headRow.push(`Room ${r.room_code}`));
+  const head = [headRow];
+  
+  // Build Body (ALL slots in one array, no grouping)
+  const body = [];
   timeSlots.forEach(slot => {
-      const match = (slot.slot_label || '').match(/Slot\s*\d+/i);
-      if (match) {
-          const newName = match[0];
-          if (newName !== currentGroupName && currentGroupSlots.length > 0) {
-              slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
-              currentGroupSlots = [];
-              currentGroupName = newName;
-          }
-      }
-      currentGroupSlots.push(slot);
-  });
-  if (currentGroupSlots.length > 0) {
-      slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
-  }
-
-  // Generate 1 Page Per Group
-  slotGroups.forEach((group, index) => {
-    if (index > 0) doc.addPage('a1', 'l');
-
-    const headRow = ['Time'];
-    rooms.forEach(r => headRow.push(`Room ${r.room_code}`));
-    const head = [headRow];
+    const timeLabel = `${slot.slot_label || ''}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
     
-    const body = [];
-    group.slots.forEach(slot => {
-      const timeLabel = `${slot.slot_label || ''}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
+    if (slot.slot_type !== 'lecture') {
+      const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+      body.push([
+        { content: timeLabel, styles: { fontStyle: 'bold', halign: 'center', valign: 'middle', fillColor: [240, 240, 245] } },
+        { content: lbl, colSpan: rooms.length, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140] } }
+      ]);
+    } else {
       const rowData = [{ content: timeLabel, styles: { fontStyle: 'bold', halign: 'center', valign: 'middle', fillColor: [240, 240, 245] } }];
       
       rooms.forEach(room => {
-        if (slot.slot_type !== 'lecture') {
-          const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
-          rowData.push({ content: lbl, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140] } });
-        } else {
-          const row = scheduleMap[slot.id]?.[room.id];
-          if (row) {
-            if(row.is_cancelled){
-               rowData.push({ content: `CANCELLED\n${row.cancel_reason || ''}`, styles: { halign: 'center', valign: 'middle', textColor: [200, 50, 50], fontStyle: 'bold' } });
-            } else {
-               const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
-               const s = row.subject?.subject_name || '';
-               let f = row.assigned_faculty?.full_name || '';
-               if(row.assigned_faculty && absentIds.has(row.assigned_faculty.id)) f += '\n(ABSENT)';
-               rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
-            }
+        const row = scheduleMap[slot.id]?.[room.id];
+        if (row) {
+          if(row.is_cancelled){
+             rowData.push({ content: `CANCELLED\n${row.cancel_reason || ''}`, styles: { halign: 'center', valign: 'middle', textColor: [200, 50, 50], fontStyle: 'bold' } });
           } else {
-            rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
+             const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
+             const s = row.subject?.subject_name || '';
+             let f = row.assigned_faculty?.full_name || '';
+             if(row.assigned_faculty && absentIds.has(row.assigned_faculty.id)) f += '\n(ABSENT)';
+             rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
           }
+        } else {
+          rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
         }
       });
       body.push(rowData);
-    });
+    }
+  });
 
-    // Clean Title
-    doc.setFontSize(24);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 30, 30);
-    doc.text(`Daily Schedule — ${selectedDate} (${group.name})`, 60, 80);
+  // Title
+  doc.setFontSize(24);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Daily Schedule — ${selectedDate}`, 60, 80);
 
-    doc.autoTable({
-      startY: 120,
-      head: head,
-      body: body,
-      theme: 'grid',
-      styles: { 
-        fontSize: 12, // Increased for readability on A1
-        cellPadding: 12, 
-        lineWidth: 0.5, 
-        lineColor: [200, 200, 200]
-      }, 
-      headStyles: { 
-        fillColor: [50, 58, 70], 
-        textColor: 255, 
-        halign: 'center', 
-        valign: 'middle',
-        fontSize: 14,
-        fontStyle: 'bold'
-      },
-      margin: { top: 120, right: 60, bottom: 60, left: 60 }
-    });
+  // Single Table Render (Entire schedule fits in one block on A1)
+  doc.autoTable({
+    startY: 120,
+    head: head,
+    body: body,
+    theme: 'grid',
+    styles: { 
+      fontSize: 12, 
+      cellPadding: 12, 
+      lineWidth: 0.5, 
+      lineColor: [200, 200, 200]
+    }, 
+    headStyles: { 
+      fillColor: [50, 58, 70], 
+      textColor: 255, 
+      halign: 'center', 
+      valign: 'middle',
+      fontSize: 14,
+      fontStyle: 'bold'
+    },
+    margin: { top: 120, right: 60, bottom: 60, left: 60 }
   });
 
   doc.save(`Daily_Schedule_${selectedDate}.pdf`);
