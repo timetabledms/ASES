@@ -4,11 +4,9 @@
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>ASES — Master Timetable</title>
   
-  <!-- Shared Theme CSS -->
   <link rel="stylesheet" href="/css/theme.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
   
-  <!-- PDF & Excel Export Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -66,7 +64,6 @@
 </head>
 <body>
 
-<!-- ── Sidebar ── -->
 <aside class="sidebar">
   <div class="sidebar-college" id="sidebarCollege"></div>
   <nav id="sideNav"></nav>
@@ -88,7 +85,6 @@
   </div>
 </aside>
 
-<!-- ── Main ── -->
 <main class="main">
   <div class="topbar">
     <div style="width: 100%;">
@@ -125,7 +121,6 @@
   </div>
 </main>
 
-<!-- Cell edit modal -->
 <div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
@@ -224,7 +219,7 @@
     }
   }
 
-  // Render Grid in UI (Time ↓ / Room →)
+  // Render Web Grid
   function renderGrid() {
     const colCount  = 1 + rooms.length;
     const gridStyle = `grid-template-columns: 88px repeat(${rooms.length}, minmax(110px,1fr))`;
@@ -270,78 +265,87 @@
     });
   }
 
-  // ── Exports ──────────────────────────────────────────────────────────
+  // ── Exports (PDF & Excel) ──────────────────────────────────────────────
 
   document.getElementById('exportPdfBtn').addEventListener('click', () => {
     if (!timeSlots.length || !rooms.length) return toast('No timetable data to export', 'error');
     
     const { jsPDF } = window.jspdf;
-    // Switch to 'p' (portrait) so rooms stack vertically on one page.
-    const doc = new jsPDF('p', 'pt', 'a4'); 
+    const doc = new jsPDF('p', 'pt', 'a4'); // Portrait orientation
     const dayCapitalized = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
 
-    // Build Table (Room ↓ / Time →)
-    const headRow = ['Room / Time'];
-    timeSlots.forEach(slot => {
-      headRow.push(`${slot.slot_label}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`);
-    });
-    const head = [headRow];
-    
-    const body = [];
-    rooms.forEach(room => {
-      const rowData = [{ content: `Room ${room.room_code}`, styles: { fontStyle: 'bold', halign: 'center', valign: 'middle', fillColor: [240, 240, 245], textColor: [40, 40, 40] } }];
+    // 1 Page = 1 Time Slot
+    timeSlots.forEach((slot, index) => {
+      if (index > 0) doc.addPage();
+
+      const timeLabel = `${slot.slot_label} (${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)})`;
+
+      // Official College Header
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(50, 50, 50);
+      doc.text("Kalyan Citizens' Education Society's", doc.internal.pageSize.width / 2, 35, { align: 'center' });
       
-      timeSlots.forEach(slot => {
-        if (slot.slot_type !== 'lecture') {
-          const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
-          rowData.push({ content: lbl, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140] } });
-        } else {
-          const entry = ttMap[slot.id]?.[room.id];
-          if (entry) {
-            const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '';
-            const s = entry.subject?.subject_name || '';
-            const f = entry.faculty?.full_name || '';
-            rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
-          } else {
-            rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
-          }
-        }
-      });
-      body.push(rowData);
-    });
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(20, 20, 20);
+      doc.text("B. K. Birla College of Arts, Science & Commerce, Kalyan", doc.internal.pageSize.width / 2, 55, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(50, 50, 50);
+      doc.text("(Empowered Autonomous Status)", doc.internal.pageSize.width / 2, 70, { align: 'center' });
 
-    // Simple Header
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 30, 30);
-    doc.text(`Master Timetable — ${dayCapitalized}`, 30, 30);
+      // Title & Slot Info
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(30, 30, 30);
+      doc.text(`Master Timetable — ${dayCapitalized}`, doc.internal.pageSize.width / 2, 100, { align: 'center' });
 
-    doc.autoTable({
-      startY: 45,
-      head: head,
-      body: body,
-      theme: 'grid',
-      styles: { 
-        fontSize: 8, // Smaller font helps all rooms fit vertically
-        cellPadding: 6, 
-        lineWidth: 0.5, 
-        lineColor: [220, 220, 220], 
-        minCellWidth: 120 // Prevents time columns from squeezing too tight
-      }, 
-      headStyles: { 
-        fillColor: [50, 58, 70], // Sleek Dark Header 
-        textColor: 255, 
-        halign: 'center', 
-        valign: 'middle',
-        fontSize: 9,
-        fontStyle: 'bold'
-      },
-      bodyStyles: {
-        valign: 'middle',
-      },
-      horizontalPageBreak: true, 
-      horizontalPageBreakRepeat: 0, // Keeps "Room / Time" column visible on every split page
-      margin: { top: 45, right: 30, bottom: 40, left: 30 },
+      doc.setFontSize(12);
+      doc.setTextColor(79, 106, 245);
+      doc.text(`Slot: ${timeLabel}`, doc.internal.pageSize.width / 2, 120, { align: 'center' });
+
+      // Table Data
+      if (slot.slot_type !== 'lecture') {
+         const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+         doc.autoTable({
+           startY: 140,
+           body: [[lbl]],
+           theme: 'grid',
+           styles: { halign: 'center', fontSize: 14, fontStyle: 'italic', fillColor: [245, 245, 250], textColor: [120, 120, 120], cellPadding: 20 },
+           margin: { left: 40, right: 40 }
+         });
+      } else {
+         const head = [['Room', 'Class', 'Subject', 'Faculty']];
+         const body = [];
+         rooms.forEach(room => {
+            const entry = ttMap[slot.id]?.[room.id];
+            if (entry) {
+              const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '';
+              const s = entry.subject?.subject_name || '';
+              const f = entry.faculty?.full_name || '';
+              body.push([`Room ${room.room_code}`, c, s, f]);
+            } else {
+              // Greyed out empty room row
+              body.push([
+                { content: `Room ${room.room_code}`, styles: { fontStyle: 'bold' } },
+                { content: '-', colSpan: 3, styles: { halign: 'center', textColor: [180, 180, 180] } }
+              ]);
+            }
+         });
+
+         doc.autoTable({
+           startY: 140,
+           head: head,
+           body: body,
+           theme: 'grid',
+           styles: { fontSize: 10, cellPadding: 7, lineWidth: 0.5, lineColor: [220, 220, 220] },
+           headStyles: { fillColor: [50, 58, 70], textColor: 255, halign: 'left' },
+           columnStyles: { 0: { fontStyle: 'bold', cellWidth: 80, fillColor: [245, 245, 250] } },
+           margin: { left: 40, right: 40, bottom: 40 }
+         });
+      }
     });
 
     doc.save(`Master_Timetable_${dayCapitalized}.pdf`);
@@ -351,58 +355,69 @@
     if (!timeSlots.length || !rooms.length) return toast('No timetable data to export', 'error');
     const dayCapitalized = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
     
-    // Build Excel Data Array (Time ↓ / Room →) matching the Web UI
     const wsData = [];
-    
-    // Headers
-    const headRow = ["Time"];
-    rooms.forEach(r => headRow.push(`Room ${r.room_code}`));
-    wsData.push(headRow);
+    const merges = [];
 
-    // Body
+    // --- Build Multi-level Header ---
+    // Row 1: Time, Room 1 (merged over 3 cols), Room 2 (merged over 3 cols)...
+    const row1 = ["Time"];
+    rooms.forEach((r, idx) => {
+       row1.push(`Room ${r.room_code}`, "", ""); // 3 cells allocated per room
+       // Merge Room header horizontally across 3 columns
+       merges.push({ s: { r: 0, c: 1 + (idx * 3) }, e: { r: 0, c: 3 + (idx * 3) } });
+    });
+    wsData.push(row1);
+
+    // Row 2: Sub-headers for Class, Subject, Teacher
+    const row2 = [""];
+    // Merge Time header vertically across Row 1 & 2
+    merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
+    rooms.forEach(() => {
+       row2.push("Class", "Subject", "Teacher");
+    });
+    wsData.push(row2);
+
+    // --- Build Data Rows ---
+    let rowIndex = 2; // Data starts at index 2
     timeSlots.forEach(slot => {
-      const timeLabel = `${slot.slot_label}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
-      const row = [timeLabel];
+       const timeLabel = `${slot.slot_label}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
+       const row = [timeLabel];
 
-      if (slot.slot_type !== 'lecture') {
-         const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
-         row.push(lbl);
-         // Fill remaining columns with empty strings so merge works properly
-         for (let i = 1; i < rooms.length; i++) row.push(""); 
-      } else {
-         rooms.forEach(room => {
-           const entry = ttMap[slot.id]?.[room.id];
-           if (entry) {
-              const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : 'No Class';
-              const s = entry.subject?.subject_name || 'No Subject';
-              const f = entry.faculty?.full_name || 'No Faculty';
-              // \n is natively supported in .xlsx cells
-              row.push(`Class: ${c}\nSubject: ${s}\nFaculty: ${f}`); 
-           } else {
-              row.push("-");
-           }
-         });
-      }
-      wsData.push(row);
+       if (slot.slot_type !== 'lecture') {
+          const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+          row.push(lbl);
+          // Fill remainder with blanks
+          for (let i = 2; i <= rooms.length * 3; i++) row.push("");
+          // Merge Break row across all room columns
+          merges.push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: rooms.length * 3 } });
+       } else {
+          rooms.forEach(room => {
+             const entry = ttMap[slot.id]?.[room.id];
+             if (entry) {
+                const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '';
+                const s = entry.subject?.subject_name || '';
+                const f = entry.faculty?.full_name || '';
+                // Push Class, Subject, and Teacher into their own separate cells
+                row.push(c, s, f);
+             } else {
+                row.push("-", "-", "-"); // Blank cells
+             }
+          });
+       }
+       wsData.push(row);
+       rowIndex++;
     });
 
     // Create Worksheet
     const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!merges'] = merges;
 
-    // Add merges for break rows
-    if (!ws['!merges']) ws['!merges'] = [];
-    let rowIndex = 1; // Start at 1 (0 is header row)
-    timeSlots.forEach(slot => {
-       if (slot.slot_type !== 'lecture') {
-          // Merge from column index 1 to rooms.length for this row
-          ws['!merges'].push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: rooms.length } });
-       }
-       rowIndex++;
+    // Define Column Widths to fit the separate data neatly
+    const cols = [{ wch: 18 }]; // Time column
+    rooms.forEach(() => {
+       cols.push({ wch: 14 }, { wch: 22 }, { wch: 22 }); // Class, Subject, Teacher
     });
-
-    // Set column widths for better readability
-    ws['!cols'] = [{ wch: 15 }]; // Time column width
-    rooms.forEach(() => ws['!cols'].push({ wch: 30 })); // Room column width
+    ws['!cols'] = cols;
 
     // Create Workbook and save
     const wb = XLSX.utils.book_new();
