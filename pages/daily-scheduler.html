@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
   
+  <!-- PDF & Excel Export Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -183,6 +184,7 @@
   </div>
 </main>
 
+<!-- Cell modal -->
 <div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
@@ -216,6 +218,7 @@
   </div>
 </div>
 
+<!-- Regenerate confirm modal -->
 <div class="modal-back" id="regenModal">
   <div class="modal" style="max-width:400px">
     <div class="modal-header">
@@ -475,37 +478,38 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
   
   const { jsPDF } = window.jspdf;
 
-  // 1. Group Time Slots rigorously by Lecture block (+ attached break)
+  // 1. Group Time Slots rigorously by "Slot 1", "Slot 2", etc.
   const slotGroups = [];
-  let currentGroup = null;
+  let currentGroupName = 'Slot 1'; 
+  let currentGroupSlots = [];
 
   timeSlots.forEach(slot => {
-      if (slot.slot_type === 'lecture') {
-          if (currentGroup) slotGroups.push(currentGroup);
-          currentGroup = { name: slot.slot_label || 'Lecture', slots: [slot] };
-      } else {
-          if (currentGroup) {
-              currentGroup.slots.push(slot);
-          } else {
-              currentGroup = { name: slot.slot_label || 'Break', slots: [slot] };
+      // Detect if label contains 'Slot X'
+      const match = (slot.slot_label || '').match(/Slot\s*\d+/i);
+      if (match) {
+          const newName = match[0];
+          // If we transitioned to a new slot (e.g. from Slot 1 to Slot 2)
+          if (newName !== currentGroupName && currentGroupSlots.length > 0) {
+              slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
+              currentGroupSlots = [];
+              currentGroupName = newName;
           }
       }
+      currentGroupSlots.push(slot);
   });
-  if (currentGroup) slotGroups.push(currentGroup);
+  if (currentGroupSlots.length > 0) {
+      slotGroups.push({ name: currentGroupName, slots: currentGroupSlots });
+  }
 
-  // 2. DYNAMIC PAGE HEIGHT CALCULATION
-  // Ensures ALL rooms fit exactly onto ONE single page without splitting.
-  // 30pt base padding + (45pt row height * number of rooms)
+  // Calculate dynamic page height to guarantee no page splitting
   const requiredHeight = 120 + (rooms.length * 45); 
-  const pageHeight = Math.max(842, requiredHeight); // Never smaller than standard A4 (842)
-  const pageWidth = 595.28; // Standard A4 Width
+  const pageHeight = Math.max(842, requiredHeight); // Never smaller than A4
+  const pageWidth = 595.28; // Standard A4 width
 
-  // Initialize PDF with the custom dynamic size
   const doc = new jsPDF('p', 'pt', [pageWidth, pageHeight]);
 
-  // 3. Generate One Group Per Page
+  // Generate 1 Page Per Group
   slotGroups.forEach((group, index) => {
-    // For pages after the first, add a page with the exact same custom height
     if (index > 0) doc.addPage([pageWidth, pageHeight], 'p');
 
     const headRow = ['Room / Time'];
@@ -546,14 +550,12 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
       body.push(rowData);
     });
 
-    // Clean Simple Title (No college header)
+    // Clean Title (No college header)
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
-    const displayGroup = group.name === 'Schedule' ? '' : ` (${group.name})`;
-    doc.text(`Daily Schedule — ${selectedDate}${displayGroup}`, 30, 40);
+    doc.text(`Daily Schedule — ${selectedDate} (${group.name})`, 30, 40);
 
-    // Auto-scaling single page table
     doc.autoTable({
       startY: 60,
       head: head,
@@ -575,7 +577,7 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
       },
       bodyStyles: { valign: 'middle' },
       margin: { top: 60, right: 30, bottom: 40, left: 30 },
-      pageBreak: 'avoid' // Explicitly prevent any internal splitting
+      pageBreak: 'avoid'
     });
   });
 
