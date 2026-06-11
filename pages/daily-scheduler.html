@@ -482,7 +482,7 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
   rooms.forEach(r => headRow.push(`Room ${r.room_code}`));
   const head = [headRow];
   
-  // Build Body (ALL slots in one array, no grouping)
+  // Build Body (ALL slots in one continuous table)
   const body = [];
   timeSlots.forEach(slot => {
     const timeLabel = `${slot.slot_label || ''}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
@@ -519,9 +519,10 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
   // Title
   doc.setFontSize(24);
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
   doc.text(`Daily Schedule — ${selectedDate}`, 60, 80);
 
-  // Single Table Render (Entire schedule fits in one block on A1)
+  // Single Table Render
   doc.autoTable({
     startY: 120,
     head: head,
