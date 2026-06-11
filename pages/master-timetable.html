@@ -189,11 +189,9 @@
   let courses = [];
   let timeSlots = [], rooms = [], ttMap = {};
   
-  // Modal state
   let modalTimeSlotId = null, modalRoomId = null, modalRoomCode = '';
   let existingEntry = null, tsCourse = null, tsCSF = null, csfOptions = [];
 
-  // ── Day type toggle ────────────────────────────────────────────────
   document.querySelectorAll('.day-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
@@ -203,7 +201,6 @@
     });
   });
 
-  // ── Load & Render Grid ─────────────────────────────────────────────
   async function loadGrid() {
     document.getElementById('gridContainer').innerHTML =
       '<div class="grid-placeholder grid-wrap"><div><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading…</div></div>';
@@ -217,11 +214,11 @@
       renderGrid();
     } catch(e) {
       toast(e.message, 'error');
-      document.getElementById('gridContainer').innerHTML =
-        '<div class="grid-placeholder grid-wrap"><div>Failed to load timetable.</div></div>';
+      document.getElementById('gridContainer').innerHTML = '<div class="grid-placeholder grid-wrap"><div>Failed to load timetable.</div></div>';
     }
   }
 
+  // Render Grid in UI (Time ↓ / Room →)
   function renderGrid() {
     const colCount  = 1 + rooms.length;
     const gridStyle = `grid-template-columns: 88px repeat(${rooms.length}, minmax(110px,1fr))`;
@@ -267,7 +264,7 @@
     });
   }
 
-  // ── Exports (PDF & Excel) ──────────────────────────────────────────
+  // ── Exports (Room ↓ / Time →) ──────────────────────────────────────────
   document.getElementById('exportPdfBtn').addEventListener('click', () => {
     if (!timeSlots.length || !rooms.length) return toast('No timetable data to export', 'error');
     
@@ -275,55 +272,69 @@
     const doc = new jsPDF('landscape', 'pt', 'a4');
     const dayCapitalized = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
 
-    // Header Text
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text("B. K. BIRLA COLLEGE, KALYAN", doc.internal.pageSize.width / 2, 40, { align: 'center' });
-    
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Master Timetable — ${dayCapitalized}`, doc.internal.pageSize.width / 2, 60, { align: 'center' });
-
-    // Table Setup
-    const head = [['Time', ...rooms.map(r => `Room ${r.room_code}`)]];
-    const body = [];
-
+    // Build Table (Room ↓ / Time →)
+    const headRow = ['Room / Time'];
     timeSlots.forEach(slot => {
-      const timeStr = `${slot.slot_label}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
+      headRow.push(`${slot.slot_label}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`);
+    });
+    const head = [headRow];
+    
+    const body = [];
+    rooms.forEach(room => {
+      const rowData = [{ content: `Room ${room.room_code}`, styles: { fontStyle: 'bold', halign: 'center', valign: 'middle', fillColor: [240, 240, 245] } }];
       
-      if (slot.slot_type !== 'lecture') {
-        const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
-        body.push([
-          { content: timeStr, styles: { fontStyle: 'bold', halign: 'center', valign: 'middle' } },
-          { content: lbl, colSpan: rooms.length, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', fillColor: [245, 245, 245], textColor: [100, 100, 100] } }
-        ]);
-      } else {
-        const rowData = [{ content: timeStr, styles: { fontStyle: 'bold', halign: 'center', valign: 'middle' } }];
-        rooms.forEach(room => {
-           const entry = ttMap[slot.id]?.[room.id];
-           if (entry) {
-              const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '';
-              const s = entry.subject?.subject_name || '';
-              const f = entry.faculty?.full_name || '';
-              rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle' } });
-           } else {
-              rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [180, 180, 180] } });
-           }
-        });
-        body.push(rowData);
-      }
+      timeSlots.forEach(slot => {
+        if (slot.slot_type !== 'lecture') {
+          const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+          rowData.push({ content: lbl, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [120, 120, 120] } });
+        } else {
+          const entry = ttMap[slot.id]?.[room.id];
+          if (entry) {
+            const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '';
+            const s = entry.subject?.subject_name || '';
+            const f = entry.faculty?.full_name || '';
+            rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle' } });
+          } else {
+            rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
+          }
+        }
+      });
+      body.push(rowData);
     });
 
     doc.autoTable({
-      startY: 75,
+      startY: 120, // Start table below the large header
       head: head,
       body: body,
       theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 4, lineWidth: 0.5, lineColor: [210, 210, 210] },
+      // minCellWidth: 160 forces time slots to be wide and readable, automatically overflowing cleanly onto exactly 2-3 pages.
+      styles: { fontSize: 8, cellPadding: 6, lineWidth: 0.5, lineColor: [210, 210, 210], minCellWidth: 160 }, 
       headStyles: { fillColor: [79, 106, 245], textColor: 255, halign: 'center', valign: 'middle' },
-      // CRITICAL: Handles overflow cleanly if columns > page width, repeating the Time column on the next page segment!
       horizontalPageBreak: true, 
-      horizontalPageBreakRepeat: 0, 
+      horizontalPageBreakRepeat: 0, // Keeps the "Room / Time" column visible on every split page
+      margin: { top: 120, right: 30, bottom: 40, left: 30 },
+      didDrawPage: function (data) {
+        // --- Official College Header (Repeats on every generated page) ---
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(50, 50, 50);
+        doc.text("Kalyan Citizens' Education Society's", doc.internal.pageSize.width / 2, 35, { align: 'center' });
+        
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(20, 20, 20);
+        doc.text("B. K. Birla College of Arts, Science & Commerce, Kalyan", doc.internal.pageSize.width / 2, 55, { align: 'center' });
+        
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(50, 50, 50);
+        doc.text("(Empowered Autonomous Status)", doc.internal.pageSize.width / 2, 70, { align: 'center' });
+
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        const pageInfo = data.pageCount > 1 ? ` (Part ${data.pageNumber})` : '';
+        doc.text(`Master Timetable — ${dayCapitalized}${pageInfo}`, doc.internal.pageSize.width / 2, 95, { align: 'center' });
+      }
     });
 
     doc.save(`Master_Timetable_${dayCapitalized}.pdf`);
@@ -334,20 +345,19 @@
     const dayCapitalized = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
     
     let csv = [];
-    // Header
-    let headRow = ['Time'];
-    rooms.forEach(r => headRow.push(`Room ${r.room_code}`));
+    // Header (Room ↓ / Time →)
+    let headRow = ['"Room / Time"'];
+    timeSlots.forEach(s => headRow.push(`"${s.slot_label}\n${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}"`));
     csv.push(headRow.join(','));
 
     // Body
-    timeSlots.forEach(slot => {
-      let row = [`"${slot.slot_label}\n${slot.start_time.slice(0,5)}-${slot.end_time.slice(0,5)}"`];
-      if (slot.slot_type !== 'lecture') {
-         let lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
-         row.push(`"${lbl}"`);
-         for(let i=1; i<rooms.length; i++) row.push('""'); // Empty cells for the rest of the merged row
-      } else {
-         rooms.forEach(room => {
+    rooms.forEach(room => {
+      let row = [`"Room ${room.room_code}"`];
+      timeSlots.forEach(slot => {
+        if (slot.slot_type !== 'lecture') {
+           const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+           row.push(`"${lbl}"`);
+        } else {
            const entry = ttMap[slot.id]?.[room.id];
            if (entry) {
               const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '';
@@ -355,10 +365,10 @@
               const f = entry.faculty?.full_name || '';
               row.push(`"${c}\n${s}\n${f}"`);
            } else {
-              row.push('""');
+              row.push('""'); // Empty string for blank cells
            }
-         });
-      }
+        }
+      });
       csv.push(row.join(','));
     });
 
