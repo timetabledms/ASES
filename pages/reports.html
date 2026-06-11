@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>ASES — Reports</title>
   
+  <!-- Shared Theme CSS -->
   <link rel="stylesheet" href="/css/theme.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
@@ -25,7 +26,7 @@
     .report-header{display:flex;align-items:center;justify-content:space-between;
       margin-bottom:1rem;flex-wrap:wrap;gap:.75rem}
     .report-title{font-family:var(--ff-display);font-size:1.2rem;color:var(--text-primary)}
-    .export-btns{display:flex;gap:.5rem}
+    .export-btns{display:flex;gap:.5rem;align-items:center}
     .filter-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
       padding:1rem 1.25rem;margin-bottom:1rem;
       display:flex;align-items:flex-end;gap:.75rem;flex-wrap:wrap;
@@ -48,18 +49,25 @@
       padding:.55rem .85rem;display:flex;justify-content:space-between;align-items:center;font-size:.82rem}
     .leave-type-chip strong{color:var(--accent)}
 
-    /* Prevent Tom Select from wrapping text to the next line */
+    /* Force Tom Select visibility in hidden tabs & prevent wrapping */
+    .ts-wrapper { width: 100% !important; min-width: 140px; }
     .ts-wrapper.single .ts-control { display: flex !important; flex-wrap: nowrap !important; align-items: center; overflow: hidden !important; }
     .ts-wrapper.single .ts-control .item { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; max-width: 95% !important; pointer-events: none; }
     .ts-wrapper.single .ts-control input { min-width: 0 !important; }
     
-    /* Force tables to occupy full container width */
+    /* Table Search and Sorting UI */
     .table-wrap { width: 100%; overflow-x: auto; }
     .table-wrap table { width: 100% !important; table-layout: fixed; }
+    .table-search { padding: 0.45rem 0.8rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; min-width: 220px; background: var(--bg-input); color: var(--text-primary); outline: none; transition: border-color 0.2s; }
+    .table-search:focus { border-color: var(--accent); }
+    th.sortable { cursor: pointer; position: relative; padding-right: 1.5rem !important; user-select: none; transition: background 0.2s; }
+    th.sortable:hover { background: rgba(0,0,0,0.04); }
+    th.sortable::after { content: '↕'; position: absolute; right: 0.4rem; color: var(--text-muted); opacity: 0.4; font-size: 0.9rem; font-weight: normal; }
   </style>
 </head>
 <body>
 
+<!-- ── Sidebar ── -->
 <aside class="sidebar">
   <div class="sidebar-college" id="sidebarCollege"></div>
   <nav id="sideNav"></nav>
@@ -81,6 +89,7 @@
   </div>
 </aside>
 
+<!-- ── Main ── -->
 <main class="main">
   <div class="topbar">
     <div><h1 class="page-title">Reports</h1><p class="page-subtitle">Analyse lecture execution, attendance, leaves, and modifications</p></div>
@@ -88,6 +97,7 @@
   <div class="content">
     <div class="report-layout">
 
+      <!-- Report navigation -->
       <div class="report-nav" id="reportNav">
         <div class="report-nav-label">Execution</div>
         <button class="report-nav-btn active" data-report="r1">1. Daily Summary</button>
@@ -105,12 +115,15 @@
         <button class="report-nav-btn" data-report="r3">8. Leave Summary</button>
       </div>
 
+      <!-- Report panels -->
       <div class="report-panel">
 
+        <!-- R1: Daily Summary -->
         <div class="report-section active" id="r1">
           <div class="report-header">
             <div class="report-title">Daily Summary</div>
             <div class="export-btns">
+              <input type="text" id="r1Search" class="table-search" placeholder="🔍 Search table..."/>
               <button class="btn btn-ghost btn-sm" id="r1ExportPdf"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>PDF</button>
               <button class="btn btn-ghost btn-sm" id="r1ExportXls"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>Excel</button>
             </div>
@@ -121,13 +134,15 @@
           </div>
           <div class="stat-chips" id="r1Stats" style="display:none"></div>
           <div class="result-count" id="r1Count"></div>
-          <div class="table-wrap"><table><thead><tr><th>Time</th><th>Room</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th><th>Flags</th></tr></thead><tbody id="r1Body"><tr class="empty-row"><td colspan="7">Select a date and run report.</td></tr></tbody></table></div>
+          <div class="table-wrap"><table id="r1Table"><thead><tr><th>Time</th><th>Room</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th><th>Flags</th></tr></thead><tbody id="r1Body"><tr class="empty-row"><td colspan="7">Select a date and run report.</td></tr></tbody></table></div>
         </div>
 
+        <!-- R2: Faculty Lectures -->
         <div class="report-section" id="r2">
           <div class="report-header">
             <div class="report-title">Faculty Lectures</div>
             <div class="export-btns">
+              <input type="text" id="r2Search" class="table-search" placeholder="🔍 Search table..."/>
               <button class="btn btn-ghost btn-sm" id="r2ExportPdf">PDF</button>
               <button class="btn btn-ghost btn-sm" id="r2ExportXls">Excel</button>
             </div>
@@ -143,13 +158,15 @@
           </div>
           <div class="mini-stats" id="r2MiniStats" style="display:none"></div>
           <div class="result-count" id="r2Count"></div>
-          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Status</th><th>Flags</th><th>Remarks</th></tr></thead><tbody id="r2Body"><tr class="empty-row"><td colspan="7">Set filters and run.</td></tr></tbody></table></div>
+          <div class="table-wrap"><table id="r2Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Status</th><th>Flags</th><th>Remarks</th></tr></thead><tbody id="r2Body"><tr class="empty-row"><td colspan="7">Set filters and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- R3: Leave Summary -->
         <div class="report-section" id="r3">
           <div class="report-header">
             <div class="report-title">Faculty Leave Summary</div>
             <div class="export-btns">
+              <input type="text" id="r3Search" class="table-search" placeholder="🔍 Search table..."/>
               <button class="btn btn-ghost btn-sm" id="r3ExportPdf">PDF</button>
               <button class="btn btn-ghost btn-sm" id="r3ExportXls">Excel</button>
             </div>
@@ -161,14 +178,16 @@
             <button class="btn btn-primary btn-sm" id="r3Run">Run</button>
           </div>
           <div class="result-count" id="r3Count"></div>
-          <div class="table-wrap"><table><thead><tr><th>Faculty</th><th>Date</th><th>Leave Type</th><th>Reason</th><th>Status</th></tr></thead><tbody id="r3Body"><tr class="empty-row"><td colspan="5">Set filters and run.</td></tr></tbody></table></div>
+          <div class="table-wrap"><table id="r3Table"><thead><tr><th>Faculty</th><th>Date</th><th>Leave Type</th><th>Reason</th><th>Status</th></tr></thead><tbody id="r3Body"><tr class="empty-row"><td colspan="5">Set filters and run.</td></tr></tbody></table></div>
           <div id="r3Summary" style="margin-top:1rem"></div>
         </div>
 
+        <!-- R4: By Course -->
         <div class="report-section" id="r4">
           <div class="report-header">
             <div class="report-title">By Course</div>
             <div class="export-btns">
+              <input type="text" id="r4Search" class="table-search" placeholder="🔍 Search table..."/>
               <button class="btn btn-ghost btn-sm" id="r4ExportPdf">PDF</button>
               <button class="btn btn-ghost btn-sm" id="r4ExportXls">Excel</button>
             </div>
@@ -181,13 +200,15 @@
             <button class="btn btn-primary btn-sm" id="r4Run">Run</button>
           </div>
           <div class="result-count" id="r4Count"></div>
-          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Subject</th><th>Faculty</th><th>Room</th><th>Status</th><th>Flags</th></tr></thead><tbody id="r4Body"><tr class="empty-row"><td colspan="7">Select course and run.</td></tr></tbody></table></div>
+          <div class="table-wrap"><table id="r4Table"><thead><tr><th>Date</th><th>Time</th><th>Subject</th><th>Faculty</th><th>Room</th><th>Status</th><th>Flags</th></tr></thead><tbody id="r4Body"><tr class="empty-row"><td colspan="7">Select course and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- R5: By Subject -->
         <div class="report-section" id="r5">
           <div class="report-header">
             <div class="report-title">By Subject</div>
             <div class="export-btns">
+              <input type="text" id="r5Search" class="table-search" placeholder="🔍 Search table..."/>
               <button class="btn btn-ghost btn-sm" id="r5ExportPdf">PDF</button>
               <button class="btn btn-ghost btn-sm" id="r5ExportXls">Excel</button>
             </div>
@@ -201,13 +222,15 @@
             <button class="btn btn-primary btn-sm" id="r5Run">Run</button>
           </div>
           <div class="result-count" id="r5Count"></div>
-          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Faculty</th><th>Room</th><th>Status</th></tr></thead><tbody id="r5Body"><tr class="empty-row"><td colspan="6">Select subject and run.</td></tr></tbody></table></div>
+          <div class="table-wrap"><table id="r5Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Faculty</th><th>Room</th><th>Status</th></tr></thead><tbody id="r5Body"><tr class="empty-row"><td colspan="6">Select subject and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- R6: By Room -->
         <div class="report-section" id="r6">
           <div class="report-header">
             <div class="report-title">By Room</div>
             <div class="export-btns">
+              <input type="text" id="r6Search" class="table-search" placeholder="🔍 Search table..."/>
               <button class="btn btn-ghost btn-sm" id="r6ExportPdf">PDF</button>
               <button class="btn btn-ghost btn-sm" id="r6ExportXls">Excel</button>
             </div>
@@ -219,13 +242,15 @@
             <button class="btn btn-primary btn-sm" id="r6Run">Run</button>
           </div>
           <div class="result-count" id="r6Count"></div>
-          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th></tr></thead><tbody id="r6Body"><tr class="empty-row"><td colspan="6">Select room and run.</td></tr></tbody></table></div>
+          <div class="table-wrap"><table id="r6Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th></tr></thead><tbody id="r6Body"><tr class="empty-row"><td colspan="6">Select room and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- R7: Modifications Log -->
         <div class="report-section" id="r7">
           <div class="report-header">
             <div class="report-title">Modifications Log</div>
             <div class="export-btns">
+              <input type="text" id="r7Search" class="table-search" placeholder="🔍 Search table..."/>
               <button class="btn btn-ghost btn-sm" id="r7ExportPdf">PDF</button>
               <button class="btn btn-ghost btn-sm" id="r7ExportXls">Excel</button>
             </div>
@@ -244,13 +269,15 @@
             <button class="btn btn-primary btn-sm" id="r7Run">Run</button>
           </div>
           <div class="result-count" id="r7Count"></div>
-          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Flags</th><th>Note</th></tr></thead><tbody id="r7Body"><tr class="empty-row"><td colspan="7">Set date range and run.</td></tr></tbody></table></div>
+          <div class="table-wrap"><table id="r7Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Flags</th><th>Note</th></tr></thead><tbody id="r7Body"><tr class="empty-row"><td colspan="7">Set date range and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- R8: Not Engaged / Not Marked -->
         <div class="report-section" id="r8">
           <div class="report-header">
             <div class="report-title">Not Engaged / Not Marked</div>
             <div class="export-btns">
+              <input type="text" id="r8Search" class="table-search" placeholder="🔍 Search table..."/>
               <button class="btn btn-ghost btn-sm" id="r8ExportPdf">PDF</button>
               <button class="btn btn-ghost btn-sm" id="r8ExportXls">Excel</button>
             </div>
@@ -266,13 +293,15 @@
             <button class="btn btn-primary btn-sm" id="r8Run">Run</button>
           </div>
           <div class="result-count" id="r8Count"></div>
-          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th><th>Remarks</th></tr></thead><tbody id="r8Body"><tr class="empty-row"><td colspan="7">Set filters and run.</td></tr></tbody></table></div>
+          <div class="table-wrap"><table id="r8Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th><th>Remarks</th></tr></thead><tbody id="r8Body"><tr class="empty-row"><td colspan="7">Set filters and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- R9: Rescheduled Slots -->
         <div class="report-section" id="r9">
           <div class="report-header">
             <div class="report-title">Rescheduled Slots</div>
             <div class="export-btns">
+              <input type="text" id="r9Search" class="table-search" placeholder="🔍 Search table..."/>
               <button class="btn btn-ghost btn-sm" id="r9ExportPdf">PDF</button>
               <button class="btn btn-ghost btn-sm" id="r9ExportXls">Excel</button>
             </div>
@@ -283,9 +312,10 @@
             <button class="btn btn-primary btn-sm" id="r9Run">Run</button>
           </div>
           <div class="result-count" id="r9Count"></div>
-          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Room</th><th>Course</th><th>New Subject</th><th>New Faculty</th></tr></thead><tbody id="r9Body"><tr class="empty-row"><td colspan="6">Set date range and run.</td></tr></tbody></table></div>
+          <div class="table-wrap"><table id="r9Table"><thead><tr><th>Date</th><th>Time</th><th>Room</th><th>Course</th><th>New Subject</th><th>New Faculty</th></tr></thead><tbody id="r9Body"><tr class="empty-row"><td colspan="6">Set date range and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- RC1: Daily Execution Report -->
         <div class="report-section" id="rc1">
           <div class="report-header">
             <div class="report-title">Daily Execution Report</div>
@@ -297,18 +327,22 @@
             <div class="field"><label>Date</label><input type="text" id="rc1Date" placeholder="Pick date" readonly/></div>
             <button class="btn btn-primary btn-sm" id="rc1Run">Run Report</button>
           </div>
+          <!-- Stat summary -->
           <div id="rc1Stats" style="display:none;margin-bottom:1rem">
             <div class="mini-stats" id="rc1MiniStats"></div>
           </div>
+          <!-- Colour-coded timetable grid -->
           <div style="overflow-x:auto"><div id="rc1Grid">
             <div style="padding:2rem;text-align:center;color:var(--text-muted)">Select a date and run report.</div>
           </div></div>
         </div>
 
+        <!-- RC2: Faculty Load Report -->
         <div class="report-section" id="rc2">
           <div class="report-header">
             <div class="report-title">Faculty Load Report</div>
             <div class="export-btns">
+              <input type="text" id="rc2Search" class="table-search" placeholder="🔍 Search table..."/>
               <button class="btn btn-ghost btn-sm" id="rc2ExportPdf">PDF</button>
               <button class="btn btn-ghost btn-sm" id="rc2ExportXls">Excel</button>
             </div>
@@ -331,10 +365,13 @@
           </div>
         </div>
 
-      </div></div></div>
+      </div><!-- /report-panel -->
+    </div><!-- /report-layout -->
+  </div>
 </main>
 <div id="toast"></div>
 
+<!-- CDN libs -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -381,8 +418,14 @@
     });
   });
 
-  // ── Load dropdowns ────────────────────────────────────────────────
+  // ── Load & Sort Dropdowns ─────────────────────────────────────────
   const { faculty, courses, subjects, rooms } = await getReportDropdowns();
+
+  // Explicitly SORT all dropdown options alphabetically by Name
+  faculty.sort((a,b) => (a.full_name||'').localeCompare(b.full_name||''));
+  courses.sort((a,b) => courseLbl(a).localeCompare(courseLbl(b)));
+  subjects.sort((a,b) => (a.subject_name||'').localeCompare(b.subject_name||''));
+  rooms.sort((a,b) => (a.room_code||'').localeCompare(b.room_code||''));
 
   function populateSelect(selId, items, labelFn, valueFn, placeholder='All') {
     const sel = document.getElementById(selId);
@@ -416,11 +459,53 @@
    'r6From','r6To','r8From','r8To','r9From','r9To','rc1Date','rc2From','rc2To']
     .forEach(id => flatpickr('#'+id, fpOpts));
 
-  // ── Tom Select inits (Applies Filter options heavily to all dropdowns) ───
+  // ── Tom Select inits (Filters Dropdowns) ──────────────────────────
   ['r2Faculty','r3Faculty','r4Course','r5Subject','r5Faculty',
    'r6Room','r8Faculty','r8Course','rc2Faculty','r2Status',
    'r4Status','r5Status','r7ModType','r8Status'].forEach(id => {
     try { new TomSelect('#'+id, { allowEmptyOption:true }); } catch {}
+  });
+
+  // ── UI Table Sorting & Filtering (Universal Function) ─────────────
+  function bindTableFilter(inputId, tbodyId) {
+    const input = document.getElementById(inputId);
+    if(!input) return;
+    input.addEventListener('input', function() {
+      const val = this.value.toLowerCase();
+      const rows = document.getElementById(tbodyId).querySelectorAll('tr:not(.empty-row)');
+      rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(val) ? '' : 'none'; });
+    });
+  }
+
+  function makeTableSortable(tableId, tbodyId) {
+    const table = document.getElementById(tableId);
+    if(!table) return;
+    const headers = table.querySelectorAll('thead th');
+    headers.forEach((th, i) => {
+      th.classList.add('sortable');
+      th.title = "Click to sort column";
+      th.addEventListener('click', () => {
+        const tbody = document.getElementById(tbodyId);
+        const rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row)'));
+        if(!rows.length) return;
+        
+        const isAsc = th.dataset.sort !== 'asc';
+        th.dataset.sort = isAsc ? 'asc' : 'desc';
+        
+        rows.sort((a, b) => {
+          const aTxt = a.children[i]?.textContent.trim() || '';
+          const bTxt = b.children[i]?.textContent.trim() || '';
+          return isAsc ? aTxt.localeCompare(bTxt, undefined, {numeric: true}) 
+                       : bTxt.localeCompare(aTxt, undefined, {numeric: true});
+        });
+        rows.forEach(r => tbody.appendChild(r));
+      });
+    });
+  }
+
+  ['r1','r2','r3','r4','r5','r6','r7','r8','r9','rc2'].forEach(prefix => {
+    bindTableFilter(`${prefix}Search`, `${prefix}Body`);
+    makeTableSortable(`${prefix}Table`, `${prefix}Body`);
   });
 
   // ── Helpers ───────────────────────────────────────────────────────
@@ -456,14 +541,13 @@
     const date = document.getElementById('r1Date').value;
     if (!date) { toast('Pick a date.', 'warn'); return; }
     loadingRow('r1Body', 7);
+    document.getElementById('r1Search').value = '';
     try {
       const [stats, rows] = await Promise.all([getDailyStats(date), getDailyFullTable(date)]);
       
-      // Default Sort: By Time Slot
       rows.sort((a,b) => (a.time_slot?.sort_order ?? 0) - (b.time_slot?.sort_order ?? 0));
       r1Data = rows;
 
-      // Stat chips
       const sc = document.getElementById('r1Stats');
       sc.style.display = '';
       sc.innerHTML = [
@@ -543,10 +627,10 @@
       faculty_status: document.getElementById('r2Status').value || null
     };
     loadingRow('r2Body', 7);
+    document.getElementById('r2Search').value = '';
     try {
       let rows = await getFilteredReport(filters, session.role, myFacultyId);
       
-      // Default Sort: Faculty Name, then Date, then Time
       rows.sort((a,b) => {
          const nameA = a.actual_faculty?.full_name || '';
          const nameB = b.actual_faculty?.full_name || '';
@@ -556,7 +640,6 @@
       });
       r2Data = rows;
 
-      // Stats
       let onTime=0,late=0,notEngaged=0,notMarked=0;
       rows.forEach(r => {
         if(r.faculty_status==='on_time')onTime++; else if(r.faculty_status==='late')late++;
@@ -605,10 +688,10 @@
     const from = document.getElementById('r3From').value;
     const to   = document.getElementById('r3To').value;
     loadingRow('r3Body', 5);
+    document.getElementById('r3Search').value = '';
     try {
       const { rows, summary } = await getFacultyLeaveSummary(fId||null, from||null, to||null);
       
-      // Default Sort: Faculty Name, then Date
       rows.sort((a,b) => {
          const nameA = a.faculty?.full_name || '';
          const nameB = b.faculty?.full_name || '';
@@ -628,7 +711,6 @@
         <td><span class="badge ${r.status==='approved'?'badge-active':'badge-inactive'}">${r.status}</span></td>
       </tr>`).join('');
       
-      // Summary by faculty
       const sumEl = document.getElementById('r3Summary');
       summary.sort((a,b) => (a.faculty?.full_name||'').localeCompare(b.faculty?.full_name||''));
       sumEl.innerHTML = summary.map(s => `
@@ -663,12 +745,12 @@
     const courseId = document.getElementById('r4Course').value;
     if (!courseId) { toast('Select a course.','warn'); return; }
     loadingRow('r4Body',7);
+    document.getElementById('r4Search').value = '';
     try {
       let rows = await getFilteredReport({courseId, fromDate:document.getElementById('r4From').value||null,
         toDate:document.getElementById('r4To').value||null, faculty_status:document.getElementById('r4Status').value||null},
         session.role, myFacultyId);
         
-      // Default Sort: Course Name, Date, Time
       rows.sort((a,b) => {
          const cA = courseLbl(a.daily_schedule?.course);
          const cB = courseLbl(b.daily_schedule?.course);
@@ -709,12 +791,12 @@
     const subjectId = document.getElementById('r5Subject').value;
     if(!subjectId){toast('Select a subject.','warn');return;}
     loadingRow('r5Body',6);
+    document.getElementById('r5Search').value = '';
     try {
       let rows = await getFilteredReport({subjectId, fromDate:document.getElementById('r5From').value||null,
         toDate:document.getElementById('r5To').value||null, facultyId:document.getElementById('r5Faculty').value||null,
         faculty_status:document.getElementById('r5Status').value||null}, session.role, myFacultyId);
         
-      // Default Sort: Subject Name, Date, Time
       rows.sort((a,b) => {
          const sA = a.daily_schedule?.subject?.subject_name || '';
          const sB = b.daily_schedule?.subject?.subject_name || '';
@@ -754,11 +836,11 @@
     const roomId=document.getElementById('r6Room').value;
     if(!roomId){toast('Select a room.','warn');return;}
     loadingRow('r6Body',6);
+    document.getElementById('r6Search').value = '';
     try {
       let rows = await getFilteredReport({roomId, fromDate:document.getElementById('r6From').value||null,
         toDate:document.getElementById('r6To').value||null}, session.role, myFacultyId);
         
-      // Default Sort: Room Code, Date, Time
       rows.sort((a,b) => {
          const rA = a.daily_schedule?.room?.room_code || '';
          const rB = b.daily_schedule?.room?.room_code || '';
@@ -803,10 +885,10 @@
     if(modType==='room')     filters.isRoomChanged=true;
     if(modType==='replaced') filters.isReplaced=true;
     loadingRow('r7Body',7);
+    document.getElementById('r7Search').value = '';
     try {
       let rows = await getFilteredReport(filters, session.role, myFacultyId);
       
-      // Default Sort: Faculty Name, Date, Time
       rows.sort((a,b) => {
          const nameA = a.actual_faculty?.full_name || '';
          const nameB = b.actual_faculty?.full_name || '';
@@ -854,12 +936,12 @@
       facultyId:document.getElementById('r8Faculty').value||null,
       courseId:document.getElementById('r8Course').value||null};
     loadingRow('r8Body',7);
+    document.getElementById('r8Search').value = '';
     try {
       let rows = await getFilteredReport(filters, session.role, myFacultyId);
       if(statusSel) rows=rows.filter(r=>r.faculty_status===statusSel);
       else rows=rows.filter(r=>r.faculty_status==='not_engaged'||r.faculty_status==='not_marked');
       
-      // Default Sort: Faculty Name, Date, Time
       rows.sort((a,b) => {
          const nameA = a.actual_faculty?.full_name || '';
          const nameB = b.actual_faculty?.full_name || '';
@@ -900,13 +982,13 @@
   let r9Data = [];
   document.getElementById('r9Run').addEventListener('click', async () => {
     loadingRow('r9Body',6);
+    document.getElementById('r9Search').value = '';
     try {
       let rows = await getRescheduledSlots(
         document.getElementById('r9From').value||null,
         document.getElementById('r9To').value||null
       );
       
-      // Default Sort: Faculty Name, Date, Time
       rows.sort((a,b) => {
          const nameA = a.assigned_faculty?.full_name || '';
          const nameB = b.assigned_faculty?.full_name || '';
@@ -942,12 +1024,11 @@
   }));
 
   // ══════════════════════════════════════════════════════════════════
-  // RC1 — Daily Execution Report (colour-coded timetable grid)
+  // RC1 — Daily Execution Report
   // ══════════════════════════════════════════════════════════════════
   let rc1Date = '';
   let rc1Rooms = [], rc1Slots = [], rc1ScheduleMap = {}, rc1ExecMap = {};
 
-  // Status colours for UI and PDF
   const RC1_STATUS_BG  = {on_time:'#d4f7e7',late:'#fff3cd',not_engaged:'#fde8ea',not_marked:'#f0f0f0'};
   const RC1_STATUS_COL = {on_time:'#1a7a4a',late:'#8a6000',not_engaged:'#a01828',not_marked:'#666'};
   const RC1_STATUS_LBL = {on_time:'On Time',late:'Late',not_engaged:'Not Engaged',not_marked:'Not Marked'};
@@ -1025,7 +1106,6 @@
     }
     const cols=`grid-template-columns:86px repeat(${rc1Rooms.length},minmax(108px,1fr))`;
     let h=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden">`;
-    // Header
     h+=`<div style="display:grid;${cols};border-bottom:1px solid var(--border);background:rgba(26,34,68,.06)">`;
     h+=`<div style="padding:.55rem .65rem;font-size:.64rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);border-right:1px solid var(--border)">Time</div>`;
     rc1Rooms.forEach(r=>{h+=`<div style="padding:.55rem .65rem;font-size:.64rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);border-right:1px solid var(--border)">Room ${r.room_code}</div>`;});
@@ -1064,46 +1144,36 @@
     document.getElementById('rc1Grid').innerHTML=h;
   }
 
-  // RC1 PDF export — A0 Sized Grid with Status Colors and Headers
+  // RC1 PDF export
   document.getElementById('rc1ExportPdf').addEventListener('click', () => {
     if(!rc1Slots.length){toast('Run the report first.','warn');return;}
     if(!window.jspdf){alert('PDF library not loaded.');return;}
     const { jsPDF } = window.jspdf;
     
-    // Switch to A0, Landscape, using Points (pt) for massive high-res grid
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a0' });
     const pageW = doc.internal.pageSize.width;
     const pageH = doc.internal.pageSize.height;
     const dateLabel = fmtDate(rc1Date);
 
-    // 1. Draw College Header (Scaled up for A0)
     if(window._ASES_LOGO_DATA){
-      // Increased logo size to make it more prominent
       try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 80, 70, 180, 180); } catch(e){}
     }
     const cx = pageW / 2;
-    
     doc.setFont('times', 'bold'); doc.setFontSize(46); doc.setTextColor(26, 34, 68);
     doc.text('B. K. Birla College, Kalyan', cx, 100, { align: 'center' });
-    
     doc.setFont('times', 'normal'); doc.setFontSize(26); doc.setTextColor(50, 60, 90);
     doc.text('(Empowered Autonomous Status)', cx, 140, { align: 'center' });
-    
     doc.setFont('times', 'bolditalic'); doc.setFontSize(30);
     doc.text('Department of Management Studies', cx, 185, { align: 'center' });
-    
     doc.setFont('helvetica', 'bold'); doc.setFontSize(34); doc.setTextColor(26, 34, 68);
     doc.text('Daily Execution Report', cx, 250, { align: 'center' });
-    
     doc.setFont('helvetica', 'normal'); doc.setFontSize(22); doc.setTextColor(90, 100, 120);
     doc.text(`Date: ${dateLabel}`, cx, 290, { align: 'center' });
     
-    // 2. Build Table Data
     const head = [['Time', ...rc1Rooms.map(r => `Room ${r.room_code}`)]];
     const body = [];
 
     rc1Slots.forEach(slot => {
-      // Add extra spacing to time blocks
       const timeLabel = slot.slot_type === 'lecture'
           ? `${slot.slot_label}\n\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`
           : `${slot.slot_label}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
@@ -1120,7 +1190,7 @@
         rc1Rooms.forEach(room => {
           const row = rc1ScheduleMap[slot.id]?.[room.id];
           if (!row) {
-            rowData.push(''); // Empty cell
+            rowData.push('');
             return;
           }
           
@@ -1130,7 +1200,6 @@
           const fac = row.assigned_faculty?.full_name ?? '';
           const lbl = row.is_cancelled ? 'CANCELLED' : (RC1_STATUS_LBL[s] ?? 'Not Marked');
           
-          // Dump cell content
           rowData.push(`${cname}\n${sub}\n${fac}\n[${lbl}]`);
         });
         body.push(rowData);
@@ -1142,27 +1211,12 @@
       not_engaged: [253, 232, 234], not_marked: [240, 240, 240], cancelled: [230, 230, 230]
     };
 
-    // 3. Render Table
     doc.autoTable({
       head, body,
       startY: 330,
       theme: 'grid',
-      styles: { 
-        fontSize: 14,
-        cellPadding: 16, 
-        valign: 'middle', 
-        halign: 'center',
-        overflow: 'linebreak',
-        lineColor: [180, 180, 180],
-        lineWidth: 1
-      },
-      headStyles: { 
-        fillColor: [26, 34, 68], 
-        textColor: 255, 
-        fontStyle: 'bold', 
-        fontSize: 16, 
-        halign: 'center' 
-      },
+      styles: { fontSize: 14, cellPadding: 16, valign: 'middle', halign: 'center', overflow: 'linebreak', lineColor: [180, 180, 180], lineWidth: 1 },
+      headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', fontSize: 16, halign: 'center' },
       columnStyles: { 0: { cellWidth: 160, fontStyle: 'bold' } },
       margin: { top: 330, left: 80, right: 80, bottom: 80 },
       tableWidth: 'auto',
@@ -1186,7 +1240,6 @@
       didDrawPage(data) {
         const pageH = doc.internal.pageSize.height;
         doc.setFont('helvetica', 'normal'); doc.setFontSize(16); doc.setTextColor(120);
-        // Uses the specific User Name variable 
         doc.text(`Report Generated By: ${generatedBy}`, 80, pageH - 40);
         doc.text(`Report Generated On: ${new Date().toLocaleString('en-IN')}`, 80, pageH - 20);
         doc.text(`Page ${data.pageNumber}`, pageW / 2, pageH - 20, { align: 'center' });
@@ -1198,7 +1251,6 @@
 
   // ══════════════════════════════════════════════════════════════════
   // RC2 — Faculty Load Report
-  // Class | Subject | Load | Teacher | Scheduled | Late | Extra
   // ══════════════════════════════════════════════════════════════════
   let rc2Data=[];
 
@@ -1209,14 +1261,13 @@
     if(!from||!to){toast('From and To dates are required.','warn');return;}
     const btn=document.getElementById('rc2Run');btn.disabled=true;
     loadingRow('rc2Body',7);
+    document.getElementById('rc2Search').value = '';
 
     try {
-      // Step 0: Fetch holidays in period
       const{data:holRows}=await supabase.from('holidays')
         .select('holiday_date').gte('holiday_date',from).lte('holiday_date',to);
       const holidayDates=new Set((holRows??[]).map(h=>h.holiday_date));
 
-      // Step 1: Count exact number of each weekday in the date range
       const dayCounts = { monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0 };
       const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
       
@@ -1234,7 +1285,6 @@
           curr.setDate(curr.getDate() + 1);
       }
 
-      // Step 2: Fetch Master Timetable to calculate true base LOAD
       let masterQuery = supabase.from('master_timetable').select(`
           day_type,
           course:courses!course_id ( id, year, program, division ),
@@ -1246,7 +1296,6 @@
       const { data: masterData, error: masterError } = await masterQuery;
       if (masterError) throw masterError;
 
-      // Step 3: Fetch Daily Schedule to calculate ACTUAL SCHEDULED and LATE
       let dailyQuery = supabase.from('daily_schedule').select(`
           id, schedule_date, is_cancelled,
           course:courses!course_id ( id, year, program, division ),
@@ -1264,7 +1313,6 @@
       
       const dailyData = (dailyDataAll ?? []).filter(r => !holidayDates.has(r.schedule_date));
 
-      // Get Execution data for Late status
       const ids = dailyData.map(r => r.id);
       let execRows = [];
       if (ids.length) {
@@ -1276,7 +1324,6 @@
       const execMap = {};
       for (const ex of execRows) execMap[ex.daily_schedule_id] = ex.faculty_status;
 
-      // Step 4: Aggregate the stats into Group Map
       const groupMap = {};
       const getCourseKey = (c) => c ? (c.division ? `${c.year} ${c.program} ${c.division}` : `${c.year} ${c.program}`) : 'Unknown';
       
@@ -1302,11 +1349,9 @@
               groupMap[key] = { course: courseKey, subject: subKey, faculty: fName, load: 0, scheduled: 0, late: 0 };
           }
           groupMap[key].scheduled++;
-          
           if (execMap[row.id] === 'late') groupMap[key].late++;
       });
 
-      // Default Sort: Faculty Name -> Course Name
       rc2Data = Object.values(groupMap).map(g => ({
           ...g, extra: Math.max(0, g.scheduled - g.load)
       })).sort((a,b) => a.faculty.localeCompare(b.faculty) || a.course.localeCompare(b.course));
@@ -1333,13 +1378,12 @@
     }
   });
 
-  // RC2 Vertical / Portrait Custom PDF Build
+  // RC2 Vertical Custom PDF Build — (HEADER SCOPED CORRECTLY)
   document.getElementById('rc2ExportPdf').addEventListener('click', () => {
     if (!rc2Data.length) { toast('Run report first.', 'warn'); return; }
     if (!window.jspdf) { alert('PDF library not loaded.'); return; }
     
     const { jsPDF } = window.jspdf;
-    // Explicitly enforce Portrait orientation
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pageW = doc.internal.pageSize.width;
     const pageH = doc.internal.pageSize.height;
@@ -1347,22 +1391,6 @@
     const from = document.getElementById('rc2From').value;
     const to = document.getElementById('rc2To').value;
     const subtitle = `Period: ${fmtDate(from)} to ${fmtDate(to)}`;
-
-    // Draw header manually to enforce Portrait context
-    if(window._ASES_LOGO_DATA) {
-      try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 14, 8, 24, 24); } catch(e) {}
-    }
-    const cx = pageW / 2;
-    doc.setFont('times', 'bold'); doc.setFontSize(15); doc.setTextColor(26, 34, 68);
-    doc.text('B. K. Birla College, Kalyan', cx, 15, { align: 'center' });
-    doc.setFont('times', 'normal'); doc.setFontSize(10); doc.setTextColor(50, 60, 90);
-    doc.text('(Empowered Autonomous Status)', cx, 20, { align: 'center' });
-    doc.setFont('times', 'bolditalic'); doc.setFontSize(10);
-    doc.text('Department of Management Studies', cx, 25, { align: 'center' });
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(26, 34, 68);
-    doc.text('Faculty Load Report', cx, 34, { align: 'center' });
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 100, 120);
-    doc.text(subtitle, cx, 40, { align: 'center' });
 
     const head = [['Class', 'Subject', 'Load', 'Teacher Name', 'Scheduled', 'Late', 'Extra']];
     const body = rc2Data.map(r => [r.course, r.subject, r.load, r.faculty, r.scheduled, r.late, r.extra]);
@@ -1384,7 +1412,23 @@
          5: { cellWidth: 10, halign: 'center' }, 
          6: { cellWidth: 10, halign: 'center' } 
       },
+      // IMPORTANT: Drawing Header & Footer *inside* didDrawPage makes it print on every page seamlessly.
       didDrawPage(data) {
+        if(window._ASES_LOGO_DATA) {
+          try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 14, 8, 24, 24); } catch(e) {}
+        }
+        const cx = pageW / 2;
+        doc.setFont('times', 'bold'); doc.setFontSize(15); doc.setTextColor(26, 34, 68);
+        doc.text('B. K. Birla College, Kalyan', cx, 15, { align: 'center' });
+        doc.setFont('times', 'normal'); doc.setFontSize(10); doc.setTextColor(50, 60, 90);
+        doc.text('(Empowered Autonomous Status)', cx, 20, { align: 'center' });
+        doc.setFont('times', 'bolditalic'); doc.setFontSize(10);
+        doc.text('Department of Management Studies', cx, 25, { align: 'center' });
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(26, 34, 68);
+        doc.text('Faculty Load Report', cx, 34, { align: 'center' });
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 100, 120);
+        doc.text(subtitle, cx, 40, { align: 'center' });
+
         doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(80);
         doc.text(`Report Generated By: ${generatedBy}`, 14, pageH - 9);
         doc.text(`Report Generated On: ${new Date().toLocaleString('en-IN')}`, 14, pageH - 4.5);
@@ -1396,7 +1440,6 @@
     doc.save('Faculty_Load_Report.pdf');
   });
 
-  // RC2 Excel
   document.getElementById('rc2ExportXls').addEventListener('click',()=>{
     if(!rc2Data.length){toast('Run report first.','warn');return;}
     exportToExcel(
