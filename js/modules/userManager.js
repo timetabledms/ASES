@@ -7,6 +7,7 @@
 import { supabase } from '../config/supabase.js';
 
 // ── Edge Function endpoint ────────────────────────────────────────────────────
+// Ensure this points to your deployed Supabase Edge Function URL
 const EDGE_FN_URL = 'https://jpmijvxdmfdmtkvfdvdq.supabase.co/functions/v1/admin-create-user';
 
 // ── createAdmin ───────────────────────────────────────────────────────────────
@@ -103,6 +104,7 @@ export async function getAllAdmins() {
 export async function getAllFaculty() {
   const { data, error } = await supabase
     .from('faculty')
+    // Important: supabase_uid must be selected for password/email reset functions to work
     .select('id, supabase_uid, employee_code, full_name, email, phone, department, faculty_type, is_active, created_at')
     .order('full_name');
 
@@ -153,6 +155,31 @@ export async function resetUserPassword(authUid, newPassword) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error ?? 'Failed to reset password');
+  }
+  return res.json();
+}
+
+// ── Unified Email Change ──────────────────────────────────────────────────────
+export async function changeUserEmail(authUid, newEmail, userType) {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  const res = await fetch(EDGE_FN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      action: 'change_email', 
+      userId: authUid, 
+      email: newEmail,
+      userType: userType // 'admin' or 'faculty'
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error ?? 'Failed to change email');
   }
   return res.json();
 }
