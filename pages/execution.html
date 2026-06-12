@@ -5,10 +5,20 @@
   <title>ASES — Execution Log</title>
   <link rel="stylesheet" href="/css/theme.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
   <style>
-    .controls-bar{display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap;
+    .controls-bar{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;
       background:var(--bg-card);border:1px solid var(--border);border-radius:14px;
       padding:1.1rem 1.35rem;margin-bottom:1.25rem;transition:background .25s,border-color .25s}
+    .controls-group{display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap}
+
+    .btn-export { display: flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); font-size: 0.85rem; cursor: pointer; transition: background 0.2s; font-weight: 500; height: 38px;}
+    .btn-export:hover { background: var(--bg-hover); }
+    .btn-export svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
 
     /* Stat chips */
     .stat-chips{display:flex;gap:.65rem;flex-wrap:wrap;margin-bottom:1.1rem}
@@ -88,7 +98,7 @@
     .grid-placeholder svg{width:36px;height:36px;stroke:var(--border);fill:none;
       stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 
-    @media(max-width:768px){.sidebar{display:none}.content{padding:1rem}.topbar{padding:1rem}}
+    @media(max-width:768px){.sidebar{display:none}.content{padding:1rem}.topbar{padding:1rem}.controls-bar{flex-direction:column;align-items:stretch}}
   </style>
 </head>
 <body>
@@ -127,20 +137,29 @@
   </div>
   <div class="content">
 
-    <!-- Controls -->
     <div class="controls-bar">
-      <div class="field">
-        <label>Date</label>
-        <input type="text" id="execDatePicker" style="width:160px" readonly/>
+      <div class="controls-group">
+        <div class="field">
+          <label>Date</label>
+          <input type="text" id="execDatePicker" style="width:160px" readonly/>
+        </div>
+        <button class="btn btn-primary" id="loadDayBtn" style="height:38px;">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Load Day
+        </button>
       </div>
-      <button class="btn btn-primary" id="loadDayBtn">
-        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Load Day
-      </button>
+      
+      <div class="controls-group" style="gap: 0.75rem;">
+        <button class="btn-export" id="exportExcelBtn">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> Excel
+        </button>
+        <button class="btn-export" id="exportPdfBtn">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h2v4H9z"/><path d="M13 15h3v4"/><path d="M13 17h2"/></svg> PDF
+        </button>
+      </div>
     </div>
 
-    <!-- Stat chips -->
     <div class="stat-chips" id="statChips" style="display:none">
       <div class="stat-chip"><span class="chip-dot" style="background:var(--success)"></span><strong id="cntOnTime">0</strong>&nbsp;On Time</div>
       <div class="stat-chip"><span class="chip-dot" style="background:var(--warn)"></span><strong id="cntLate">0</strong>&nbsp;Late</div>
@@ -149,7 +168,6 @@
       <div class="stat-chip"><span class="chip-dot" style="background:var(--text-muted);opacity:.4"></span><strong id="cntCancelled">0</strong>&nbsp;Cancelled</div>
     </div>
 
-    <!-- Legend -->
     <div class="legend" id="legendRow" style="display:none">
       <span style="font-size:.75rem;color:var(--text-muted);font-weight:600;margin-right:.25rem">Click to cycle:</span>
       <div class="leg-item"><div class="leg-sw" style="background:rgba(62,207,142,.1);border-color:var(--success)"></div>On Time</div>
@@ -159,7 +177,6 @@
       <div class="leg-item"><div class="leg-sw" style="background:rgba(107,112,137,.07);border-color:var(--text-muted)"></div>Cancelled (not clickable)</div>
     </div>
 
-    <!-- Grid -->
     <div style="overflow-x:auto">
       <div id="gridContainer">
         <div class="tt-grid">
@@ -181,9 +198,12 @@
 import { requireRole } from '/js/auth/session.js';
 import { initSidebar } from '/js/components/sidebar.js';
 import { supabase } from '/js/config/supabase.js';
+import { preloadLogoForPDF } from '/js/utils/exportHelpers.js';
 
 const session = await requireRole('admin');
 initSidebar(session, 'execution');
+preloadLogoForPDF();
+const generatedBy = session?.profile?.full_name ?? 'Admin';
 
 // ── Toast ──────────────────────────────────────────────────────────
 function toast(msg, type='success') {
@@ -194,7 +214,6 @@ function toast(msg, type='success') {
 }
 
 // ── State ──────────────────────────────────────────────────────────
-// Use local date (not UTC) to avoid IST timezone shifting date back by 1
 function localDateStr(d) {
   const dt = d ?? new Date();
   return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
@@ -202,16 +221,15 @@ function localDateStr(d) {
 let currentDate = localDateStr();
 let timeSlots   = [];
 let rooms       = [];
-let scheduleMap = {};   // tsId → roomId → scheduleRow
-let execMap     = {};   // scheduleId → executionRow
+let scheduleMap = {};   
+let execMap     = {};   
 
-// Status cycle: click advances through this order
 const STATUS_CYCLE = ['on_time','late','not_engaged','not_marked'];
 const STATUS_LABEL = {on_time:'On Time',late:'Late',not_engaged:'Not Engaged',not_marked:'Not Marked'};
 const STATUS_CLASS = {on_time:'s-on-time',late:'s-late',not_engaged:'s-not-engaged',not_marked:'s-not-marked'};
 const PILL_CLASS   = {on_time:'sp-on-time',late:'sp-late',not_engaged:'sp-not-engaged',not_marked:'sp-not-marked'};
 
-// ── Flatpickr — fix: pass date explicitly to avoid closure timing bug ──
+// ── Flatpickr ──────────────────────────────────────────────────────
 flatpickr('#execDatePicker', {
   dateFormat: 'Y-m-d',
   defaultDate: new Date(),
@@ -219,7 +237,6 @@ flatpickr('#execDatePicker', {
   onChange([d]) {
     if (!d) return;
     currentDate = localDateStr(d);
-    // Pass date directly — don't rely on closure reading currentDate
     loadDay(currentDate);
   }
 });
@@ -231,7 +248,6 @@ document.getElementById('loadDayBtn').addEventListener('click', () => {
 
 // ── Load day ───────────────────────────────────────────────────────
 async function loadDay(date) {
-  // Always use the passed date parameter
   const loadDate = date ?? currentDate;
 
   const btn = document.getElementById('loadDayBtn');
@@ -242,9 +258,9 @@ async function loadDay(date) {
     const DAY_MAP_E=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
     const dayType = DAY_MAP_E[new Date(loadDate+'T00:00:00').getDay()];
     const slotDt  = dayType==='saturday'?'saturday':'weekday';
-    // Block Sunday
+    
     if(dayType==='sunday'){gridEmpty('No schedule on Sundays.');document.getElementById('statChips').style.display='none';document.getElementById('legendRow').style.display='none';return;}
-    // Block holiday
+    
     const{data:holChk}=await supabase.from('holidays').select('name').eq('holiday_date',loadDate).maybeSingle();
     if(holChk){gridEmpty(`🎉 Holiday: ${holChk.name}. No execution log for this day.`);document.getElementById('statChips').style.display='none';document.getElementById('legendRow').style.display='none';return;}
 
@@ -273,16 +289,10 @@ async function loadDay(date) {
     if (slotsRes.error) throw new Error('Time slots: ' + slotsRes.error.message);
     if (roomsRes.error) throw new Error('Rooms: ' + roomsRes.error.message);
     if (schedRes.error) throw new Error('Schedule: ' + schedRes.error.message);
-    if (execRes.error)  console.warn('Execution fetch error (non-fatal):', execRes.error.message);
-
-    console.log('[ASES Execution] Date:', loadDate, '| Slots:', slotsRes.data?.length,
-      '| Rooms:', roomsRes.data?.length, '| Schedule rows:', schedRes.data?.length,
-      '| Execution rows:', execRes.data?.length);
 
     timeSlots = slotsRes.data ?? [];
     rooms     = roomsRes.data ?? [];
 
-    // Build schedule map
     scheduleMap = {};
     for (const row of (schedRes.data ?? [])) {
       const t=row.time_slot_id, r=row.room_id;
@@ -290,7 +300,6 @@ async function loadDay(date) {
       scheduleMap[t][r] = row;
     }
 
-    // Build execution map: scheduleId → execution row
     execMap = {};
     for (const ex of (execRes.data ?? [])) {
       execMap[ex.daily_schedule_id] = ex;
@@ -322,13 +331,11 @@ function renderGrid() {
   const cols = `grid-template-columns:86px repeat(${rooms.length},minmax(108px,1fr))`;
   let h = `<div class="tt-grid">`;
 
-  // Header
   h += `<div class="tt-head" style="${cols}">
     <div class="th-cell">Time</div>
     ${rooms.map(r=>`<div class="th-cell">Room ${r.room_code}</div>`).join('')}
   </div>`;
 
-  // Rows
   for (const slot of timeSlots) {
     const isBreak = slot.slot_type !== 'lecture';
     h += `<div class="tt-row${isBreak?' is-break':''}" style="${cols}">`;
@@ -352,7 +359,6 @@ function renderGrid() {
   h += `</div>`;
   document.getElementById('gridContainer').innerHTML = h;
 
-  // Bind click on every clickable cell
   document.querySelectorAll('.ec.clickable').forEach(cell => {
     cell.addEventListener('click', () => cycleStatus(cell));
   });
@@ -398,11 +404,9 @@ async function cycleStatus(cell) {
   const idx        = STATUS_CYCLE.indexOf(current);
   const nextStatus = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
 
-  // Optimistic UI update immediately
   updateCellUI(cell, nextStatus);
 
   try {
-    // Upsert execution row
     const { error } = await supabase
       .from('lecture_execution')
       .upsert({
@@ -419,25 +423,21 @@ async function cycleStatus(cell) {
 
     if (error) throw error;
 
-    // Update local execMap
     if (!execMap[scheduleId]) execMap[scheduleId] = { daily_schedule_id: scheduleId };
     execMap[scheduleId].faculty_status = nextStatus;
 
     updateStats();
   } catch(e) {
-    // Revert on failure
     updateCellUI(cell, current);
     toast('Failed to save: ' + e.message, 'error');
   }
 }
 
 function updateCellUI(cell, status) {
-  // Remove all status classes
   ['s-on-time','s-late','s-not-engaged','s-not-marked'].forEach(c => cell.classList.remove(c));
   cell.classList.add(STATUS_CLASS[status] ?? 's-not-marked');
   cell.dataset.status = status;
 
-  // Update pill
   const pill = cell.querySelector('.status-pill');
   if (pill) {
     ['sp-on-time','sp-late','sp-not-engaged','sp-not-marked'].forEach(c => pill.classList.remove(c));
@@ -478,6 +478,194 @@ function updateStats() {
   document.getElementById('cntCancelled').textContent = cancelled;
 }
 
+// ── A0 PDF Export Logic ──────────────────────────────────────────────────────
+document.getElementById('exportPdfBtn').addEventListener('click', () => {
+  if (!timeSlots.length || !rooms.length || Object.keys(scheduleMap).length === 0) return toast('No data to export', 'warn');
+  if(!window.jspdf){alert('PDF library not loaded.');return;}
+  
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a0' });
+  const pageW = doc.internal.pageSize.width;
+  const pageH = doc.internal.pageSize.height;
+  
+  const dtStr = new Date(currentDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  // Build Head
+  const head = [['Time', ...rooms.map(r => `Room ${r.room_code}`)]];
+  
+  // Build Body
+  const body = [];
+  timeSlots.forEach(slot => {
+    const timeLabel = slot.slot_type === 'lecture'
+        ? `${slot.slot_label || ''}\n\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`
+        : `${slot.slot_label || ''}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
+
+    if (slot.slot_type !== 'lecture') {
+      const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+      body.push([
+        { content: timeLabel, styles: { fontStyle: 'bold', valign: 'middle', halign: 'center', fillColor: [240, 240, 245] } },
+        { content: lbl, colSpan: rooms.length, styles: { halign: 'center', valign: 'middle', fontStyle: 'italic', textColor: [140, 140, 140] } }
+      ]);
+    } else {
+      const rowData = [{ content: timeLabel, styles: { fontStyle: 'bold', valign: 'middle', halign: 'center', fillColor: [240, 240, 245] } }];
+      
+      rooms.forEach(room => {
+        const row = scheduleMap[slot.id]?.[room.id];
+        if (!row) {
+          rowData.push('');
+          return;
+        }
+        
+        const ex = execMap[row.id];
+        const s = row.is_cancelled ? 'cancelled' : (ex?.faculty_status ?? 'not_marked');
+        const cname = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
+        const sub = row.subject?.subject_name ?? '';
+        const fac = row.assigned_faculty?.full_name ?? '';
+        
+        const STATUS_LBL = {on_time:'On Time', late:'Late', not_engaged:'Not Engaged', not_marked:'Not Marked', cancelled:'CANCELLED'};
+        const lbl = row.is_cancelled ? 'CANCELLED' : (STATUS_LBL[s] ?? 'Not Marked');
+        
+        rowData.push(`${cname}\n${sub}\n${fac}\n[${lbl}]`);
+      });
+      body.push(rowData);
+    }
+  });
+
+  const statusFill = {
+    on_time: [212, 247, 231], late: [255, 243, 205],
+    not_engaged: [253, 232, 234], not_marked: [240, 240, 240], cancelled: [230, 230, 230]
+  };
+
+  doc.autoTable({
+    head, body,
+    startY: 330,
+    theme: 'grid',
+    styles: { fontSize: 14, cellPadding: 16, valign: 'middle', halign: 'center', overflow: 'linebreak', lineColor: [180, 180, 180], lineWidth: 1 },
+    headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', fontSize: 16, halign: 'center' },
+    columnStyles: { 0: { cellWidth: 160, fontStyle: 'bold' } },
+    margin: { top: 330, left: 80, right: 80, bottom: 80 },
+    tableWidth: 'auto',
+    didParseCell(data) {
+      if (data.section === 'body' && data.column.index > 0 && data.cell.raw) {
+        const text = String(data.cell.raw.content || data.cell.raw);
+        if (!text || text === '') return;
+        
+        let fill = [255, 255, 255];
+        if (text.includes('[On Time]')) fill = statusFill.on_time;
+        else if (text.includes('[Late]')) fill = statusFill.late;
+        else if (text.includes('[Not Engaged]')) fill = statusFill.not_engaged;
+        else if (text.includes('[Not Marked]')) fill = statusFill.not_marked;
+        else if (text.includes('[CANCELLED]')) fill = statusFill.cancelled;
+
+        if (!text.includes('Lunch Break') && !text.includes('Recess') && text !== '-') {
+           data.cell.styles.fillColor = fill;
+        }
+      }
+    },
+    didDrawPage(data) {
+      if(window._ASES_LOGO_DATA){
+        try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 80, 70, 180, 180); } catch(e){}
+      }
+      const cx = pageW / 2;
+      
+      doc.setFont('times', 'bold'); doc.setFontSize(46); doc.setTextColor(26, 34, 68);
+      doc.text('B. K. Birla College, Kalyan', cx, 100, { align: 'center' });
+      
+      doc.setFont('times', 'normal'); doc.setFontSize(26); doc.setTextColor(50, 60, 90);
+      doc.text('(Empowered Autonomous Status)', cx, 140, { align: 'center' });
+      
+      doc.setFont('times', 'bolditalic'); doc.setFontSize(30);
+      doc.text('Department of Management Studies', cx, 185, { align: 'center' });
+      
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(34); doc.setTextColor(26, 34, 68);
+      doc.text('Daily Execution Report', cx, 250, { align: 'center' });
+      
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(22); doc.setTextColor(90, 100, 120);
+      doc.text(`Date: ${dtStr}`, cx, 290, { align: 'center' });
+      
+      // Footer
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(16); doc.setTextColor(120);
+      doc.text(`Report Generated By: ${generatedBy}`, 80, pageH - 40);
+      doc.text(`Report Generated On: ${new Date().toLocaleString('en-IN')}`, 80, pageH - 20);
+      doc.text(`Page ${data.pageNumber}`, pageW / 2, pageH - 20, { align: 'center' });
+    }
+  });
+
+  doc.save(`Execution_Log_${currentDate}.pdf`);
+});
+
+// ── Excel Export Logic ───────────────────────────────────────────────────────
+document.getElementById('exportExcelBtn').addEventListener('click', () => {
+  if (!timeSlots.length || !rooms.length || Object.keys(scheduleMap).length === 0) return toast('No data to export', 'warn');
+  
+  const wsData = [];
+  const merges = [];
+
+  const headRow = ["Time"];
+  rooms.forEach(r => headRow.push(`Room ${r.room_code}`));
+  wsData.push(headRow);
+
+  let rowIndex = 1;
+
+  timeSlots.forEach(slot => {
+     const timeLabel = slot.slot_type === 'lecture'
+          ? `${slot.slot_label || ''}\n\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`
+          : `${slot.slot_label || ''}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
+
+     if (slot.slot_type !== 'lecture') {
+        const lbl = slot.slot_type === 'lunch' ? 'Lunch Break' : 'Recess';
+        const row = [timeLabel, lbl];
+        for (let i = 1; i < rooms.length; i++) row.push("");
+        wsData.push(row);
+        merges.push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: rooms.length } });
+        rowIndex += 1;
+     } else {
+        const row1 = [timeLabel]; 
+        const row2 = [""];        
+        const row3 = [""];        
+        const row4 = [""];        
+
+        rooms.forEach(room => {
+           const row = scheduleMap[slot.id]?.[room.id];
+           if (row) {
+              const ex = execMap[row.id];
+              const s = row.is_cancelled ? 'cancelled' : (ex?.faculty_status ?? 'not_marked');
+              const STATUS_LBL = {on_time:'On Time', late:'Late', not_engaged:'Not Engaged', not_marked:'Not Marked', cancelled:'CANCELLED'};
+              
+              const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '-';
+              const sub = row.subject?.subject_name || '-';
+              let f = row.assigned_faculty?.full_name || '-';
+              let statusStr = `[${STATUS_LBL[s] ?? 'Not Marked'}]`;
+              
+              row1.push(c);
+              row2.push(sub);
+              row3.push(f);
+              row4.push(statusStr);
+           } else {
+              row1.push("-");
+              row2.push("");
+              row3.push("");
+              row4.push("");
+           }
+        });
+        
+        wsData.push(row1, row2, row3, row4);
+        merges.push({ s: { r: rowIndex, c: 0 }, e: { r: rowIndex + 3, c: 0 } });
+        rowIndex += 4;
+     }
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!merges'] = merges;
+  const cols = [{ wch: 18 }]; 
+  rooms.forEach(() => cols.push({ wch: 30 })); 
+  ws['!cols'] = cols;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Execution");
+  XLSX.writeFile(wb, `Execution_Log_${currentDate}.xlsx`);
+});
+
 // ── Grid helpers ───────────────────────────────────────────────────
 function gridLoading() {
   document.getElementById('gridContainer').innerHTML=`<div class="tt-grid"><div class="grid-placeholder"><span class="spin" style="display:inline-block;width:24px;height:24px;border-width:3px"></span><div>Loading…</div></div></div>`;
@@ -486,7 +674,6 @@ function gridEmpty(msg) {
   document.getElementById('gridContainer').innerHTML=`<div class="tt-grid"><div class="grid-placeholder"><svg viewBox="0 0 24 24"><polyline points="9,11 12,14 22,4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><div>${msg}</div></div></div>`;
 }
 
-// ── Auto-load today on page open ───────────────────────────────────
 loadDay(currentDate);
 </script>
 </body>
