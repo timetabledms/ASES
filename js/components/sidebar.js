@@ -14,53 +14,54 @@ export function initSidebar(session, activeId) {
         flex-direction: row !important;
         align-items: center !important;
         justify-content: flex-start !important;
-        gap: 0.75rem !important;
-        padding: 1.5rem 1rem 1.25rem 1rem !important; /* Adjusted padding to perfectly fit text */
+        gap: 0.85rem !important; /* Improved spacing between logo and text */
+        padding: 1.5rem 1.25rem 1.25rem 1.25rem !important; 
         border-bottom: 1px solid var(--border) !important;
-        overflow: hidden !important; 
+        background: transparent !important;
       }
       .sidebar-logo {
-        width: 48px !important; /* Sized perfectly to anchor 3 lines of text */
-        height: 48px !important;
+        width: 56px !important; /* Increased size significantly for clarity */
+        height: 56px !important;
         object-fit: contain !important;
         flex-shrink: 0 !important;
+        image-rendering: -webkit-optimize-contrast; /* Helps sharpen scaled logos */
       }
       .sidebar-college-text {
         display: flex !important;
         flex-direction: column !important;
         justify-content: center !important;
-        gap: 0.15rem !important;
+        gap: 0.2rem !important; /* Perfect uniform spacing between the 3 lines */
         min-width: 0 !important;
       }
       .col-name {
         font-family: var(--ff-display, sans-serif) !important;
-        font-size: 0.96rem !important;
+        font-size: 0.88rem !important; /* Slightly adjusted to accommodate the longer name */
         font-weight: 800 !important;
-        line-height: 1.1 !important;
+        line-height: 1.2 !important;
         color: var(--text-primary) !important;
         margin: 0 !important;
-        white-space: nowrap !important;
-        letter-spacing: -0.02em !important;
+        white-space: normal !important; /* Allows the longer name to wrap gracefully if needed */
+        letter-spacing: -0.01em !important;
       }
       .col-status {
         font-family: var(--ff-body, sans-serif) !important;
-        font-size: 0.58rem !important;
+        font-size: 0.6rem !important;
         font-weight: 500 !important;
         color: var(--text-muted) !important;
-        margin: 0 0 0.15rem 0 !important; /* Adds a tiny gap before the department name */
-        line-height: 1 !important;
-        white-space: nowrap !important;
+        margin: 0 !important; 
+        line-height: 1.1 !important;
+        white-space: normal !important;
       }
       .col-dept {
         font-family: var(--ff-body, sans-serif) !important;
         font-size: 0.65rem !important;
         font-weight: 700 !important;
-        letter-spacing: 0.06em !important;
+        letter-spacing: 0.05em !important;
         text-transform: uppercase !important;
         color: var(--text-muted) !important; 
-        margin: 0 !important;
+        margin: 0.15rem 0 0 0 !important; /* Tiny extra gap to separate department */
         line-height: 1 !important;
-        white-space: nowrap !important;
+        white-space: normal !important;
       }
 
       /* Navigation Menu Styles */
@@ -81,7 +82,7 @@ export function initSidebar(session, activeId) {
     collegeEl.innerHTML = `
       <img src="https://i.ibb.co/3mfRpCpR/IMG-20260505-WA0001-1-jpg.jpg" alt="Logo" class="sidebar-logo" onerror="this.style.display='none'">
       <div class="sidebar-college-text">
-        <strong class="col-name">B. K. Birla College</strong>
+        <strong class="col-name">B. K. Birla College, Kalyan</strong>
         <span class="col-status">(Empowered Autonomous Status)</span>
         <span class="col-dept">Management Studies</span>
       </div>
