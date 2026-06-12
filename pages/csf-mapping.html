@@ -4,266 +4,378 @@
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>ASES — CSF Mapping</title>
   
-  <!-- Shared Theme CSS -->
   <link rel="stylesheet" href="/css/theme.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
   
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+
   <style>
-    /* Page-specific overrides */
-    .form-row { display:flex; align-items:flex-end; gap:1rem; flex-wrap:wrap; }
+    .controls-bar { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem; }
+    .table-search { padding: 0.55rem 1rem; border-radius: 8px; border: 1px solid var(--border); width: 100%; max-width: 350px; background: var(--bg-input); color: var(--text-primary); outline: none; transition: border-color 0.2s; }
+    .table-search:focus { border-color: var(--accent); }
     
-    /* Force fields in the row to expand and fill the empty space */
-    .form-row .field { flex: 1; min-width: 180px; } 
+    .btn-export { display: flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); font-size: 0.85rem; cursor: pointer; transition: background 0.2s; font-weight: 500; height: 38px;}
+    .btn-export:hover { background: var(--bg-hover); }
+
+    th.sortable { cursor: pointer; position: relative; padding-right: 1.5rem !important; user-select: none; transition: background 0.2s; }
+    th.sortable:hover { background: rgba(0,0,0,0.04); }
+    th.sortable::after { content: '↕'; position: absolute; right: 0.4rem; color: var(--text-muted); opacity: 0.4; font-size: 0.9rem; font-weight: normal; }
+
+    .modal-back { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-back.open { display: flex; }
+    .modal { background: var(--bg-card); width: 100%; max-width: 500px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-modal); animation: mIn 0.2s ease both; }
+    @keyframes mIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .modal-title { font-family: var(--ff-display); font-size: 1.2rem; color: var(--text-primary); }
+    .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+    .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem; }
     
-    /* Prevent Tom Select from wrapping text to the next line */
-    .ts-wrapper.single .ts-control {
-      display: flex !important;
-      flex-wrap: nowrap !important;
-      align-items: center;
-      overflow: hidden !important;
-    }
-    .ts-wrapper.single .ts-control .item {
-      white-space: nowrap !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      max-width: 95% !important;
-      pointer-events: none;
-    }
-    .ts-wrapper.single .ts-control input {
-      min-width: 0 !important;
-    }
-    
-    .filters { display:flex; align-items:flex-end; gap:.75rem; flex-wrap:wrap; margin-bottom:1.25rem; }
-    .filters .field { min-width:180px; flex: 1; max-width: 300px; }
-    
-    .new-subject-row { display:none; align-items:flex-end; gap:.75rem; flex-wrap:wrap; margin-top:.75rem; padding:.85rem; background:var(--bg-input); border:1px dashed var(--border-focus); border-radius:var(--radius); }
-    .new-subject-row.visible { display:flex; }
+    .ts-wrapper.single .ts-control { display: flex !important; flex-wrap: nowrap !important; align-items: center; overflow: hidden !important; }
   </style>
 </head>
 <body>
 
-<!-- ── Sidebar ── -->
 <aside class="sidebar">
   <div class="sidebar-college" id="sidebarCollege"></div>
-  
   <nav id="sideNav"></nav>
-  
   <div class="sidebar-footer">
     <div class="theme-row">
-      <span class="theme-label">
-        <span id="themeIcon"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
-        <span id="themeLabel">Light mode</span>
-      </span>
+      <span class="theme-label"><span id="themeIcon"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span><span id="themeLabel">Light mode</span></span>
       <label class="toggle-switch"><input type="checkbox" id="themeToggle"/><span class="toggle-track"></span></label>
     </div>
     <div class="user-pill">
       <div class="user-avatar" id="userAvatar">?</div>
       <div class="user-info"><div class="user-name" id="userName">…</div><div class="user-role" id="userRole">admin</div></div>
-      <button class="btn-logout" id="logoutBtn" title="Sign out">
-        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      </button>
+      <button class="btn-logout" id="logoutBtn" title="Sign out"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
     </div>
   </div>
 </aside>
 
-<!-- ── Main ── -->
 <main class="main">
   <div class="topbar">
-    <div><h1 class="page-title">CSF Mapping</h1><p class="page-subtitle">Course → Subject → Faculty — drives all scheduling dropdowns</p></div>
+    <div>
+      <h1 class="page-title">CSF Mapping</h1>
+      <p class="page-subtitle">Manage Course, Subject, and Faculty relationships</p>
+    </div>
   </div>
+  
   <div class="content">
-    
-    <!-- Add mapping form -->
-    <div class="card">
-      <div class="card-title"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add New Mapping</div>
-      <div class="form-row">
-        <div class="field"><label>Course *</label><select id="csfCourse"><option value="">— select course —</option></select></div>
-        <div class="field"><label>Subject *</label><select id="csfSubject"><option value="">— select subject —</option></select></div>
-        <div class="field"><label>Faculty *</label><select id="csfFaculty"><option value="">— select faculty —</option></select></div>
-        <button class="btn btn-primary" id="addCsfBtn" style="flex-shrink:0">
-          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Mapping
-        </button>
-      </div>
-      <!-- New subject inline form -->
-      <div style="margin-top:.75rem">
-        <button class="btn btn-ghost btn-sm" id="toggleNewSubject">
-          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add New Subject
-        </button>
-        <div class="new-subject-row" id="newSubjectRow">
-          <div class="field" style="min-width:140px"><label>Subject Code *</label><input type="text" id="newSubCode" placeholder="FIN-301" /></div>
-          <div class="field" style="flex:2"><label>Subject Name *</label><input type="text" id="newSubName" placeholder="Financial Management" /></div>
-          <button class="btn btn-primary btn-sm" id="saveSubjectBtn">Save Subject</button>
-          <button class="btn btn-ghost btn-sm" id="cancelSubjectBtn">Cancel</button>
-        </div>
+    <div class="controls-bar">
+      <input type="text" id="searchInput" class="table-search" placeholder="🔍 Search course, subject, or faculty..." />
+      <div style="display: flex; gap: 0.75rem;">
+        <button class="btn-export" id="exportExcelBtn">Excel</button>
+        <button class="btn-export" id="exportPdfBtn">PDF</button>
+        <button class="btn btn-primary" id="addBtn">+ Add Mapping</button>
       </div>
     </div>
 
-    <!-- CSF Records -->
-    <div class="card" style="padding:0;overflow:hidden">
-      <div class="card-title" style="padding: 1.5rem 1.5rem 0;"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg>All Mappings</div>
-      <div class="filters" style="padding: 0 1.5rem;">
-        <div class="field"><label>Filter by Course</label><select id="filterCourse"><option value="">All Courses</option></select></div>
-        <div class="field"><label>Filter by Status</label>
-          <select id="filterStatus"><option value="">All</option><option value="active">Active Only</option><option value="inactive">Inactive Only</option></select>
-        </div>
-        <button class="btn btn-primary btn-sm" id="applyFilter">Apply</button>
-        <button class="btn btn-ghost btn-sm" id="clearFilter">Clear</button>
-      </div>
-      <div class="table-wrap" style="border:none;border-radius:0;margin-top:1rem;">
-        <table>
-          <thead><tr><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="csfTableBody"><tr class="empty-row"><td colspan="5"><span class="spin" style="display:inline-block"></span> Loading…</td></tr></tbody>
-        </table>
-      </div>
+    <div class="table-wrap">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th class="sortable">Course</th>
+            <th class="sortable">Sub Code</th>
+            <th class="sortable" data-sort="asc">Subject Name</th>
+            <th class="sortable">Faculty</th>
+            <th>Status</th>
+            <th style="width:100px;text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr class="empty-row"><td colspan="6"><span class="spin"></span> Loading...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </main>
+
+<!-- Modal -->
+<div class="modal-back" id="csfModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Add Mapping</div>
+      <button class="btn-icon" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Course *</label>
+        <select id="courseId" required><option value="">Select Course...</option></select>
+      </div>
+      <div class="field">
+        <label>Subject *</label>
+        <select id="subjectId" required><option value="">Select Subject...</option></select>
+      </div>
+      <div class="field">
+        <label>Faculty *</label>
+        <select id="facultyId" required><option value="">Select Faculty...</option></select>
+      </div>
+      <div class="field" style="flex-direction:row;align-items:center;gap:0.75rem;margin-top:0.5rem">
+        <label class="toggle-switch"><input type="checkbox" id="isActive" checked/><span class="toggle-track"></span></label>
+        <label style="margin:0">Active Mapping</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+      <button class="btn btn-primary" id="modalSave">Save Mapping</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 <script type="module">
-  import { requireRole } from '../js/auth/session.js';
-  import { initSidebar } from '../js/components/sidebar.js';
-  import {
-    getAllCSF, addCSF, deactivateCSF, reactivateCSF,
-    getAllCourses, getAllSubjects, getActiveFacultyList,
-    addSubject, courseLabel
-  } from '../js/modules/csfManager.js';
+  import { requireRole } from '/js/auth/session.js';
+  import { initSidebar } from '/js/components/sidebar.js';
+  import { supabase } from '/js/config/supabase.js';
+  import { exportToExcel, exportToPDF, preloadLogoForPDF } from '/js/utils/exportHelpers.js';
 
   const session = await requireRole('admin');
-  
-  // Initialize shared sidebar component
-  initSidebar(session, 'csf');
+  initSidebar(session, 'csf-mapping');
+  preloadLogoForPDF();
+  const generatedBy = session?.profile?.full_name ?? 'Admin';
 
   function toast(msg, type='success') {
-    const c = document.getElementById('toast');
-    const el = document.createElement('div');
-    el.className = `toast-item ${type}`;
-    el.textContent = msg;
-    c.appendChild(el);
-    setTimeout(() => el.remove(), 4000);
+    const c=document.getElementById('toast');
+    const el=document.createElement('div');
+    el.className=`toast-item ${type}`; el.textContent=msg;
+    c.appendChild(el); setTimeout(()=>el.remove(),4000);
   }
 
-  // ── Load master data ─────────────────────────────────────────────
-  let courses = [], subjects = [], faculty = [], csfData = [];
-  let tsCourse, tsSubject, tsFaculty, tsFilter;
+  let csfData = [];
+  let currentId = null;
+  let tsCourse, tsSubject, tsFaculty;
 
-  async function loadMasterData() {
-    [courses, subjects, faculty] = await Promise.all([getAllCourses(), getAllSubjects(), getActiveFacultyList()]);
-
-    const courseOpts = courses.map(c => `<option value="${c.id}">${courseLabel(c)}</option>`).join('');
-    const subOpts    = subjects.map(s => `<option value="${s.id}">${s.subject_name}</option>`).join('');
-    const facOpts    = faculty.map(f => `<option value="${f.id}">Prof. ${f.full_name}</option>`).join('');
-
-    document.getElementById('csfCourse').innerHTML  = '<option value="">— select course —</option>' + courseOpts;
-    document.getElementById('csfSubject').innerHTML = '<option value="">— select subject —</option>' + subOpts;
-    document.getElementById('csfFaculty').innerHTML = '<option value="">— select faculty —</option>' + facOpts;
-    document.getElementById('filterCourse').innerHTML = '<option value="">All Courses</option>' + courseOpts;
-
-    tsCourse  = new TomSelect('#csfCourse',  { placeholder: 'Search course…' });
-    tsSubject = new TomSelect('#csfSubject', { placeholder: 'Search subject…' });
-    tsFaculty = new TomSelect('#csfFaculty', { placeholder: 'Search faculty…' });
-    tsFilter  = new TomSelect('#filterCourse', { placeholder: 'All Courses' });
-  }
-
-  async function refreshSubjectDropdown() {
-    subjects = await getAllSubjects();
-    if (tsSubject) tsSubject.destroy();
-    document.getElementById('csfSubject').innerHTML =
-      '<option value="">— select subject —</option>' +
-      subjects.map(s => `<option value="${s.id}">${s.subject_name}</option>`).join('');
-    tsSubject = new TomSelect('#csfSubject', { placeholder: 'Search subject…' });
-  }
-
-  // ── CSF Table ────────────────────────────────────────────────────
-  async function loadCSF(courseId = null, statusFilter = null) {
-    const tbody = document.getElementById('csfTableBody');
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="5"><span class="spin" style="display:inline-block"></span> Loading…</td></tr>';
+  // ── 1. Fetch & Render Data ──────────────────────────────────────────
+  async function loadData() {
     try {
-      csfData = await getAllCSF(courseId || null);
-      let rows = csfData;
-      if (statusFilter === 'active')   rows = rows.filter(r => r.is_active);
-      if (statusFilter === 'inactive') rows = rows.filter(r => !r.is_active);
-      renderCSF(rows);
-    } catch(e) { toast(e.message, 'error'); }
+      // Updated select query to include subject_code
+      const { data, error } = await supabase.from('course_subject_faculty')
+        .select(`
+          id, is_active, course_id, subject_id, faculty_id,
+          course:courses!course_id(id, year, program, division),
+          subject:subjects!subject_id(id, subject_name, subject_code),
+          faculty:faculty!faculty_id(id, full_name)
+        `);
+      if (error) throw error;
+
+      // Default Sort: Subject Name alphabetically
+      data.sort((a,b) => (a.subject?.subject_name || '').localeCompare(b.subject?.subject_name || ''));
+      csfData = data;
+      renderTable();
+    } catch(e) {
+      toast(e.message, 'error');
+      document.getElementById('tableBody').innerHTML = `<tr class="empty-row"><td colspan="6">Error loading data</td></tr>`;
+    }
   }
 
-  function renderCSF(rows) {
-    const tbody = document.getElementById('csfTableBody');
-    if (!rows.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No mappings found.</td></tr>'; return; }
-    tbody.innerHTML = rows.map(r => `<tr>
-      <td><strong style="color:var(--text-primary)">${r.course ? courseLabel(r.course) : '—'}</strong></td>
-      <td style="color:var(--text-muted)">${r.subject?.subject_name ?? '—'}</td>
-      <td style="color:var(--text-muted)">Prof. ${r.faculty?.full_name ?? '—'}</td>
-      <td><span class="badge ${r.is_active ? 'badge-active' : 'badge-inactive'}">${r.is_active ? 'Active' : 'Inactive'}</span></td>
-      <td>
-        ${r.is_active
-          ? `<button class="btn btn-warn btn-sm" onclick="toggleCSF('${r.id}',false)">Deactivate</button>`
-          : `<button class="btn btn-success btn-sm" onclick="toggleCSF('${r.id}',true)">Reactivate</button>`}
-      </td>
-    </tr>`).join('');
+  function cName(c) {
+    if (!c) return '—';
+    return c.division ? `${c.year} ${c.program} ${c.division}` : `${c.year} ${c.program}`;
   }
 
-  window.toggleCSF = async (id, active) => {
-    try {
-      active ? await reactivateCSF(id) : await deactivateCSF(id);
-      toast(active ? 'Mapping reactivated.' : 'Mapping deactivated.', active ? 'success' : 'warn');
-      loadCSF();
-    } catch(e) { toast(e.message, 'error'); }
-  };
+  function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    if (!csfData.length) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No mappings found.</td></tr>`;
+      return;
+    }
 
-  // ── Add CSF ──────────────────────────────────────────────────────
-  document.getElementById('addCsfBtn').addEventListener('click', async () => {
-    const courseId  = tsCourse.getValue();
-    const subjectId = tsSubject.getValue();
-    const facultyId = tsFaculty.getValue();
-    if (!courseId || !subjectId || !facultyId) { toast('Please select course, subject, and faculty.', 'error'); return; }
-    const btn = document.getElementById('addCsfBtn');
+    tbody.innerHTML = csfData.map(r => `
+      <tr>
+        <td><strong>${cName(r.course)}</strong></td>
+        <td style="color:var(--accent); font-weight:600;">${r.subject?.subject_code || '—'}</td>
+        <td>${r.subject?.subject_name || '—'}</td>
+        <td>Prof. ${r.faculty?.full_name || '—'}</td>
+        <td><span class="badge ${r.is_active ? 'badge-active' : 'badge-inactive'}">${r.is_active ? 'Active' : 'Inactive'}</span></td>
+        <td style="text-align:right">
+          <button class="btn-icon edit-btn" data-id="${r.id}" title="Edit">✏️</button>
+          <button class="btn-icon delete-btn" data-id="${r.id}" title="Delete">🗑️</button>
+        </td>
+      </tr>
+    `).join('');
+
+    bindActions();
+  }
+
+  // ── 2. Table Features: Search & Sort ───────────────────────────────
+  document.getElementById('searchInput').addEventListener('input', function() {
+    const val = this.value.toLowerCase();
+    const rows = document.getElementById('tableBody').querySelectorAll('tr:not(.empty-row)');
+    rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(val) ? '' : 'none'; });
+  });
+
+  document.querySelectorAll('th.sortable').forEach((th, i) => {
+    th.title = "Click to sort column";
+    th.addEventListener('click', () => {
+      const tbody = document.getElementById('tableBody');
+      const rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row)'));
+      if(!rows.length) return;
+      
+      const isAsc = th.dataset.sort !== 'asc';
+      th.dataset.sort = isAsc ? 'asc' : 'desc';
+      
+      rows.sort((a, b) => {
+        const aTxt = a.children[i]?.textContent.trim() || '';
+        const bTxt = b.children[i]?.textContent.trim() || '';
+        return isAsc ? aTxt.localeCompare(bTxt, undefined, {numeric: true}) 
+                     : bTxt.localeCompare(aTxt, undefined, {numeric: true});
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
+
+  // ── 3. Exports ─────────────────────────────────────────────────────
+  document.getElementById('exportPdfBtn').addEventListener('click', () => {
+    if (!csfData.length) return toast('No data to export', 'warn');
+    const flat = csfData.map(r => ({
+      course: cName(r.course),
+      code: r.subject?.subject_code || '—',
+      subject: r.subject?.subject_name || '—',
+      faculty: `Prof. ${r.faculty?.full_name || '—'}`,
+      status: r.is_active ? 'Active' : 'Inactive'
+    }));
+    const cols = [
+      { header: 'Course', key: 'course' },
+      { header: 'Subject Code', key: 'code' },
+      { header: 'Subject Name', key: 'subject', width: 40 },
+      { header: 'Faculty', key: 'faculty', width: 30 },
+      { header: 'Status', key: 'status' }
+    ];
+    exportToPDF(flat, cols, 'Course-Subject-Faculty Mapping', 'CSF_Mapping_Report', '', generatedBy);
+  });
+
+  document.getElementById('exportExcelBtn').addEventListener('click', () => {
+    if (!csfData.length) return toast('No data to export', 'warn');
+    const flat = csfData.map(r => ({
+      course: cName(r.course),
+      code: r.subject?.subject_code || '—',
+      subject: r.subject?.subject_name || '—',
+      faculty: `Prof. ${r.faculty?.full_name || '—'}`,
+      status: r.is_active ? 'Active' : 'Inactive'
+    }));
+    exportToExcel(flat, [
+      { header: 'Course', key: 'course', width: 25 },
+      { header: 'Subject Code', key: 'code', width: 15 },
+      { header: 'Subject Name', key: 'subject', width: 40 },
+      { header: 'Faculty', key: 'faculty', width: 30 },
+      { header: 'Status', key: 'status', width: 12 }
+    ], 'CSF_Mapping_Report');
+  });
+
+  // ── 4. Dropdowns & Modal Logic ─────────────────────────────────────
+  async function initDropdowns() {
+    const [cRes, sRes, fRes] = await Promise.all([
+      supabase.from('courses').select('id, year, program, division').eq('is_active', true),
+      supabase.from('subjects').select('id, subject_name, subject_code').eq('is_active', true).order('subject_name'),
+      supabase.from('faculty').select('id, full_name').eq('is_active', true).order('full_name')
+    ]);
+
+    const cSel = document.getElementById('courseId');
+    cSel.innerHTML = '<option value="">Select Course...</option>' + 
+      (cRes.data||[]).map(c => `<option value="${c.id}">${cName(c)}</option>`).join('');
+    tsCourse = new TomSelect('#courseId');
+
+    const sSel = document.getElementById('subjectId');
+    sSel.innerHTML = '<option value="">Select Subject...</option>' + 
+      (sRes.data||[]).map(s => `<option value="${s.id}">${s.subject_code ? s.subject_code+' - ' : ''}${s.subject_name}</option>`).join('');
+    tsSubject = new TomSelect('#subjectId');
+
+    const fSel = document.getElementById('facultyId');
+    fSel.innerHTML = '<option value="">Select Faculty...</option>' + 
+      (fRes.data||[]).map(f => `<option value="${f.id}">Prof. ${f.full_name}</option>`).join('');
+    tsFaculty = new TomSelect('#facultyId');
+  }
+
+  function openModal(id = null) {
+    currentId = id;
+    document.getElementById('modalTitle').textContent = id ? 'Edit Mapping' : 'Add Mapping';
+    
+    if (id) {
+      const row = csfData.find(r => r.id === id);
+      tsCourse.setValue(row.course_id);
+      tsSubject.setValue(row.subject_id);
+      tsFaculty.setValue(row.faculty_id);
+      document.getElementById('isActive').checked = row.is_active;
+    } else {
+      tsCourse.clear();
+      tsSubject.clear();
+      tsFaculty.clear();
+      document.getElementById('isActive').checked = true;
+    }
+    
+    document.getElementById('csfModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('csfModal').classList.remove('open');
+    currentId = null;
+  }
+
+  document.getElementById('addBtn').addEventListener('click', () => openModal());
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalCancel').addEventListener('click', closeModal);
+
+  document.getElementById('modalSave').addEventListener('click', async () => {
+    const course_id = tsCourse.getValue();
+    const subject_id = tsSubject.getValue();
+    const faculty_id = tsFaculty.getValue();
+    const is_active = document.getElementById('isActive').checked;
+
+    if (!course_id || !subject_id || !faculty_id) {
+      toast('Please fill all required fields', 'warn'); return;
+    }
+
+    const payload = { course_id, subject_id, faculty_id, is_active };
+    const btn = document.getElementById('modalSave');
     btn.disabled = true;
+
     try {
-      await addCSF(courseId, subjectId, facultyId);
-      toast('Mapping added successfully.', 'success');
-      tsCourse.clear(); tsSubject.clear(); tsFaculty.clear();
-      loadCSF();
-    } catch(e) { toast(e.message, 'error'); }
-    finally { btn.disabled = false; }
+      if (currentId) {
+        const { error } = await supabase.from('course_subject_faculty').update(payload).eq('id', currentId);
+        if (error) throw error;
+        toast('Mapping updated');
+      } else {
+        const { error } = await supabase.from('course_subject_faculty').insert(payload);
+        if (error) throw error;
+        toast('Mapping created');
+      }
+      closeModal();
+      await loadData();
+    } catch(e) {
+      if(e.code === '23505') toast('This Course-Subject-Faculty mapping already exists.', 'warn');
+      else toast(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
   });
 
-  // ── New Subject inline ────────────────────────────────────────────
-  document.getElementById('toggleNewSubject').addEventListener('click', () => {
-    document.getElementById('newSubjectRow').classList.toggle('visible');
-  });
-  document.getElementById('cancelSubjectBtn').addEventListener('click', () => {
-    document.getElementById('newSubjectRow').classList.remove('visible');
-    document.getElementById('newSubCode').value = '';
-    document.getElementById('newSubName').value = '';
-  });
-  document.getElementById('saveSubjectBtn').addEventListener('click', async () => {
-    const code = document.getElementById('newSubCode').value.trim();
-    const name = document.getElementById('newSubName').value.trim();
-    if (!code || !name) { toast('Subject code and name are required.', 'error'); return; }
-    try {
-      await addSubject(code, name);
-      toast(`Subject "${name}" added.`, 'success');
-      document.getElementById('newSubjectRow').classList.remove('visible');
-      document.getElementById('newSubCode').value = '';
-      document.getElementById('newSubName').value = '';
-      await refreshSubjectDropdown();
-    } catch(e) { toast(e.message, 'error'); }
-  });
+  function bindActions() {
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => openModal(e.currentTarget.dataset.id));
+    });
 
-  // ── Filters ──────────────────────────────────────────────────────
-  document.getElementById('applyFilter').addEventListener('click', () => {
-    loadCSF(tsFilter.getValue() || null, document.getElementById('filterStatus').value || null);
-  });
-  document.getElementById('clearFilter').addEventListener('click', () => {
-    tsFilter.clear();
-    document.getElementById('filterStatus').value = '';
-    loadCSF();
-  });
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        if (!confirm('Are you sure you want to delete this mapping?')) return;
+        try {
+          const { error } = await supabase.from('course_subject_faculty').delete().eq('id', e.currentTarget.dataset.id);
+          if (error) throw error;
+          toast('Mapping deleted', 'success');
+          await loadData();
+        } catch(err) {
+          if (err.code === '23503') toast('Cannot delete: This mapping is used in timetables', 'error');
+          else toast(err.message, 'error');
+        }
+      });
+    });
+  }
 
-  await loadMasterData();
-  await loadCSF();
+  // Init
+  initDropdowns();
+  loadData();
 </script>
 </body>
 </html>
