@@ -10,9 +10,9 @@
   <style>
     /* ── Design Tokens ───────────────────────────── */
     :root {
-      --bg:           #f4f6f9;       
+      --bg:           #f8fafc; /* Unified soft background */      
       --bg-card:      #ffffff;       
-      --bg-input:     #f8fafc;       
+      --bg-input:     #f1f5f9;       
       --border:       #cbd5e1;       
       --border-focus: #1e3a8a;       
       --accent:       #1e3a8a;       
@@ -27,8 +27,7 @@
       --college-red:  #b91c1c;       
       --ff-display:   'DM Serif Display', Georgia, serif;
       --ff-body:      'DM Sans', system-ui, sans-serif;
-      --radius:       10px;
-      --shadow-card:  0 20px 40px -10px rgba(0, 0, 0, 0.08), 0 10px 15px -5px rgba(0, 0, 0, 0.03);
+      --radius:       12px;
     }
 
     /* ── Reset ─────────────────────────────────────────────────── */
@@ -42,35 +41,39 @@
       overflow: hidden;
     }
 
+    /* Seamless full-screen layout instead of harsh split */
     body {
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr; 
-      min-height: 100vh;
-    }
-
-    /* ── Left panel — Branding ─────────────────────────────────── */
-    .brand-panel {
-      position: relative;
       display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 4.5rem;
-      background: var(--bg-card);
-      border-right: 1px solid var(--border);
-      overflow: hidden;
+      min-height: 100vh;
+      position: relative;
     }
 
-    .brand-panel::before {
+    /* Unified Grid spanning the entire screen gracefully */
+    body::before {
       content: '';
       position: absolute;
       inset: 0;
       background-image:
-        linear-gradient(rgba(30, 58, 138, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(30, 58, 138, 0.03) 1px, transparent 1px);
+        linear-gradient(rgba(30, 58, 138, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30, 58, 138, 0.04) 1px, transparent 1px);
       background-size: 40px 40px;
-      mask-image: radial-gradient(ellipse 90% 80% at 50% 50%, black 40%, transparent 100%);
-      -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 50%, black 40%, transparent 100%);
+      /* Smooth diagonal fade - works perfectly on any ultrawide monitor */
+      mask-image: linear-gradient(135deg, black 10%, transparent 100%);
+      -webkit-mask-image: linear-gradient(135deg, black 10%, transparent 100%);
+      z-index: 0;
       pointer-events: none;
+    }
+
+    /* ── Left panel — Branding ─────────────────────────────────── */
+    .brand-panel {
+      flex: 1.15;
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 5vw;
+      background: transparent;
     }
 
     .brand-top { position: relative; z-index: 1; }
@@ -170,22 +173,25 @@
 
     /* ── Right panel — login form ───────────────────────────────── */
     .login-panel {
+      flex: 0.85;
+      position: relative;
+      z-index: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2rem;
-      background: var(--bg);
-      overflow-y: auto;
+      padding: 5vw;
+      background: transparent;
     }
 
     .login-card {
       width: 100%;
       max-width: 440px;
       background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 20px;
       padding: 3.5rem 3rem;
-      box-shadow: var(--shadow-card);
+      /* Soft floating shadow to pop against the grid */
+      box-shadow: 0 25px 50px -12px rgba(30, 58, 138, 0.08), 0 10px 15px -5px rgba(0, 0, 0, 0.03);
       animation: fadeUp 0.45s ease both;
     }
 
@@ -469,7 +475,7 @@
 
     /* ── Responsive ────────────────────────────────────────────── */
     @media (max-width: 1024px) {
-      body { grid-template-columns: 1fr; overflow-y: auto; overflow-x: hidden; }
+      body { flex-direction: column; overflow-y: auto; overflow-x: hidden; }
       .brand-panel { display: none; } /* Hide branding entirely on mobile to prioritize login */
       .login-panel { padding: 3rem 1.5rem; align-items: flex-start; }
       .login-card { max-width: 100%; padding: 2.5rem 1.5rem; }
@@ -478,10 +484,11 @@
 </head>
 <body>
 
+  <!-- ── Left: Branding Panel ───────────────────────────────────── -->
   <aside class="brand-panel">
     <div class="brand-top">
       <div class="brand-logo-group">
-        <img src="https://i.ibb.co/8D6qf9gg/tl.png" alt="B. K. Birla College Logo" class="college-logo" onerror="this.style.display='none'" />
+        <img src="/img/logo.png" alt="B. K. Birla College Logo" class="college-logo" onerror="this.style.display='none'" />
         <div class="brand-text">
           <div class="brand-wordmark">B. K. Birla College, Kalyan</div>
           <div class="brand-submark">(Empowered Autonomous Status)</div>
@@ -505,6 +512,7 @@
     </div>
   </aside>
 
+  <!-- ── Right: Login Panel ─────────────────────────────────────── -->
   <main class="login-panel">
     <div class="login-card">
 
@@ -514,12 +522,14 @@
         <p class="card-subtitle">Sign in with your institutional credentials</p>
       </div>
 
+      <!-- Error banner -->
       <div class="error-banner" id="errorBanner" role="alert">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span id="errorMsg">Invalid credentials. Please try again.</span>
       </div>
 
       <form id="loginForm" novalidate>
+        <!-- Email -->
         <div class="field">
           <label for="email">Email address</label>
           <div class="input-wrap">
@@ -537,6 +547,7 @@
           </div>
         </div>
 
+        <!-- Password -->
         <div class="field">
           <label for="password">Password</label>
           <div class="input-wrap">
@@ -558,12 +569,14 @@
           </div>
         </div>
 
+        <!-- Forgot password link -->
         <div class="forgot-wrap">
           <button type="button" class="link-forgot" id="openForgot">
             Forgot your password?
           </button>
         </div>
 
+        <!-- Submit -->
         <button type="submit" class="btn-login" id="loginBtn">
           <div class="spinner"></div>
           <span class="btn-text">Sign in to ASES</span>
@@ -577,6 +590,7 @@
     </div>
   </main>
 
+  <!-- ── Forgot Password Modal ──────────────────────────────────── -->
   <div class="modal-backdrop" id="forgotModal" role="dialog" aria-modal="true" aria-labelledby="forgotTitle">
     <div class="modal">
       <h3 class="modal-title" id="forgotTitle">Reset Password</h3>
@@ -611,6 +625,7 @@
     </div>
   </div>
 
+  <!-- ── Scripts ────────────────────────────────────────────────── -->
   <script type="module">
     import { supabase }       from './js/config/supabase.js';
     import { getSession, redirectByRole } from './js/auth/session.js';
