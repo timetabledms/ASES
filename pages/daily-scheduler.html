@@ -154,7 +154,7 @@
     </div>
 
     <div class="danger-bar" id="dangerBar" style="display:none">
-      <span>⚠ Schedule already exists for this date. Regenerating will delete all edits and rebuild from master.</span>
+      <span>⚠ Schedule active for this date. Regenerating will delete all existing edits.</span>
       <button class="btn btn-danger btn-sm" id="regenerateBtn">Delete &amp; Regenerate</button>
     </div>
 
@@ -216,6 +216,28 @@
   </div>
 </div>
 
+<div class="modal-back" id="generateTypeModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div><div class="modal-title">Create Schedule</div></div>
+      <button class="modal-xbtn" id="generateTypeX"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.88rem;color:var(--text-muted);margin-bottom:1.25rem;">How would you like to set up the schedule for <strong id="genTypeDateStr"></strong>?</p>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;">
+        <button class="btn btn-primary" id="btnGenMaster" style="justify-content:center;">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;margin-right:8px;stroke:currentColor;fill:none;stroke-width:2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Import from Master Timetable
+        </button>
+        <button class="btn btn-ghost" id="btnGenBlank" style="justify-content:center;border:1px solid var(--border);">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;margin-right:8px;stroke:currentColor;fill:none;stroke-width:2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Start with Blank Schedule
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-back" id="regenModal">
   <div class="modal" style="max-width:400px">
     <div class="modal-header">
@@ -223,11 +245,11 @@
       <button class="modal-xbtn" id="regenX"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
-      <p style="font-size:.88rem;color:var(--text-muted);line-height:1.65">This will <strong style="color:var(--error)">permanently delete</strong> today's entire schedule including all edits and recreate fresh from master. Cannot be undone.</p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost btn-sm" id="regenCancel">Cancel</button>
-      <button class="btn btn-danger btn-sm" id="regenConfirm">Yes, Regenerate</button>
+      <p style="font-size:.88rem;color:var(--text-muted);line-height:1.65;margin-bottom:1.25rem;">This will <strong style="color:var(--error)">permanently delete</strong> today's entire schedule including all edits. Cannot be undone.</p>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;">
+        <button class="btn btn-danger" id="regenMasterBtn" style="justify-content:center;">Delete &amp; Import from Master</button>
+        <button class="btn btn-ghost" id="regenBlankBtn" style="justify-content:center;border:1px solid var(--border);color:var(--error);">Delete &amp; Clear to Blank</button>
+      </div>
     </div>
   </div>
 </div>
@@ -310,17 +332,36 @@ function courseName(c){
 }
 
 // Controls
-document.getElementById('generateBtn').addEventListener('click',()=>generateOrLoad(false));
-document.getElementById('reloadBtn').addEventListener('click',loadSchedule);
-document.getElementById('regenerateBtn').addEventListener('click',()=>document.getElementById('regenModal').classList.add('open'));
-document.getElementById('regenX').addEventListener('click',()=>document.getElementById('regenModal').classList.remove('open'));
-document.getElementById('regenCancel').addEventListener('click',()=>document.getElementById('regenModal').classList.remove('open'));
-document.getElementById('regenConfirm').addEventListener('click',async()=>{
-  document.getElementById('regenModal').classList.remove('open');
-  await generateOrLoad(true);
+document.getElementById('generateBtn').addEventListener('click',() => {
+  document.getElementById('genTypeDateStr').textContent = new Date(selectedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  document.getElementById('generateTypeModal').classList.add('open');
+});
+document.getElementById('generateTypeX').addEventListener('click',() => document.getElementById('generateTypeModal').classList.remove('open'));
+
+document.getElementById('btnGenMaster').addEventListener('click', () => {
+  document.getElementById('generateTypeModal').classList.remove('open');
+  generateOrLoad(false, 'master');
+});
+document.getElementById('btnGenBlank').addEventListener('click', () => {
+  document.getElementById('generateTypeModal').classList.remove('open');
+  generateOrLoad(false, 'blank');
 });
 
-async function generateOrLoad(force=false){
+document.getElementById('reloadBtn').addEventListener('click',loadSchedule);
+
+document.getElementById('regenerateBtn').addEventListener('click',()=>document.getElementById('regenModal').classList.add('open'));
+document.getElementById('regenX').addEventListener('click',()=>document.getElementById('regenModal').classList.remove('open'));
+
+document.getElementById('regenMasterBtn').addEventListener('click', async () => {
+  document.getElementById('regenModal').classList.remove('open');
+  await generateOrLoad(true, 'master');
+});
+document.getElementById('regenBlankBtn').addEventListener('click', async () => {
+  document.getElementById('regenModal').classList.remove('open');
+  await generateOrLoad(true, 'blank');
+});
+
+async function generateOrLoad(force=false, mode='master'){
   const btn=document.getElementById('generateBtn');
   btn.disabled=true;
   btn.innerHTML='<span class="spin" style="display:inline-block;border-color:rgba(255,255,255,.3);border-top-color:#fff"></span> Generating…';
@@ -328,31 +369,43 @@ async function generateOrLoad(force=false){
   try{
     const{data:existing}=await supabase.from('daily_schedule').select('id').eq('schedule_date',selectedDate).limit(1);
     const exists=existing&&existing.length>0;
+    
+    // If it already exists and we aren't forcing, just load it.
     if(exists&&!force){await loadSchedule();document.getElementById('dangerBar').style.display='';toast('Schedule loaded.','info');return;}
+    
+    // If forcing, wipe the existing schedule for this date
     if(force&&exists){
       const{error:de}=await supabase.from('daily_schedule').delete().eq('schedule_date',selectedDate);
       if(de)throw de;
     }
+    
     const dayType=getDayType(selectedDate);
     if(dayType==='sunday'){toast('No schedule on Sundays.','warn');gridEmpty('No schedule on Sundays.');return;}
     const{data:hol}=await supabase.from('holidays').select('name').eq('holiday_date',selectedDate).maybeSingle();
     if(hol){toast(`${selectedDate} is a holiday: ${hol.name}. Cannot generate schedule.`,'warn');gridEmpty(`🎉 Holiday: ${hol.name}. No schedule for this day.`);document.getElementById('dangerBar').style.display='none';return;}
-    const{data:master,error:me}=await supabase.from('master_timetable')
-      .select('id,time_slot_id,room_id,course_id,subject_id,csf_id,faculty_id')
-      .eq('day_type',dayType).eq('is_active',true);
-    if(me)throw me;
-    if(!master||!master.length){toast('No master timetable found for this day type.','warn');gridEmpty('No master timetable entries. Set up the Master Timetable first.');return;}
-    const{error:ie}=await supabase.from('daily_schedule').insert(
-      master.map(r=>({schedule_date:selectedDate,master_entry_id:r.id,
-        time_slot_id:r.time_slot_id,room_id:r.room_id,
-        course_id:r.course_id,subject_id:r.subject_id,csf_id:r.csf_id,
-        assigned_faculty_id:r.faculty_id,original_faculty_id:r.faculty_id,
-        is_rescheduled:false,is_cancelled:false,generated_by:session.user.id}))
-    );
-    if(ie)throw ie;
+    
+    if (mode === 'master') {
+      const{data:master,error:me}=await supabase.from('master_timetable')
+        .select('id,time_slot_id,room_id,course_id,subject_id,csf_id,faculty_id')
+        .eq('day_type',dayType).eq('is_active',true);
+      if(me)throw me;
+      if(!master||!master.length){toast('No master timetable found for this day type.','warn');gridEmpty('No master timetable entries. Set up the Master Timetable first.');return;}
+      
+      const{error:ie}=await supabase.from('daily_schedule').insert(
+        master.map(r=>({schedule_date:selectedDate,master_entry_id:r.id,
+          time_slot_id:r.time_slot_id,room_id:r.room_id,
+          course_id:r.course_id,subject_id:r.subject_id,csf_id:r.csf_id,
+          assigned_faculty_id:r.faculty_id,original_faculty_id:r.faculty_id,
+          is_rescheduled:false,is_cancelled:false,generated_by:session.user.id}))
+      );
+      if(ie)throw ie;
+      toast('Schedule imported from master.','success');
+    } else {
+      toast('Blank schedule created.','success');
+    }
+    
     await loadSchedule();
     document.getElementById('dangerBar').style.display='';
-    toast('Schedule created.','success');
   }catch(e){toast(e.message,'error');gridEmpty('Failed: '+e.message);}
   finally{
     btn.disabled=false;
