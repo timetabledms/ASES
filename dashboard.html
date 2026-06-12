@@ -20,18 +20,31 @@
     .date-badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.75rem; background: rgba(79, 106, 245, 0.1); color: var(--accent); border-radius: 20px; font-size: 0.75rem; font-weight: 600; width: fit-content; }
     .date-badge svg { width: 14px; height: 14px; }
 
-    /* Date Picker Input */
+    /* Date Picker Input (FIXED) */
     .date-picker-wrapper { position: relative; display: flex; align-items: center; }
     .date-picker-input {
       background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
-      padding: 0.6rem 1rem 0.6rem 2.4rem; font-family: var(--ff-body); font-weight: 600;
+      padding: 0.65rem 1rem 0.65rem 2.6rem !important; /* Forced padding to protect the icon space */
+      font-family: var(--ff-body); font-weight: 600;
       color: var(--text-primary); font-size: 0.9rem; cursor: pointer;
       box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: border-color 0.2s;
-      width: 140px; outline: none;
+      width: 150px !important; /* Slightly wider to prevent text squishing */
+      outline: none;
     }
     .date-picker-input:focus, .date-picker-input:hover { border-color: var(--accent); }
-    .date-picker-icon { position: absolute; left: 0.8rem; display: flex; color: var(--text-muted); pointer-events: none; }
-    .date-picker-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .date-picker-icon { 
+      position: absolute; 
+      left: 0.85rem; 
+      top: 50%; 
+      transform: translateY(-50%); 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      color: var(--text-muted); 
+      pointer-events: none; 
+      z-index: 10; 
+    }
+    .date-picker-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 
     /* Stat Cards */
     .stats-grid {
@@ -139,7 +152,6 @@
   
   <div class="content">
     
-    <!-- Header with Dynamic Date -->
     <div class="dashboard-top">
       <div class="date-display">
         <div class="date-title" id="displayDate">Loading...</div>
@@ -156,7 +168,6 @@
       </div>
     </div>
 
-    <!-- Stat Cards -->
     <div class="stats-grid">
       <div class="stat-card blue">
         <div class="stat-label">Scheduled Today</div>
@@ -168,7 +179,6 @@
         <div class="stat-value" id="statMarked">-</div>
         <div class="stat-desc">execution records</div>
       </div>
-      <!-- Updated class to 'gray' -->
       <div class="stat-card gray">
         <div class="stat-label">Pending / Unmarked</div>
         <div class="stat-value" id="statUnmarked">-</div>
@@ -186,7 +196,6 @@
       </div>
     </div>
 
-    <!-- Quick Links -->
     <div class="quick-links">
       <a href="/pages/leaves.html" class="quick-link">
         <div class="quick-icon"><svg><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
@@ -206,10 +215,8 @@
       </a>
     </div>
 
-    <!-- Lists -->
     <div class="lists-grid">
       
-      <!-- Recent Leaves -->
       <div class="list-card">
         <div class="list-header">
           <div class="list-title">Leave Entries (Selected Date)</div>
@@ -220,7 +227,6 @@
         </ul>
       </div>
 
-      <!-- Execution Updates -->
       <div class="list-card">
         <div class="list-header">
           <div class="list-title">Execution Updates (Selected Date)</div>
