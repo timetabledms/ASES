@@ -1144,7 +1144,7 @@
     document.getElementById('rc1Grid').innerHTML=h;
   }
 
-  // ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
   // RC1 PDF export — A0 Sized Grid + Faculty Load on Page 2
   // ══════════════════════════════════════════════════════════════════
   document.getElementById('rc1ExportPdf').addEventListener('click', async () => {
@@ -1288,7 +1288,11 @@
 
       // --- 3. Build & Draw Faculty Load Summary (Page 2+) ---
       let totalAllotted = 0, totalTaken = 0, totalLate = 0;
-      const summaryBody = facultyList.map(f => {
+      
+      // Filter out faculties that have 0 allotted lectures today
+      const activeFaculties = facultyList.filter(f => facStats[f.id].allotted > 0);
+      
+      const summaryBody = activeFaculties.map(f => {
           const s = facStats[f.id];
           totalAllotted += s.allotted;
           totalTaken += s.taken;
@@ -1297,12 +1301,16 @@
       });
       
       // Add Total Row
-      summaryBody.push([
-          { content: 'TOTAL', styles: { fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 245] } },
-          { content: totalAllotted.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } },
-          { content: totalTaken.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } },
-          { content: totalLate.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } }
-      ]);
+      if (summaryBody.length > 0) {
+        summaryBody.push([
+            { content: 'TOTAL', styles: { fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 245] } },
+            { content: totalAllotted.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } },
+            { content: totalTaken.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } },
+            { content: totalLate.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } }
+        ]);
+      } else {
+        summaryBody.push([{ content: 'No active lectures allotted for this date.', colSpan: 4, styles: { halign: 'center' } }]);
+      }
 
       // Force a new page for the Faculty Load Summary
       doc.addPage();
@@ -1320,7 +1328,8 @@
               2: { cellWidth: 200, halign: 'center' },
               3: { cellWidth: 200, halign: 'center' }
           },
-          margin: { left: 200, right: 200, bottom: 80 }, // Squeeze margins to center the smaller table
+          // FIX: Added top: 330 to ensure any table spillover to page 3 perfectly clears the repeating header
+          margin: { top: 330, left: 200, right: 200, bottom: 80 }, 
           didDrawPage: function(data) {
               if(window._ASES_LOGO_DATA){
                 try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 80, 70, 180, 180); } catch(e){}
@@ -1353,7 +1362,7 @@
       btn.innerHTML = originalHtml;
     }
   });
-
+  
   // ══════════════════════════════════════════════════════════════════
   // RC2 — Faculty Load Report
   // ══════════════════════════════════════════════════════════════════
