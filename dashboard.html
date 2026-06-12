@@ -1,289 +1,435 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ASES — Dashboard</title>
   
-  <!-- Fixed path for root folder -->
-  <link rel="stylesheet" href="./css/theme.css"/>
+  <link rel="stylesheet" href="/css/theme.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   
   <style>
-    /* Dashboard-specific */
-    .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:1.5rem}
-    .dash-stat{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;
-      padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.35rem;
-      transition:background .25s,border-color .25s;position:relative;overflow:hidden}
-    .dash-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent-color,var(--accent));border-radius:14px 14px 0 0}
-    .dash-stat-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
-    .dash-stat-value{font-family:var(--ff-display);font-size:2.2rem;line-height:1;color:var(--text-primary)}
-    .dash-stat-sub{font-size:.76rem;color:var(--text-muted)}
-    .dash-stat.green{--accent-color:var(--success)}.dash-stat.amber{--accent-color:var(--warn)}
-    .dash-stat.red{--accent-color:var(--error)}.dash-stat.blue{--accent-color:var(--accent)}
-    .dash-stat.grey{--accent-color:var(--text-muted)}
+    /* ── Dashboard Specific Styles ───────────────────────────────── */
+    .dashboard-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;
+    }
+    
+    .date-display { display: flex; flex-direction: column; gap: 0.5rem; }
+    .date-title { font-family: var(--ff-display); font-size: 2rem; font-weight: 700; color: var(--text-primary); line-height: 1.1; }
+    .date-badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.75rem; background: rgba(79, 106, 245, 0.1); color: var(--accent); border-radius: 20px; font-size: 0.75rem; font-weight: 600; width: fit-content; }
+    .date-badge svg { width: 14px; height: 14px; }
 
-    /* Quick actions */
-    .quick-actions{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem}
-    .quick-action{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
-      padding:1rem 1.25rem;display:flex;align-items:center;gap:.75rem;text-decoration:none;
-      color:var(--text-primary);font-size:.88rem;font-weight:500;transition:background .2s,border-color .2s,transform .15s;
-      flex:1;min-width:160px}
-    .quick-action:hover{background:var(--bg-hover);border-color:var(--accent);transform:translateY(-1px)}
-    .qa-icon{width:36px;height:36px;border-radius:9px;background:rgba(79,106,245,.15);
-      display:flex;align-items:center;justify-content:center;flex-shrink:0}
-    .qa-icon svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-    .qa-text{flex:1}
-    .qa-label{font-weight:600;font-size:.85rem}
-    .qa-sub{font-size:.72rem;color:var(--text-muted);margin-top:.1rem}
+    /* Date Picker Input */
+    .date-picker-wrapper { position: relative; }
+    .date-picker-input {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.65rem 1rem 0.65rem 2.5rem; font-family: var(--ff-body); font-weight: 600;
+      color: var(--text-primary); font-size: 0.9rem; cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: border-color 0.2s;
+      width: 200px;
+    }
+    .date-picker-input:hover { border-color: var(--accent); }
+    .date-picker-icon { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+    .date-picker-icon svg { width: 16px; height: 16px; }
 
-    /* Two-column lower layout */
-    .lower-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
-    @media(max-width:900px){.lower-grid{grid-template-columns:1fr}}
+    /* Stat Cards */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem; margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative; overflow: hidden;
+    }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+    .stat-card.blue::before { background: var(--accent); }
+    .stat-card.green::before { background: var(--success); }
+    .stat-card.amber::before { background: #f59e0b; }
+    .stat-card.yellow::before { background: #eab308; }
+    .stat-card.red::before { background: var(--error); }
+    
+    .stat-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+    .stat-value { font-family: var(--ff-display); font-size: 2.5rem; font-weight: 400; color: var(--text-primary); line-height: 1; margin: 0.25rem 0; }
+    .stat-desc { font-size: 0.75rem; color: var(--text-muted); }
 
-    /* Activity list */
-    .activity-list{display:flex;flex-direction:column;gap:0}
-    .activity-item{display:flex;align-items:flex-start;gap:.75rem;padding:.7rem 0;
-      border-bottom:1px solid var(--border)}
-    .activity-item:last-child{border-bottom:none}
-    .activity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:.35rem}
-    .activity-dot.green{background:var(--success)}.activity-dot.amber{background:var(--warn)}
-    .activity-dot.blue{background:var(--accent)}.activity-dot.grey{background:var(--text-muted)}
-    .activity-text{flex:1;font-size:.83rem;line-height:1.45}
-    .activity-time{font-size:.72rem;color:var(--text-muted);white-space:nowrap;margin-top:.1rem}
+    /* Quick Links */
+    .quick-links {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem; margin-bottom: 2rem;
+    }
+    .quick-link {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1rem 1.25rem; display: flex; align-items: center; gap: 1rem;
+      text-decoration: none; color: var(--text-primary); transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .quick-link:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.05); }
+    .quick-icon { width: 36px; height: 36px; border-radius: 8px; background: rgba(79, 106, 245, 0.08); color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .quick-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .quick-text { display: flex; flex-direction: column; }
+    .quick-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.15rem; }
+    .quick-desc { font-size: 0.75rem; color: var(--text-muted); }
 
-    /* Date header */
-    .dash-header{margin-bottom:1.5rem}
-    .dash-date{font-family:var(--ff-display);font-size:1.8rem}
-    .dash-daytype{display:inline-flex;align-items:center;gap:.35rem;
-      background:rgba(79,106,245,.1);border:1px solid rgba(79,106,245,.2);
-      border-radius:20px;padding:.2rem .75rem;font-size:.78rem;font-weight:600;
-      color:var(--accent);margin-top:.25rem}
+    /* Lists Section */
+    .lists-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;
+    }
+    @media (max-width: 768px) { .lists-grid { grid-template-columns: 1fr; } }
+    
+    .list-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column; min-height: 300px;
+    }
+    .list-header {
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .list-title { font-weight: 700; font-size: 1rem; color: var(--text-primary); }
+    .list-link { font-size: 0.8rem; color: var(--accent); text-decoration: none; font-weight: 500; }
+    .list-link:hover { text-decoration: underline; }
+    
+    .list-body { padding: 0; margin: 0; list-style: none; flex: 1; overflow-y: auto; max-height: 400px; }
+    .list-item {
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
+    }
+    .list-item:last-child { border-bottom: none; }
+    .list-empty { padding: 3rem 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
+    
+    .item-content { display: flex; flex-direction: column; gap: 0.25rem; }
+    .item-title { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; }
+    .item-subtitle { font-size: 0.8rem; color: var(--text-muted); }
+    .item-meta { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
 
-    .card-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem}
-    .card-title-sm{font-size:.88rem;font-weight:600;color:var(--text-primary)}
-    .view-all{font-size:.76rem;color:var(--accent);text-decoration:none;transition:opacity .15s}
-    .view-all:hover{opacity:.7}
+    /* Status Dots */
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .dot-on_time { background: var(--success); }
+    .dot-late { background: #f59e0b; }
+    .dot-not_engaged { background: var(--error); }
+    .dot-not_marked { background: var(--text-muted); }
   </style>
 </head>
 <body>
 
-<!-- ── Sidebar ── -->
 <aside class="sidebar">
   <div class="sidebar-college" id="sidebarCollege"></div>
   <nav id="sideNav"></nav>
   <div class="sidebar-footer">
     <div class="theme-row">
-      <span class="theme-label">
-        <span id="themeIcon"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
-        <span id="themeLabel">Light mode</span>
-      </span>
+      <span class="theme-label"><span id="themeIcon"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span><span id="themeLabel">Light mode</span></span>
       <label class="toggle-switch"><input type="checkbox" id="themeToggle"/><span class="toggle-track"></span></label>
     </div>
     <div class="user-pill">
       <div class="user-avatar" id="userAvatar">?</div>
-      <div class="user-info"><div class="user-name" id="userName">…</div><div class="user-role" id="userRole"></div></div>
-      <button class="btn-logout" id="logoutBtn" title="Sign out">
-        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      </button>
+      <div class="user-info"><div class="user-name" id="userName">…</div><div class="user-role" id="userRole">admin</div></div>
+      <button class="btn-logout" id="logoutBtn" title="Sign out"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
     </div>
   </div>
 </aside>
 
-<!-- ── Main ── -->
 <main class="main">
   <div class="topbar">
-    <div><h1 class="page-title">Dashboard</h1><p class="page-subtitle">Academic Schedule Execution System — Admin Overview</p></div>
+    <div>
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-subtitle">Academic Schedule Execution System — Admin Overview</p>
+    </div>
   </div>
+  
   <div class="content">
-
-    <!-- Date header -->
-    <div class="dash-header">
-      <div class="dash-date" id="dashDate">—</div>
-      <div><span class="dash-daytype" id="dashDayType">Weekday</span></div>
-    </div>
-
-    <!-- Today stats -->
-    <div class="dash-grid" id="dashStats">
-      <div class="dash-stat blue"><div class="dash-stat-label">Scheduled Today</div><div class="dash-stat-value" id="dTotal">—</div><div class="dash-stat-sub">lecture slots</div></div>
-      <div class="dash-stat green"><div class="dash-stat-label">Marked</div><div class="dash-stat-value" id="dMarked">—</div><div class="dash-stat-sub">execution records</div></div>
-      <div class="dash-stat grey"><div class="dash-stat-label">Pending / Unmarked</div><div class="dash-stat-value" id="dPending">—</div><div class="dash-stat-sub">not yet marked</div></div>
-      <div class="dash-stat amber"><div class="dash-stat-label">Absent Faculty</div><div class="dash-stat-value" id="dAbsent">—</div><div class="dash-stat-sub">today</div></div>
-      <div class="dash-stat red"><div class="dash-stat-label">Not Engaged</div><div class="dash-stat-value" id="dNotEngaged">—</div><div class="dash-stat-sub">today</div></div>
-    </div>
-
-    <!-- Quick actions (Fixed relative links) -->
-    <div class="quick-actions">
-      <a class="quick-action" href="./pages/leaves.html">
-        <div class="qa-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg></div>
-        <div class="qa-text"><div class="qa-label">Leave Management</div><div class="qa-sub">Record absences &amp; leaves</div></div>
-      </a>
-      <a class="quick-action" href="./pages/daily-scheduler.html">
-        <div class="qa-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg></div>
-        <div class="qa-text"><div class="qa-label">Daily Scheduler</div><div class="qa-sub">Generate today's schedule</div></div>
-      </a>
-      <a class="quick-action" href="./pages/execution.html">
-        <div class="qa-icon"><svg viewBox="0 0 24 24"><polyline points="9,11 12,14 22,4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
-        <div class="qa-text"><div class="qa-label">Execution Log</div><div class="qa-sub">Mark lecture outcomes</div></div>
-      </a>
-      <a class="quick-action" href="./pages/reports.html">
-        <div class="qa-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-        <div class="qa-text"><div class="qa-label">Reports</div><div class="qa-sub">View &amp; export all reports</div></div>
-      </a>
-    </div>
-
-    <!-- Lower two-column grid -->
-    <div class="lower-grid">
-
-      <!-- Recent leaves -->
-      <div class="card">
-        <div class="card-header-row">
-          <div class="card-title-sm">Recent Leave Entries</div>
-          <a class="view-all" href="./pages/leaves.html">View all →</a>
-        </div>
-        <div class="activity-list" id="recentLeaves">
-          <div style="color:var(--text-muted);font-size:.83rem;padding:.5rem 0"><span class="spin"></span> Loading…</div>
+    
+    <!-- Header with Dynamic Date -->
+    <div class="dashboard-top">
+      <div class="date-display">
+        <div class="date-title" id="displayDate">Loading...</div>
+        <div class="date-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span id="displayDayType">...</span>
         </div>
       </div>
+      <div class="date-picker-wrapper">
+        <span class="date-picker-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </span>
+        <input type="text" id="dashDatePicker" class="date-picker-input" placeholder="Select Date" readonly />
+      </div>
+    </div>
 
-      <!-- Recent execution updates -->
-      <div class="card">
-        <div class="card-header-row">
-          <div class="card-title-sm">Recent Execution Updates</div>
-          <a class="view-all" href="./pages/execution.html">View all →</a>
+    <!-- Stat Cards -->
+    <div class="stats-grid">
+      <div class="stat-card blue">
+        <div class="stat-label">Scheduled Today</div>
+        <div class="stat-value" id="statSched">-</div>
+        <div class="stat-desc">lecture slots</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Marked</div>
+        <div class="stat-value" id="statMarked">-</div>
+        <div class="stat-desc">execution records</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">Pending / Unmarked</div>
+        <div class="stat-value" id="statUnmarked">-</div>
+        <div class="stat-desc">not yet marked</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-label">Absent Faculty</div>
+        <div class="stat-value" id="statAbsent">-</div>
+        <div class="stat-desc">today</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Not Engaged</div>
+        <div class="stat-value" id="statNotEngaged">-</div>
+        <div class="stat-desc">today</div>
+      </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="quick-links">
+      <a href="/pages/leaves.html" class="quick-link">
+        <div class="quick-icon"><svg><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
+        <div class="quick-text"><span class="quick-title">Leave Management</span><span class="quick-desc">Record absences & leaves</span></div>
+      </a>
+      <a href="/pages/daily-scheduler.html" class="quick-link">
+        <div class="quick-icon"><svg><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="quick-text"><span class="quick-title">Daily Scheduler</span><span class="quick-desc">Generate today's schedule</span></div>
+      </a>
+      <a href="/pages/execution.html" class="quick-link">
+        <div class="quick-icon"><svg><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+        <div class="quick-text"><span class="quick-title">Execution Log</span><span class="quick-desc">Mark lecture outcomes</span></div>
+      </a>
+      <a href="/pages/reports.html" class="quick-link">
+        <div class="quick-icon"><svg><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        <div class="quick-text"><span class="quick-title">Reports</span><span class="quick-desc">View & export all reports</span></div>
+      </a>
+    </div>
+
+    <!-- Lists -->
+    <div class="lists-grid">
+      
+      <!-- Recent Leaves -->
+      <div class="list-card">
+        <div class="list-header">
+          <div class="list-title">Leave Entries (Selected Date)</div>
+          <a href="/pages/leaves.html" class="list-link">View all &rarr;</a>
         </div>
-        <div class="activity-list" id="recentExecution">
-          <div style="color:var(--text-muted);font-size:.83rem;padding:.5rem 0"><span class="spin"></span> Loading…</div>
+        <ul class="list-body" id="leavesList">
+          <div class="list-empty"><span class="spin"></span> Loading...</div>
+        </ul>
+      </div>
+
+      <!-- Execution Updates -->
+      <div class="list-card">
+        <div class="list-header">
+          <div class="list-title">Execution Updates (Selected Date)</div>
+          <a href="/pages/execution.html" class="list-link">View all &rarr;</a>
         </div>
+        <ul class="list-body" id="execList">
+          <div class="list-empty"><span class="spin"></span> Loading...</div>
+        </ul>
       </div>
 
     </div>
+
   </div>
 </main>
-<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <script type="module">
-  // 1. Removed the missing toast.js import to prevent 404 crashes
-  import { requireRole } from './js/auth/session.js';
-  import { initSidebar } from './js/components/sidebar.js';
-  import { supabase } from './js/config/supabase.js';
-  import { getDailyStats } from './js/modules/reports.js';
-  import { getDayType } from './js/modules/dailyScheduler.js';
+  import { requireRole } from '/js/auth/session.js';
+  import { initSidebar } from '/js/components/sidebar.js';
+  import { supabase } from '/js/config/supabase.js';
 
-  // 2. Embedded the toast function natively
-  function toast(msg, type='success') {
-    const c = document.getElementById('toast');
-    if (!c) return;
-    const el = document.createElement('div');
-    el.className = `toast-item ${type}`;
-    el.textContent = msg;
-    c.appendChild(el);
-    setTimeout(() => el.remove(), 4000);
-  }
-
-  const session = await requireRole('admin');
+  const session = await requireRole('admin'); 
   initSidebar(session, 'dashboard');
 
-  const today = new Date();
-  const todayStr = today.toISOString().slice(0,10);
+  const STATUS_LABELS = { on_time: 'On Time', late: 'Late', not_engaged: 'Not Engaged', not_marked: 'Not Marked' };
 
-  // Date display
-  document.getElementById('dashDate').textContent = today.toLocaleDateString('en-IN',
-    { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
-  const dt = getDayType(todayStr);
-  document.getElementById('dashDayType').textContent = dt === 'saturday' ? '📅 Saturday' : '📋 Weekday';
+  // Helper: Format large dates elegantly
+  function formatDisplayDate(dateStr) {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
 
-  // ── Today stats ───────────────────────────────────────────────────
-  async function loadTodayStats() {
+  // Helper: Time ago formatter
+  function timeAgo(dateString) {
+    const d = new Date(dateString);
+    const now = new Date();
+    const diff = (now - d) / 1000;
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+    return Math.floor(diff/86400) + 'd ago';
+  }
+
+  // Initialize Flatpickr for dynamic date changing
+  flatpickr('#dashDatePicker', {
+    defaultDate: 'today',
+    dateFormat: 'Y-m-d',
+    disableMobile: true,
+    onChange: function(selectedDates, dateStr) {
+      loadDashboard(dateStr);
+    }
+  });
+
+  // Load the initial dashboard for today immediately
+  const todayStr = new Date().toLocaleDateString('en-CA'); // 'YYYY-MM-DD' local time
+  loadDashboard(todayStr);
+
+  async function loadDashboard(dateStr) {
+    // 1. Update Headers
+    document.getElementById('displayDate').textContent = formatDisplayDate(dateStr);
+    const dayOfWeek = new Date(dateStr).getDay();
+    document.getElementById('displayDayType').textContent = (dayOfWeek === 0) ? 'Sunday' : (dayOfWeek === 6 ? 'Saturday' : 'Weekday');
+
     try {
-      const [stats, leavesRes] = await Promise.all([
-        getDailyStats(todayStr),
-        supabase.from('faculty_leaves').select('id').eq('leave_date', todayStr).eq('status','approved'),
-      ]);
-      document.getElementById('dTotal').textContent      = stats.total;
-      document.getElementById('dMarked').textContent     = stats.marked;
-      document.getElementById('dPending').textContent    = stats.not_marked;
-      document.getElementById('dAbsent').textContent     = leavesRes.data?.length ?? '—';
-      document.getElementById('dNotEngaged').textContent = stats.not_engaged;
-    } catch(e) { toast('Could not load today\'s stats.', 'warn'); }
-  }
+      // 2. Fetch Total Scheduled (excluding cancelled)
+      const { count: schedCount, error: sErr } = await supabase.from('daily_schedule')
+        .select('*', { count: 'exact', head: true })
+        .eq('schedule_date', dateStr)
+        .eq('is_cancelled', false);
+      
+      if (sErr) throw sErr;
 
-  // ── Recent leaves ─────────────────────────────────────────────────
-  async function loadRecentLeaves() {
-    const { data, error } = await supabase
-      .from('faculty_leaves')
-      .select(`leave_date, leave_type, status, faculty:faculty!faculty_id(full_name), created_at`)
-      .order('created_at', { ascending: false })
-      .limit(5);
+      // 3. Fetch Executions marked for this date
+      const { data: executions, error: eErr } = await supabase.from('lecture_execution')
+        .select('faculty_status')
+        .eq('schedule_date', dateStr);
+        
+      if (eErr) throw eErr;
 
-    const el = document.getElementById('recentLeaves');
-    if (error || !data?.length) {
-      el.innerHTML = '<div style="color:var(--text-muted);font-size:.83rem;padding:.5rem 0">No recent leave entries.</div>';
-      return;
+      // 4. Fetch Approved Leaves for this date
+      const { count: leaveCount, error: lErr } = await supabase.from('faculty_leaves')
+        .select('*', { count: 'exact', head: true })
+        .eq('leave_date', dateStr)
+        .eq('status', 'approved');
+        
+      if (lErr) throw lErr;
+
+      // --- CALCULATE PERFECT MATH ---
+      const scheduled = schedCount || 0;
+      const marked = executions ? executions.length : 0;
+      const notEngaged = executions ? executions.filter(e => e.faculty_status === 'not_engaged').length : 0;
+      // Pending / Unmarked is simply Total Scheduled minus Total Marked. Ensure it doesn't drop below 0.
+      const unmarked = Math.max(0, scheduled - marked); 
+
+      // Update DOM Cards
+      animateValue('statSched', scheduled);
+      animateValue('statMarked', marked);
+      animateValue('statUnmarked', unmarked);
+      animateValue('statAbsent', leaveCount || 0);
+      animateValue('statNotEngaged', notEngaged);
+
+      // 5. Load Lists
+      loadLeavesList(dateStr);
+      loadExecutionList(dateStr);
+
+    } catch (err) {
+      console.error("Dashboard error:", err);
     }
-
-    const leaveLabels = { casual:'Casual', medical:'Medical', earned:'Earned', duty:'Duty',
-      half_day_morning:'Half Day AM', half_day_afternoon:'Half Day PM', compensatory:'Compensatory', other:'Other' };
-
-    el.innerHTML = data.map(r => `
-      <div class="activity-item">
-        <div class="activity-dot ${r.status==='approved'?'green':'grey'}"></div>
-        <div class="activity-text">
-          <strong>${r.faculty?.full_name??'Unknown'}</strong> — ${leaveLabels[r.leave_type]??r.leave_type}
-          <div style="font-size:.73rem;color:var(--text-muted);margin-top:.1rem">${fmtDate(r.leave_date)}</div>
-        </div>
-        <div class="activity-time">${timeAgo(r.created_at)}</div>
-      </div>`).join('');
   }
 
-  // ── Recent execution ──────────────────────────────────────────────
-  async function loadRecentExecution() {
-    const { data, error } = await supabase
-      .from('lecture_execution')
-      .select(`faculty_status, schedule_date, updated_at,
-        actual_faculty:faculty!actual_faculty_id(full_name),
-        daily_schedule:daily_schedule!daily_schedule_id(
-          subject:subjects!subject_id(subject_name))`)
-      .order('updated_at', { ascending: false })
-      .limit(5);
+  async function loadLeavesList(dateStr) {
+    const listEl = document.getElementById('leavesList');
+    listEl.innerHTML = '<div class="list-empty"><span class="spin"></span> Loading...</div>';
 
-    const el = document.getElementById('recentExecution');
-    if (error || !data?.length) {
-      el.innerHTML = '<div style="color:var(--text-muted);font-size:.83rem;padding:.5rem 0">No execution updates yet.</div>';
-      return;
+    try {
+      const { data, error } = await supabase.from('faculty_leaves')
+        .select('created_at, leave_type, faculty:faculty_id(full_name)')
+        .eq('leave_date', dateStr)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        listEl.innerHTML = `<div class="list-empty">No approved leaves for this date.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = data.map(l => `
+        <li class="list-item">
+          <div class="item-content">
+            <div class="item-title">Prof. ${l.faculty?.full_name || 'Unknown'}</div>
+            <div class="item-subtitle">${(l.leave_type || 'Leave').toUpperCase()}</div>
+          </div>
+          <div class="item-meta">${timeAgo(l.created_at)}</div>
+        </li>
+      `).join('');
+    } catch(e) {
+      listEl.innerHTML = `<div class="list-empty">Error loading leaves.</div>`;
     }
-
-    const statusDot = { on_time:'green', late:'amber', not_engaged:'red', not_marked:'grey' };
-    const statusLabel = { on_time:'On Time', late:'Late', not_engaged:'Not Engaged', not_marked:'Not Marked' };
-
-    el.innerHTML = data.map(r => `
-      <div class="activity-item">
-        <div class="activity-dot ${statusDot[r.faculty_status]??'grey'}"></div>
-        <div class="activity-text">
-          <strong>${r.actual_faculty?.full_name??'—'}</strong> — ${r.daily_schedule?.subject?.subject_name??'—'}
-          <div style="font-size:.73rem;color:var(--text-muted);margin-top:.1rem">${fmtDate(r.schedule_date)} · ${statusLabel[r.faculty_status]??'—'}</div>
-        </div>
-        <div class="activity-time">${timeAgo(r.updated_at)}</div>
-      </div>`).join('');
   }
 
-  function fmtDate(d) {
-    if (!d) return '—';
-    return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  async function loadExecutionList(dateStr) {
+    const listEl = document.getElementById('execList');
+    listEl.innerHTML = '<div class="list-empty"><span class="spin"></span> Loading...</div>';
+
+    try {
+      const { data, error } = await supabase.from('lecture_execution')
+        .select(`
+          created_at, faculty_status,
+          daily_schedule:daily_schedule_id(
+            subject:subject_id(subject_name),
+            faculty:assigned_faculty_id(full_name)
+          )
+        `)
+        .eq('schedule_date', dateStr)
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        listEl.innerHTML = `<div class="list-empty">No execution updates recorded yet for this date.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = data.map(e => {
+        const facName = e.daily_schedule?.faculty?.full_name || 'Unknown';
+        const subName = e.daily_schedule?.subject?.subject_name || 'Unknown Subject';
+        const statusLbl = STATUS_LABELS[e.faculty_status] || 'Not Marked';
+        const rawDate = new Date(e.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+
+        return `
+          <li class="list-item">
+            <div class="item-content">
+              <div class="item-title">
+                <span class="dot dot-${e.faculty_status}"></span>
+                Prof. ${facName} &mdash; ${subName}
+              </div>
+              <div class="item-subtitle">${rawDate} &middot; ${statusLbl}</div>
+            </div>
+            <div class="item-meta">${timeAgo(e.created_at)}</div>
+          </li>
+        `;
+      }).join('');
+    } catch(e) {
+      listEl.innerHTML = `<div class="list-empty">Error loading executions.</div>`;
+    }
   }
 
-  function timeAgo(ts) {
-    if (!ts) return '';
-    const diff = Date.now() - new Date(ts).getTime();
-    const m = Math.floor(diff/60000);
-    if (m < 1)  return 'just now';
-    if (m < 60) return `${m}m ago`;
-    const h = Math.floor(m/60);
-    if (h < 24) return `${h}h ago`;
-    return `${Math.floor(h/24)}d ago`;
+  // Smooth number counter animation
+  function animateValue(id, end) {
+    const obj = document.getElementById(id);
+    if (!obj) return;
+    const start = parseInt(obj.textContent) || 0;
+    if (start === end) { obj.textContent = end; return; }
+    
+    const duration = 500;
+    let startTimestamp = null;
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      obj.textContent = Math.floor(progress * (end - start) + start);
+      if (progress < 1) window.requestAnimationFrame(step);
+    };
+    window.requestAnimationFrame(step);
   }
-
-  loadTodayStats();
-  loadRecentLeaves();
-  loadRecentExecution();
 </script>
+
 </body>
 </html>
