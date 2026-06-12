@@ -8,7 +8,47 @@ export function initSidebar(session, activeId) {
     const style = document.createElement('style');
     style.id = 'sidebar-injected-styles';
     style.innerHTML = `
-      #sideNav { display: flex; flex-direction: column; gap: 0.15rem; margin-top: 1rem; padding: 0 0.5rem; }
+      /* Fix for the College Header Layout WITH LOGO */
+      .sidebar-college {
+        display: flex !important;
+        flex-direction: row !important; /* Side-by-side layout */
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 0.75rem !important;
+        padding: 1.5rem 1.25rem 1.25rem 1.25rem !important;
+        border-bottom: 1px solid var(--border) !important;
+      }
+      .sidebar-logo {
+        width: 46px; /* Perfect size for the sidebar */
+        height: 46px;
+        object-fit: contain;
+        flex-shrink: 0;
+      }
+      .sidebar-college-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+      .sidebar-college-text strong {
+        font-family: var(--ff-display, sans-serif) !important;
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        line-height: 1.1 !important;
+        color: var(--text-primary) !important;
+        margin: 0 !important;
+      }
+      .sidebar-college-text span {
+        font-family: var(--ff-body, sans-serif) !important;
+        font-size: 0.65rem !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.08em !important;
+        text-transform: uppercase !important;
+        color: var(--text-muted) !important;
+        margin: 0 !important;
+      }
+
+      /* Navigation Menu Styles */
+      #sideNav { display: flex; flex-direction: column; gap: 0.15rem; margin-top: 0.5rem; padding: 0 0.5rem; overflow-y: auto; }
       .nav-section { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted, #94a3b8); margin: 1.2rem 1rem 0.4rem 1rem; user-select: none; }
       .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 1rem; color: var(--text-muted, #64748b); text-decoration: none; border-radius: 8px; font-size: 0.88rem; font-weight: 500; transition: all 0.2s ease; }
       .nav-item:hover { background: var(--bg-hover, rgba(0,0,0,0.04)); color: var(--text-primary, #1e293b); }
@@ -19,10 +59,17 @@ export function initSidebar(session, activeId) {
     document.head.appendChild(style);
   }
 
-  // 2. Set College Branding
+  // 2. Set College Branding (Now with Logo)
   const collegeEl = document.getElementById('sidebarCollege');
   if (collegeEl) {
-    collegeEl.innerHTML = `<strong>B. K. Birla College</strong><span>Management Studies</span>`;
+    // Adjust the src attribute if your logo is in a different folder
+    collegeEl.innerHTML = `
+      <img src="https://i.ibb.co/wZDKbsK6/image.png" alt="Logo" class="sidebar-logo" onerror="this.style.display='none'">
+      <div class="sidebar-college-text">
+        <strong>B. K. Birla College</strong>
+        <span>Management Studies</span>
+      </div>
+    `;
   }
   
   // 3. Set User Profile Info
