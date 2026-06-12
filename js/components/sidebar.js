@@ -90,7 +90,7 @@ export function initSidebar(session, activeId) {
   const collegeEl = document.getElementById('sidebarCollege');
   if (collegeEl) {
     collegeEl.innerHTML = `
-      <img src="/img/logo.png" alt="Logo" class="sidebar-logo" onerror="this.style.display='none'">
+      <img src="https://i.ibb.co/3mfRpCpR/IMG-20260505-WA0001-1-jpg.jpg" alt="Logo" class="sidebar-logo" onerror="this.style.display='none'">
       <div class="sidebar-college-text">
         <strong class="col-name">B. K. Birla College, Kalyan</strong>
         <span class="col-status">(Empowered Autonomous Status)</span>
