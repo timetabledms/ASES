@@ -4,7 +4,6 @@
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>ASES — Reports</title>
   
-  <!-- Shared Theme CSS -->
   <link rel="stylesheet" href="/css/theme.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"/>
@@ -67,7 +66,6 @@
 </head>
 <body>
 
-<!-- ── Sidebar ── -->
 <aside class="sidebar">
   <div class="sidebar-college" id="sidebarCollege"></div>
   <nav id="sideNav"></nav>
@@ -89,7 +87,6 @@
   </div>
 </aside>
 
-<!-- ── Main ── -->
 <main class="main">
   <div class="topbar">
     <div><h1 class="page-title">Reports</h1><p class="page-subtitle">Analyse lecture execution, attendance, leaves, and modifications</p></div>
@@ -97,7 +94,6 @@
   <div class="content">
     <div class="report-layout">
 
-      <!-- Report navigation -->
       <div class="report-nav" id="reportNav">
         <div class="report-nav-label">Execution</div>
         <button class="report-nav-btn active" data-report="r1">1. Daily Summary</button>
@@ -115,10 +111,8 @@
         <button class="report-nav-btn" data-report="r3">8. Leave Summary</button>
       </div>
 
-      <!-- Report panels -->
       <div class="report-panel">
 
-        <!-- R1: Daily Summary -->
         <div class="report-section active" id="r1">
           <div class="report-header">
             <div class="report-title">Daily Summary</div>
@@ -137,7 +131,6 @@
           <div class="table-wrap"><table id="r1Table"><thead><tr><th>Time</th><th>Room</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th><th>Flags</th></tr></thead><tbody id="r1Body"><tr class="empty-row"><td colspan="7">Select a date and run report.</td></tr></tbody></table></div>
         </div>
 
-        <!-- R2: Faculty Lectures -->
         <div class="report-section" id="r2">
           <div class="report-header">
             <div class="report-title">Faculty Lectures</div>
@@ -161,7 +154,6 @@
           <div class="table-wrap"><table id="r2Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Status</th><th>Flags</th><th>Remarks</th></tr></thead><tbody id="r2Body"><tr class="empty-row"><td colspan="7">Set filters and run.</td></tr></tbody></table></div>
         </div>
 
-        <!-- R3: Leave Summary -->
         <div class="report-section" id="r3">
           <div class="report-header">
             <div class="report-title">Faculty Leave Summary</div>
@@ -182,7 +174,6 @@
           <div id="r3Summary" style="margin-top:1rem"></div>
         </div>
 
-        <!-- R4: By Course -->
         <div class="report-section" id="r4">
           <div class="report-header">
             <div class="report-title">By Course</div>
@@ -203,7 +194,6 @@
           <div class="table-wrap"><table id="r4Table"><thead><tr><th>Date</th><th>Time</th><th>Subject</th><th>Faculty</th><th>Room</th><th>Status</th><th>Flags</th></tr></thead><tbody id="r4Body"><tr class="empty-row"><td colspan="7">Select course and run.</td></tr></tbody></table></div>
         </div>
 
-        <!-- R5: By Subject -->
         <div class="report-section" id="r5">
           <div class="report-header">
             <div class="report-title">By Subject</div>
@@ -225,7 +215,6 @@
           <div class="table-wrap"><table id="r5Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Faculty</th><th>Room</th><th>Status</th></tr></thead><tbody id="r5Body"><tr class="empty-row"><td colspan="6">Select subject and run.</td></tr></tbody></table></div>
         </div>
 
-        <!-- R6: By Room -->
         <div class="report-section" id="r6">
           <div class="report-header">
             <div class="report-title">By Room</div>
@@ -245,7 +234,6 @@
           <div class="table-wrap"><table id="r6Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th></tr></thead><tbody id="r6Body"><tr class="empty-row"><td colspan="6">Select room and run.</td></tr></tbody></table></div>
         </div>
 
-        <!-- R7: Modifications Log -->
         <div class="report-section" id="r7">
           <div class="report-header">
             <div class="report-title">Modifications Log</div>
@@ -272,7 +260,6 @@
           <div class="table-wrap"><table id="r7Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Flags</th><th>Note</th></tr></thead><tbody id="r7Body"><tr class="empty-row"><td colspan="7">Set date range and run.</td></tr></tbody></table></div>
         </div>
 
-        <!-- R8: Not Engaged / Not Marked -->
         <div class="report-section" id="r8">
           <div class="report-header">
             <div class="report-title">Not Engaged / Not Marked</div>
@@ -296,7 +283,6 @@
           <div class="table-wrap"><table id="r8Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th><th>Remarks</th></tr></thead><tbody id="r8Body"><tr class="empty-row"><td colspan="7">Set filters and run.</td></tr></tbody></table></div>
         </div>
 
-        <!-- R9: Rescheduled Slots -->
         <div class="report-section" id="r9">
           <div class="report-header">
             <div class="report-title">Rescheduled Slots</div>
@@ -315,7 +301,6 @@
           <div class="table-wrap"><table id="r9Table"><thead><tr><th>Date</th><th>Time</th><th>Room</th><th>Course</th><th>New Subject</th><th>New Faculty</th></tr></thead><tbody id="r9Body"><tr class="empty-row"><td colspan="6">Set date range and run.</td></tr></tbody></table></div>
         </div>
 
-        <!-- RC1: Daily Execution Report -->
         <div class="report-section" id="rc1">
           <div class="report-header">
             <div class="report-title">Daily Execution Report</div>
@@ -327,17 +312,14 @@
             <div class="field"><label>Date</label><input type="text" id="rc1Date" placeholder="Pick date" readonly/></div>
             <button class="btn btn-primary btn-sm" id="rc1Run">Run Report</button>
           </div>
-          <!-- Stat summary -->
           <div id="rc1Stats" style="display:none;margin-bottom:1rem">
             <div class="mini-stats" id="rc1MiniStats"></div>
           </div>
-          <!-- Colour-coded timetable grid -->
           <div style="overflow-x:auto"><div id="rc1Grid">
             <div style="padding:2rem;text-align:center;color:var(--text-muted)">Select a date and run report.</div>
           </div></div>
         </div>
 
-        <!-- RC2: Faculty Load Report -->
         <div class="report-section" id="rc2">
           <div class="report-header">
             <div class="report-title">Faculty Load Report</div>
@@ -365,13 +347,10 @@
           </div>
         </div>
 
-      </div><!-- /report-panel -->
-    </div><!-- /report-layout -->
-  </div>
+      </div></div></div>
 </main>
 <div id="toast"></div>
 
-<!-- CDN libs -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -1051,7 +1030,7 @@
           room:rooms!room_id(id,room_code),
           course:courses!course_id(year,program,division),
           subject:subjects!subject_id(subject_name),
-          assigned_faculty:faculty!assigned_faculty_id(full_name)
+          assigned_faculty:faculty!assigned_faculty_id(id,full_name)
         `).eq('schedule_date',rc1Date),
         supabase.from('lecture_execution').select('daily_schedule_id,faculty_status').eq('schedule_date',rc1Date),
       ]);
@@ -1144,7 +1123,7 @@
     document.getElementById('rc1Grid').innerHTML=h;
   }
 
-// ══════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════
   // RC1 PDF export — A0 Sized Grid + Faculty Load on Page 2
   // ══════════════════════════════════════════════════════════════════
   document.getElementById('rc1ExportPdf').addEventListener('click', async () => {
@@ -1159,7 +1138,6 @@
     try {
       const { jsPDF } = window.jspdf;
       
-      // Switch to A0, Landscape, using Points (pt) for massive high-res grid
       const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a0' });
       const pageW = doc.internal.pageSize.width;
       const pageH = doc.internal.pageSize.height;
@@ -1184,7 +1162,6 @@
       const body = [];
 
       rc1Slots.forEach(slot => {
-        // Add extra spacing to time blocks
         const timeLabel = slot.slot_type === 'lecture'
             ? `${slot.slot_label}\n\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`
             : `${slot.slot_label}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
@@ -1213,7 +1190,7 @@
             
             rowData.push(`${cname}\n${sub}\n${fac}\n[${lbl}]`);
 
-            // -- Populate Faculty Stats while iterating --
+            // Populate Faculty Stats 
             if (!row.is_cancelled && row.assigned_faculty?.id) {
               const fId = row.assigned_faculty.id;
               if (facStats[fId]) {
@@ -1289,10 +1266,8 @@
       // --- 3. Build & Draw Faculty Load Summary (Page 2+) ---
       let totalAllotted = 0, totalTaken = 0, totalLate = 0;
       
-      // Filter out faculties that have 0 allotted lectures today
-      const activeFaculties = facultyList.filter(f => facStats[f.id].allotted > 0);
-      
-      const summaryBody = activeFaculties.map(f => {
+      // Use ALL faculties from facultyList
+      const summaryBody = facultyList.map(f => {
           const s = facStats[f.id];
           totalAllotted += s.allotted;
           totalTaken += s.taken;
@@ -1301,16 +1276,12 @@
       });
       
       // Add Total Row
-      if (summaryBody.length > 0) {
-        summaryBody.push([
-            { content: 'TOTAL', styles: { fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 245] } },
-            { content: totalAllotted.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } },
-            { content: totalTaken.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } },
-            { content: totalLate.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } }
-        ]);
-      } else {
-        summaryBody.push([{ content: 'No active lectures allotted for this date.', colSpan: 4, styles: { halign: 'center' } }]);
-      }
+      summaryBody.push([
+          { content: 'TOTAL', styles: { fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 245] } },
+          { content: totalAllotted.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } },
+          { content: totalTaken.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } },
+          { content: totalLate.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } }
+      ]);
 
       // Force a new page for the Faculty Load Summary
       doc.addPage();
@@ -1328,7 +1299,6 @@
               2: { cellWidth: 200, halign: 'center' },
               3: { cellWidth: 200, halign: 'center' }
           },
-          // FIX: Added top: 330 to ensure any table spillover to page 3 perfectly clears the repeating header
           margin: { top: 330, left: 200, right: 200, bottom: 80 }, 
           didDrawPage: function(data) {
               if(window._ASES_LOGO_DATA){
@@ -1362,7 +1332,7 @@
       btn.innerHTML = originalHtml;
     }
   });
-  
+
   // ══════════════════════════════════════════════════════════════════
   // RC2 — Faculty Load Report
   // ══════════════════════════════════════════════════════════════════
@@ -1492,7 +1462,6 @@
     }
   });
 
-  // RC2 Vertical Custom PDF Build — (HEADER SCOPED CORRECTLY)
   document.getElementById('rc2ExportPdf').addEventListener('click', () => {
     if (!rc2Data.length) { toast('Run report first.', 'warn'); return; }
     if (!window.jspdf) { alert('PDF library not loaded.'); return; }
@@ -1526,7 +1495,6 @@
          5: { cellWidth: 10, halign: 'center' }, 
          6: { cellWidth: 10, halign: 'center' } 
       },
-      // IMPORTANT: Drawing Header & Footer *inside* didDrawPage makes it print on every page seamlessly.
       didDrawPage(data) {
         if(window._ASES_LOGO_DATA) {
           try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 14, 8, 24, 24); } catch(e) {}
