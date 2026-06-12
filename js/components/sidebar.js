@@ -3,74 +3,84 @@ import { supabase } from '../config/supabase.js';
 export function initSidebar(session, activeId) {
   if (!session) return;
   
-  // 1. Inject Defensive Styles to guarantee perfect rendering
+  // 1. Inject Defensive Styles to guarantee perfect full-width rendering
   if (!document.getElementById('sidebar-injected-styles')) {
     const style = document.createElement('style');
     style.id = 'sidebar-injected-styles';
     style.innerHTML = `
+      /* Expand Sidebar to Full Width needed for the College Name */
+      .sidebar {
+        width: 320px !important; /* Expanded sidebar width */
+        min-width: 320px !important;
+        flex-shrink: 0 !important;
+      }
+      
       /* Professional College Header Layout */
       .sidebar-college {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
         justify-content: flex-start !important;
-        gap: 0.85rem !important; /* Improved spacing between logo and text */
+        gap: 1rem !important; 
         padding: 1.5rem 1.25rem 1.25rem 1.25rem !important; 
         border-bottom: 1px solid var(--border) !important;
         background: transparent !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
       }
       .sidebar-logo {
-        width: 56px !important; /* Increased size significantly for clarity */
-        height: 56px !important;
+        width: 58px !important; /* Clear, sharp logo */
+        height: 58px !important;
         object-fit: contain !important;
         flex-shrink: 0 !important;
-        image-rendering: -webkit-optimize-contrast; /* Helps sharpen scaled logos */
+        image-rendering: -webkit-optimize-contrast; 
       }
       .sidebar-college-text {
         display: flex !important;
         flex-direction: column !important;
         justify-content: center !important;
-        gap: 0.2rem !important; /* Perfect uniform spacing between the 3 lines */
+        gap: 0.25rem !important; 
         min-width: 0 !important;
+        width: 100% !important;
       }
       .col-name {
         font-family: var(--ff-display, sans-serif) !important;
-        font-size: 0.88rem !important; /* Slightly adjusted to accommodate the longer name */
+        font-size: 0.95rem !important; 
         font-weight: 800 !important;
-        line-height: 1.2 !important;
+        line-height: 1.1 !important;
         color: var(--text-primary) !important;
         margin: 0 !important;
-        white-space: normal !important; /* Allows the longer name to wrap gracefully if needed */
+        white-space: nowrap !important; /* Force full width single line */
         letter-spacing: -0.01em !important;
       }
       .col-status {
         font-family: var(--ff-body, sans-serif) !important;
-        font-size: 0.6rem !important;
+        font-size: 0.62rem !important;
         font-weight: 500 !important;
         color: var(--text-muted) !important;
         margin: 0 !important; 
-        line-height: 1.1 !important;
-        white-space: normal !important;
+        line-height: 1 !important;
+        white-space: nowrap !important; /* Force single line */
       }
       .col-dept {
         font-family: var(--ff-body, sans-serif) !important;
-        font-size: 0.65rem !important;
+        font-size: 0.68rem !important;
         font-weight: 700 !important;
         letter-spacing: 0.05em !important;
         text-transform: uppercase !important;
         color: var(--text-muted) !important; 
-        margin: 0.15rem 0 0 0 !important; /* Tiny extra gap to separate department */
+        margin: 0.15rem 0 0 0 !important; 
         line-height: 1 !important;
-        white-space: normal !important;
+        white-space: nowrap !important; /* Force single line */
       }
 
       /* Navigation Menu Styles */
-      #sideNav { display: flex; flex-direction: column; gap: 0.15rem; margin-top: 0.5rem; padding: 0 0.5rem; overflow-y: auto; overflow-x: hidden; }
+      #sideNav { display: flex; flex-direction: column; gap: 0.15rem; margin-top: 0.5rem; padding: 0 0.75rem; overflow-y: auto; overflow-x: hidden; width: 100%; box-sizing: border-box; }
       .nav-section { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted, #94a3b8); margin: 1.2rem 1rem 0.4rem 1rem; user-select: none; }
-      .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 1rem; color: var(--text-muted, #64748b); text-decoration: none; border-radius: 8px; font-size: 0.88rem; font-weight: 500; transition: all 0.2s ease; white-space: nowrap; }
+      .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 1rem; color: var(--text-muted, #64748b); text-decoration: none; border-radius: 8px; font-size: 0.9rem; font-weight: 500; transition: all 0.2s ease; white-space: nowrap; width: 100%; box-sizing: border-box; }
       .nav-item:hover { background: var(--bg-hover, rgba(0,0,0,0.04)); color: var(--text-primary, #1e293b); }
       .nav-item.active { background: rgba(79, 106, 245, 0.1); color: var(--accent, #4f6af5); font-weight: 600; }
-      .nav-icon { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; flex-shrink: 0; }
+      .nav-icon { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; flex-shrink: 0; }
       .nav-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
     `;
     document.head.appendChild(style);
@@ -80,7 +90,7 @@ export function initSidebar(session, activeId) {
   const collegeEl = document.getElementById('sidebarCollege');
   if (collegeEl) {
     collegeEl.innerHTML = `
-      <img src="https://i.ibb.co/3mfRpCpR/IMG-20260505-WA0001-1-jpg.jpg" alt="Logo" class="sidebar-logo" onerror="this.style.display='none'">
+      <img src="/img/logo.png" alt="Logo" class="sidebar-logo" onerror="this.style.display='none'">
       <div class="sidebar-college-text">
         <strong class="col-name">B. K. Birla College, Kalyan</strong>
         <span class="col-status">(Empowered Autonomous Status)</span>
