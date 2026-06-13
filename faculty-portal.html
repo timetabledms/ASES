@@ -145,18 +145,64 @@
     const session = await getSession();
     if (!session) { window.location.href = '/index.html'; return; }
     
-    // We allow anyone with a session to view, but we MUST have a faculty_id
     initSidebar(session, 'faculty-portal');
 
-    const facultyId = session.profile?.faculty_id;
+    let facultyId = session.profile?.faculty_id;
+    let facultyName = session.profile?.full_name || 'Professor';
     const content = document.getElementById('mainContent');
 
+    // --- PRECISE LOOKUP: Find faculty record by matching auth user_id or email ---
+    if (!facultyId) {
+      // Depending on how getSession is structured, user id is usually here:
+      const userId = session.user?.id || session.id; 
+      const userEmail = session.user?.email || session.profile?.email;
+      
+      try {
+        // 1. Try matching the user_id column in the faculty table
+        let { data: facMatch } = await supabase
+          .from('faculty')
+          .select('id, full_name')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        // 2. If user_id wasn't found, fallback to matching the exact email address
+        if (!facMatch && userEmail) {
+          const { data: emailMatch } = await supabase
+            .from('faculty')
+            .select('id, full_name')
+            .eq('email', userEmail)
+            .maybeSingle();
+          facMatch = emailMatch;
+        }
+          
+        // 3. Apply the matched Faculty ID
+        if (facMatch) {
+          facultyId = facMatch.id;
+          facultyName = facMatch.full_name;
+        }
+      } catch(e) { 
+        console.warn("Faculty link lookup failed:", e); 
+      }
+    }
+
+    // --- ADMIN PREVIEW (Testing Fallback) ---
+    let isAdminPreview = false;
+    if (!facultyId && (session.role === 'admin' || session.role === 'super_admin')) {
+      const { data: firstFac } = await supabase.from('faculty').select('id, full_name').limit(1).maybeSingle();
+      if (firstFac) {
+        facultyId = firstFac.id;
+        facultyName = firstFac.full_name;
+        isAdminPreview = true;
+      }
+    }
+
+    // If absolutely no faculty record is found, show lock screen
     if (!facultyId) {
       content.innerHTML = `
         <div class="error-state">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <h2>No Faculty Profile Linked</h2>
-          <p>Your user account is not linked to a Faculty profile. This portal is strictly for active faculty members to view their specific schedules. Contact your administrator if this is a mistake.</p>
+          <p>Your user account is not linked to a Faculty profile in the system. Contact your administrator to ensure your Auth ID is mapped to your Faculty record.</p>
         </div>
       `;
       return;
@@ -188,21 +234,12 @@
       // 2. Fetch Recent Executions (Last 30 days)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const { data: execData, error: eErr } = await supabase.from('lecture_execution')
-        .select(`
-          schedule_date, faculty_status,
-          daily_schedule:daily_schedule_id(subject:subject_id(subject_name))
-        `)
-        .gte('schedule_date', thirtyDaysAgo.toLocaleDateString('en-CA'))
-        .order('schedule_date', { ascending: false }); // Note: RLS or assigned_faculty_id filter needed if table has it
       
-      // Filter executions to only those belonging to this faculty (safeguard)
-      // Since lecture_execution doesn't store assigned_faculty_id directly in the schema provided usually, 
-      // we need an inner join or handle it. Let's do a safe fetch.
       const { data: myExecsRaw, error: meErr } = await supabase
         .from('lecture_execution')
         .select(`schedule_date, faculty_status, daily_schedule!inner(assigned_faculty_id, subject:subject_id(subject_name))`)
         .eq('daily_schedule.assigned_faculty_id', facultyId)
+        .gte('schedule_date', thirtyDaysAgo.toLocaleDateString('en-CA'))
         .order('schedule_date', { ascending: false })
         .limit(10);
       
@@ -222,8 +259,8 @@
       let html = `
         <div class="portal-top">
           <div class="welcome-display">
-            <div class="welcome-title">Welcome back, ${session.profile?.full_name.split(' ')[0] || 'Professor'}</div>
-            <div class="welcome-subtitle">Here is your professional summary for today.</div>
+            <div class="welcome-title">Welcome back, ${facultyName.split(' ')[0]}</div>
+            <div class="welcome-subtitle">${isAdminPreview ? '<span style="color:var(--error); font-weight:bold;">[ADMIN PREVIEW]</span> Viewing as ' + facultyName : 'Here is your professional summary for today.'}</div>
           </div>
           <div class="date-badge">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -250,6 +287,7 @@
         </div>
 
         <div class="portal-grid">
+          <!-- Left: Today's Timeline -->
           <div class="panel-card">
             <div class="panel-header">
               <div class="panel-title">
@@ -306,8 +344,10 @@
             </div>
           </div>
 
+          <!-- Right: History Splits -->
           <div style="display:flex; flex-direction:column; gap:1.5rem;">
             
+            <!-- Execution History -->
             <div class="panel-card" style="flex:1;">
               <div class="panel-header">
                 <div class="panel-title">
@@ -345,6 +385,7 @@
               </ul>
             </div>
 
+            <!-- Leave History -->
             <div class="panel-card" style="flex:1;">
               <div class="panel-header">
                 <div class="panel-title">
@@ -372,7 +413,7 @@
                 <span class="hl-title">${lName}</span>
                 <span class="hl-date">${fDate}</span>
               </div>
-              <span class="hl-badge ${bgClass}">${lv.status}</span>
+              <span class="hl-badge ${bgClass}">${lv.status.toUpperCase()}</span>
             </li>
           `;
         });
@@ -394,7 +435,7 @@
         <div class="error-state">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <h2>Error Loading Portal</h2>
-          <p>We encountered an issue fetching your data. Please try refreshing the page or contact support if the issue persists.</p>
+          <p>We encountered an issue fetching your data. Please check your console for details, or contact support.</p>
         </div>
       `;
     }
