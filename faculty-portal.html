@@ -1,103 +1,105 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>ASES — Faculty Portal</title>
-  <link rel="stylesheet" href="/css/theme.css"/>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ASES — My Portal</title>
+  
+  <link rel="stylesheet" href="/css/theme.css" />
+  
   <style>
-    .tabs{display:flex;gap:.4rem;background:var(--bg-card);border:1px solid var(--border);
-      border-radius:12px;padding:.28rem;margin-bottom:1.25rem;transition:background .25s,border-color .25s;
-      flex-wrap:wrap}
-    .tab-btn{flex:1;text-align:center;padding:.52rem .85rem;border-radius:9px;font-size:.82rem;
-      font-weight:500;cursor:pointer;border:none;background:transparent;
-      color:var(--text-muted);transition:background .2s,color .2s;font-family:var(--ff-body);
-      white-space:nowrap;min-width:120px}
-    .tab-btn.active{background:var(--accent);color:#fff}
-    .faculty-hero{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;
-      padding:1.25rem 1.5rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1.1rem;
-      transition:background .25s,border-color .25s}
-    .hero-avatar{width:48px;height:48px;border-radius:50%;background:var(--accent);
-      display:flex;align-items:center;justify-content:center;font-size:1.2rem;
-      font-weight:700;color:#fff;flex-shrink:0}
-    .hero-name{font-family:var(--ff-display);font-size:1.35rem;color:var(--text-primary)}
-    .hero-meta{font-size:.8rem;color:var(--text-muted);margin-top:.15rem}
-    .readonly-pill{display:inline-flex;align-items:center;gap:.35rem;
-      background:rgba(79,106,245,.08);border:1px solid rgba(79,106,245,.18);
-      border-radius:20px;padding:.18rem .65rem;font-size:.72rem;font-weight:600;
-      color:var(--accent);margin-left:.5rem;vertical-align:middle}
-    .filters-bar{display:flex;align-items:flex-end;gap:.75rem;flex-wrap:wrap;margin-bottom:1.1rem}
-    .filters-bar .field{min-width:140px}
-    .section-header{display:flex;align-items:center;justify-content:space-between;
-      margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
-    .section-title{font-size:.95rem;font-weight:600;color:var(--text-primary)}
-    .export-bar{display:flex;gap:.45rem}
-    .badge-on-time    {background:rgba(62,207,142,.14);color:var(--success)}
-    .badge-late       {background:rgba(245,166,35,.14); color:var(--warn)}
-    .badge-not-engaged{background:rgba(224,92,107,.14); color:var(--error)}
-    .badge-not-marked {background:rgba(107,112,137,.14);color:var(--text-muted)}
-    .badge-cancelled  {background:rgba(107,112,137,.14);color:var(--text-muted)}
-    .badge-leave{background:rgba(79,106,245,.1);color:var(--accent)}
-    .badge-halfday{background:rgba(245,166,35,.1);color:var(--warn)}
-    .empty-state{display:flex;flex-direction:column;align-items:center;gap:.65rem;
-      padding:2.5rem;color:var(--text-muted);text-align:center}
-    .empty-state svg{width:32px;height:32px;stroke:var(--border);fill:none;stroke-width:1.5;
-      stroke-linecap:round;stroke-linejoin:round}
+    /* ── Portal Specific Styles ───────────────────────────────── */
+    .portal-top {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;
+    }
+    
+    .welcome-display { display: flex; flex-direction: column; gap: 0.4rem; }
+    .welcome-title { font-family: var(--ff-display); font-size: 2.2rem; font-weight: 700; color: var(--text-primary); line-height: 1.1; letter-spacing: -0.01em; }
+    .welcome-subtitle { font-size: 0.95rem; color: var(--text-muted); font-weight: 500; }
+    
+    .date-badge { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; background: var(--bg-card); border: 1px solid var(--border); box-shadow: 0 2px 6px rgba(0,0,0,0.02); color: var(--text-primary); border-radius: 8px; font-size: 0.85rem; font-weight: 600; }
+    .date-badge svg { width: 16px; height: 16px; color: var(--accent); }
 
-    /* Day toggle */
-    .day-toggle{display:flex;gap:.4rem;background:var(--bg-input);border:1px solid var(--border);
-      border-radius:10px;padding:.25rem;width:fit-content}
-    .day-btn{padding:.45rem 1rem;border-radius:8px;font-family:var(--ff-body);font-size:.82rem;
-      font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text-muted);
-      transition:background .2s,color .2s}
-    .day-btn.active{background:var(--accent);color:#fff}
+    /* Stat Cards */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem; margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative; overflow: hidden;
+    }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+    .stat-card.blue::before { background: var(--accent); }
+    .stat-card.green::before { background: var(--success); }
+    .stat-card.yellow::before { background: #eab308; }
+    
+    .stat-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+    .stat-value { font-family: var(--ff-display); font-size: 2.5rem; font-weight: 400; color: var(--text-primary); line-height: 1; margin: 0.25rem 0; }
+    .stat-desc { font-size: 0.75rem; color: var(--text-muted); }
 
-    /* Timetable grid */
-    .tt-grid{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
-      overflow:hidden;min-width:600px}
-    .tt-head{display:grid;border-bottom:1px solid var(--border);background:rgba(127,127,200,.04)}
-    .th-cell{padding:.55rem .65rem;font-size:.64rem;font-weight:700;letter-spacing:.08em;
-      text-transform:uppercase;color:var(--text-muted);border-right:1px solid var(--border)}
-    .th-cell:last-child{border-right:none}
-    .tt-row{display:grid;border-bottom:1px solid rgba(200,210,230,.35)}
-    [data-theme="dark"] .tt-row{border-bottom-color:rgba(37,41,53,.5)}
-    .tt-row:last-child{border-bottom:none}
-    .tt-row.is-break{background:var(--bg-input)}
-    .time-cell{padding:.4rem .6rem;font-size:.68rem;color:var(--text-muted);
-      border-right:1px solid var(--border);display:flex;flex-direction:column;
-      justify-content:center;min-width:84px;flex-shrink:0}
-    .time-cell .tl{font-weight:700;font-size:.7rem;color:var(--text-label)}
-    .time-cell .tr{font-size:.63rem}
-    .break-span{padding:.35rem .65rem;font-size:.7rem;font-style:italic;
-      color:var(--text-muted);display:flex;align-items:center}
-    /* Lecture cell */
-    .lc{padding:.4rem .5rem;border-right:1px solid var(--border);min-height:62px;
-      display:flex;flex-direction:column;gap:.08rem}
-    .lc:last-child{border-right:none}
-    .lc.mine{background:rgba(79,106,245,.07);border-left:3px solid var(--accent)}
-    .lc-course{font-size:.6rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted)}
-    .lc-subject{font-size:.75rem;font-weight:600;color:var(--text-primary);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .lc-faculty{font-size:.68rem;color:var(--text-muted);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .lc-empty{display:flex;align-items:center;justify-content:center;
-      height:100%;color:var(--border);font-size:.7rem}
-    .mine-tag{font-size:.58rem;font-weight:700;color:var(--accent);
-      background:rgba(79,106,245,.12);border-radius:3px;padding:.05rem .3rem;width:fit-content}
-    .grid-placeholder{padding:3rem;text-align:center;color:var(--text-muted);
-      display:flex;flex-direction:column;align-items:center;gap:.65rem}
-    .grid-placeholder svg{width:32px;height:32px;stroke:var(--border);fill:none;
-      stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+    /* Layout Grid */
+    .portal-grid {
+      display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem;
+    }
+    @media (max-width: 1024px) { .portal-grid { grid-template-columns: 1fr; } }
+    
+    .panel-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column; overflow: hidden;
+    }
+    .panel-header {
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); background: rgba(26, 34, 68, 0.02);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .panel-title { font-weight: 700; font-size: 1.05rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; }
+    .panel-title svg { width: 18px; height: 18px; color: var(--accent); }
+    
+    /* Timeline (Today's Schedule) */
+    .timeline { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; flex: 1; overflow-y: auto; max-height: 500px; }
+    .timeline-empty { text-align: center; padding: 3rem 1rem; color: var(--text-muted); font-size: 0.95rem; font-style: italic; }
+    
+    .tl-item { display: flex; gap: 1rem; position: relative; }
+    .tl-item:not(:last-child)::after {
+      content: ''; position: absolute; left: 47px; top: 32px; bottom: -1.5rem;
+      width: 2px; background: var(--border); opacity: 0.5;
+    }
+    .tl-time { width: 90px; text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; padding-top: 0.2rem; }
+    .tl-time strong { font-size: 0.85rem; color: var(--text-primary); font-weight: 700; }
+    .tl-time span { font-size: 0.7rem; color: var(--text-muted); font-weight: 500; }
+    
+    .tl-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid var(--bg-card); box-shadow: 0 0 0 2px var(--accent); margin-top: 0.45rem; flex-shrink: 0; position: relative; z-index: 2; }
+    .tl-dot.cancelled { background: var(--border); box-shadow: 0 0 0 2px var(--border); }
+    .tl-dot.break { background: #f59e0b; box-shadow: 0 0 0 2px #f59e0b; }
+    
+    .tl-content { background: var(--bg-input); border: 1px solid var(--border); padding: 1rem 1.25rem; border-radius: 10px; flex: 1; }
+    .tl-content.cancelled { opacity: 0.6; text-decoration: line-through; }
+    .tl-course { font-size: 0.75rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+    .tl-subject { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem; }
+    .tl-room { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; background: var(--bg-card); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--border); }
+    
+    /* History Lists */
+    .history-list { padding: 0; margin: 0; list-style: none; flex: 1; overflow-y: auto; max-height: 250px; }
+    .hl-item { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+    .hl-item:last-child { border-bottom: none; }
+    .hl-item:hover { background: rgba(0,0,0,0.01); }
+    .hl-main { display: flex; flex-direction: column; gap: 0.2rem; }
+    .hl-title { font-weight: 600; font-size: 0.85rem; color: var(--text-primary); }
+    .hl-date { font-size: 0.75rem; color: var(--text-muted); }
+    .hl-badge { font-size: 0.7rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
 
-    /* CSF mapping table */
-    .csf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.65rem}
-    .csf-card{background:var(--bg-input);border:1px solid var(--border);border-radius:10px;
-      padding:.85rem 1rem;transition:background .25s,border-color .25s}
-    .csf-card-course{font-size:.65rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
-      color:var(--accent);margin-bottom:.25rem}
-    .csf-card-subject{font-size:.9rem;font-weight:600;color:var(--text-primary)}
+    /* Status Colors */
+    .bg-green { background: #dcfce7; color: #059669; }
+    .bg-red { background: #fee2e2; color: #dc2626; }
+    .bg-amber { background: #fef3c7; color: #d97706; }
+    .bg-gray { background: #f1f5f9; color: #475569; }
 
-    @media(max-width:768px){.sidebar{display:none}.content{padding:1rem}.topbar{padding:1rem}}
+    .error-state { padding: 4rem; text-align: center; }
+    .error-state svg { width: 48px; height: 48px; color: var(--error); margin-bottom: 1rem; opacity: 0.8; }
+    .error-state h2 { font-family: var(--ff-display); font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .error-state p { color: var(--text-muted); font-size: 0.95rem; max-width: 400px; margin: 0 auto; }
   </style>
 </head>
 <body>
@@ -107,22 +109,13 @@
   <nav id="sideNav"></nav>
   <div class="sidebar-footer">
     <div class="theme-row">
-      <span class="theme-label">
-        <span id="themeIcon"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
-        <span id="themeLabel">Light mode</span>
-      </span>
+      <span class="theme-label"><span id="themeIcon"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span><span id="themeLabel">Light mode</span></span>
       <label class="toggle-switch"><input type="checkbox" id="themeToggle"/><span class="toggle-track"></span></label>
     </div>
     <div class="user-pill">
       <div class="user-avatar" id="userAvatar">?</div>
-      <div class="user-info">
-        <div class="user-name" id="userName">…</div>
-        <div class="user-role" id="userRole">faculty</div>
-      </div>
-      <button class="btn-logout" id="logoutBtn">
-        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-          <polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      </button>
+      <div class="user-info"><div class="user-name" id="userName">…</div><div class="user-role" id="userRole">Faculty</div></div>
+      <button class="btn-logout" id="logoutBtn" title="Sign out"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
     </div>
   </div>
 </aside>
@@ -130,560 +123,283 @@
 <main class="main">
   <div class="topbar">
     <div>
-      <h1 class="page-title">Faculty Portal</h1>
-      <p class="page-subtitle">View-only — your lectures, history, leaves and timetable</p>
+      <h1 class="page-title">My Portal</h1>
+      <p class="page-subtitle">View your daily schedule and execution history</p>
     </div>
   </div>
-  <div class="content">
-
-    <!-- Hero -->
-    <div class="faculty-hero">
-      <div class="hero-avatar" id="heroAvatar">?</div>
-      <div>
-        <div class="hero-name" id="heroName">—<span class="readonly-pill">👁 View Only</span></div>
-        <div class="hero-meta" id="heroMeta">Loading…</div>
-      </div>
-    </div>
-
-    <!-- Tabs -->
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="today">Today's Lectures</button>
-      <button class="tab-btn" data-tab="history">Lecture History</button>
-      <button class="tab-btn" data-tab="leaves">My Leaves</button>
-      <button class="tab-btn" data-tab="csf">My Subjects</button>
-      <button class="tab-btn" data-tab="tt">Timetable</button>
-    </div>
-
-    <!-- ══ TODAY ══ -->
-    <div id="tabToday">
-      <div class="card" style="padding:0;overflow:hidden">
-        <div style="padding:1rem 1.35rem;border-bottom:1px solid var(--border);
-          display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
-          <div class="section-title">
-            <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;margin-right:.4rem"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-            Today's Schedule
-          </div>
-          <div style="font-size:.8rem;color:var(--text-muted)" id="todayDateLabel"></div>
-        </div>
-        <div class="table-wrap" style="border:none;border-radius:0">
-          <table>
-            <thead><tr><th>Time</th><th>Room</th><th>Course</th><th>Subject</th><th>Status</th></tr></thead>
-            <tbody id="todayBody"><tr class="empty-row"><td colspan="5"><span class="spin" style="display:inline-block"></span></td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ HISTORY ══ -->
-    <div id="tabHistory" style="display:none">
-      <div class="card">
-        <div class="section-header">
-          <div class="section-title">Lecture History</div>
-          <div class="export-bar">
-            <button class="btn btn-ghost btn-sm" id="exportHistPdf">
-              <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>PDF
-            </button>
-            <button class="btn btn-ghost btn-sm" id="exportHistXls">
-              <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>Excel
-            </button>
-          </div>
-        </div>
-        <div class="filters-bar">
-          <div class="field"><label>From Date</label><input type="text" id="histFrom" placeholder="From" readonly/></div>
-          <div class="field"><label>To Date</label><input type="text" id="histTo" placeholder="To" readonly/></div>
-          <div class="field"><label>Status</label>
-            <select id="histStatus">
-              <option value="">All</option>
-              <option value="on_time">On Time</option>
-              <option value="late">Late</option>
-              <option value="not_engaged">Not Engaged</option>
-              <option value="not_marked">Not Marked</option>
-            </select>
-          </div>
-          <button class="btn btn-primary btn-sm" id="histSearchBtn">Search</button>
-          <button class="btn btn-ghost btn-sm" id="histClearBtn">Clear</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Date</th><th>Time</th><th>Room</th><th>Course</th><th>Subject</th><th>Status</th></tr></thead>
-            <tbody id="historyBody"><tr class="empty-row"><td colspan="6">Set a date range and search.</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ LEAVES ══ -->
-    <div id="tabLeaves" style="display:none">
-      <div class="card">
-        <div class="section-header">
-          <div class="section-title">My Leave Records</div>
-          <div style="font-size:.78rem;color:var(--text-muted)">Entered by admin · read-only</div>
-        </div>
-        <div class="filters-bar">
-          <div class="field"><label>From Date</label><input type="text" id="leaveFrom" placeholder="From" readonly/></div>
-          <div class="field"><label>To Date</label><input type="text" id="leaveTo" placeholder="To" readonly/></div>
-          <button class="btn btn-primary btn-sm" id="leaveSearchBtn">Search</button>
-          <button class="btn btn-ghost btn-sm" id="leaveClearBtn">Clear</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Date</th><th>Leave Type</th><th>Reason</th><th>Entered By</th><th>Status</th></tr></thead>
-            <tbody id="leavesBody"><tr class="empty-row"><td colspan="5">Set a date range and search.</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ MY SUBJECTS (CSF) ══ -->
-    <div id="tabCsf" style="display:none">
-      <div class="card">
-        <div class="section-header">
-          <div class="section-title">My Subject Assignments</div>
-          <div style="font-size:.78rem;color:var(--text-muted)">Courses & subjects assigned to you</div>
-        </div>
-        <div id="csfContainer">
-          <div class="grid-placeholder">
-            <span class="spin" style="display:inline-block"></span>
-            <div>Loading…</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ TIMETABLE ══ -->
-    <div id="tabTt" style="display:none">
-
-      <!-- My timetable -->
-      <div class="card" style="margin-bottom:1.25rem">
-        <div class="section-header">
-          <div class="section-title">My Timetable</div>
-          <div class="day-toggle">
-            <button class="day-btn active" data-day="weekday" id="myTtWeekday">Weekday</button>
-            <button class="day-btn" data-day="saturday" id="myTtSaturday">Saturday</button>
-          </div>
-        </div>
-        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem">
-          <span style="display:inline-block;width:12px;height:12px;background:rgba(79,106,245,.07);border:2px solid var(--accent);border-radius:3px;vertical-align:middle;margin-right:.3rem"></span>
-          Highlighted cells are your lectures
-        </p>
-        <div style="overflow-x:auto"><div id="myTtGrid">
-          <div class="tt-grid"><div class="grid-placeholder">
-            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <div>Loading timetable…</div>
-          </div></div>
-        </div></div>
-      </div>
-
-      <!-- Full college timetable -->
-      <div class="card">
-        <div class="section-header">
-          <div class="section-title">Full College Timetable</div>
-          <div class="day-toggle">
-            <button class="day-btn active" data-day="weekday" id="fullTtWeekday">Weekday</button>
-            <button class="day-btn" data-day="saturday" id="fullTtSaturday">Saturday</button>
-          </div>
-        </div>
-        <div style="overflow-x:auto"><div id="fullTtGrid">
-          <div class="tt-grid"><div class="grid-placeholder">
-            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <div>Loading…</div>
-          </div></div>
-        </div></div>
-      </div>
-
-    </div>
-
+  
+  <div class="content" id="mainContent">
+    <div style="text-align:center; padding:4rem;"><span class="spin"></span> Loading portal...</div>
   </div>
 </main>
 
-<div id="toast"></div>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable/dist/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
 <script type="module">
-import { requireRole } from '/js/auth/session.js';
-import { initSidebar } from '/js/components/sidebar.js';
-import { supabase } from '/js/config/supabase.js';
-import { exportToPDF, exportToExcel, preloadLogoForPDF } from '/js/utils/exportHelpers.js';
+  import { getSession } from '/js/auth/session.js';
+  import { initSidebar } from '/js/components/sidebar.js';
+  import { supabase } from '/js/config/supabase.js';
 
-const session = await requireRole('faculty');
-initSidebar(session, 'portal');
-  preloadLogoForPDF();
-  const generatedBy = myFacultyName;
+  const STATUS_LABELS = { on_time: 'On Time', late: 'Late', not_engaged: 'Not Engaged', not_marked: 'Not Marked' };
+  const LEAVE_LABELS = { cl: 'Casual Leave', dl: 'Duty Leave', ml: 'Medical Leave', lwp: 'Leave Without Pay' };
 
-function toast(msg, type='success') {
-  const c=document.getElementById('toast');
-  const el=document.createElement('div');
-  el.className=`toast-item ${type}`;el.textContent=msg;
-  c.appendChild(el);setTimeout(()=>el.remove(),4000);
-}
+  (async () => {
+    const session = await getSession();
+    if (!session) { window.location.href = '/index.html'; return; }
+    
+    // We allow anyone with a session to view, but we MUST have a faculty_id
+    initSidebar(session, 'faculty-portal');
 
-function localDateStr(d) {
-  const dt=d??new Date();
-  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
-}
-const todayStr = localDateStr();
+    const facultyId = session.profile?.faculty_id;
+    const content = document.getElementById('mainContent');
 
-// ── Fetch faculty profile ─────────────────────────────────────────
-let myFacultyId=null, myFacultyName=session.profile.full_name;
-
-{
-  const {data} = await supabase.from('faculty')
-    .select('id,full_name,employee_code,department')
-    .eq('supabase_uid', session.user.id).maybeSingle();
-  if (data) {
-    myFacultyId   = data.id;
-    myFacultyName = data.full_name;
-    document.getElementById('heroAvatar').textContent = data.full_name.charAt(0).toUpperCase();
-    document.getElementById('heroName').innerHTML =
-      `${data.full_name} <span class="readonly-pill">👁 View Only</span>`;
-    const parts=[];
-    if(data.employee_code) parts.push(`Emp. ${data.employee_code}`);
-    if(data.department)    parts.push(data.department);
-    document.getElementById('heroMeta').textContent = parts.join(' · ')||'Faculty';
-  } else {
-    document.getElementById('heroMeta').textContent='Profile not linked — contact admin.';
-  }
-}
-document.getElementById('userName').textContent   = myFacultyName;
-document.getElementById('userAvatar').textContent = myFacultyName.charAt(0).toUpperCase();
-
-// ── Helpers ───────────────────────────────────────────────────────
-function fmtDate(d){if(!d)return'—';return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
-function fmtTime(t){return t?t.slice(0,5):'—';}
-function cName(c){if(!c)return'—';return c.division?`${c.year} ${c.program} ${c.division}`:`${c.year} ${c.program}`;}
-
-const SL={on_time:'On Time',late:'Late',not_engaged:'Not Engaged',not_marked:'Not Marked'};
-const SC={on_time:'badge-on-time',late:'badge-late',not_engaged:'badge-not-engaged',not_marked:'badge-not-marked'};
-const LL={casual:'Casual',medical:'Medical',earned:'Earned',duty:'Duty',
-  half_day_morning:'Half Day (AM)',half_day_afternoon:'Half Day (PM)',compensatory:'Compensatory',other:'Other'};
-
-function sBadge(s){const st=s??'not_marked';return`<span class="badge ${SC[st]??'badge-not-marked'}">${SL[st]??st}</span>`;}
-
-// ── Tabs ──────────────────────────────────────────────────────────
-const TAB_MAP={today:'tabToday',history:'tabHistory',leaves:'tabLeaves',csf:'tabCsf',tt:'tabTt'};
-let ttLoaded={myTt:false,fullTt:false}, csfLoaded=false;
-
-document.querySelectorAll('.tab-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    Object.values(TAB_MAP).forEach(id=>document.getElementById(id).style.display='none');
-    document.getElementById(TAB_MAP[btn.dataset.tab]).style.display='';
-    // Lazy load
-    if(btn.dataset.tab==='csf'  && !csfLoaded)   { loadCSF();    csfLoaded=true; }
-    if(btn.dataset.tab==='tt'   && !ttLoaded.myTt){ loadMyTt('weekday'); loadFullTt('weekday'); ttLoaded.myTt=true;ttLoaded.fullTt=true; }
-  });
-});
-
-// ── Flatpickr ─────────────────────────────────────────────────────
-flatpickr('#histFrom',{dateFormat:'Y-m-d',disableMobile:true});
-flatpickr('#histTo',  {dateFormat:'Y-m-d',disableMobile:true});
-flatpickr('#leaveFrom',{dateFormat:'Y-m-d',disableMobile:true});
-flatpickr('#leaveTo',  {dateFormat:'Y-m-d',disableMobile:true});
-
-// ══ TODAY ════════════════════════════════════════════════════════
-document.getElementById('todayDateLabel').textContent=
-  new Date().toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-
-async function loadToday(){
-  const tbody=document.getElementById('todayBody');
-  if(!myFacultyId){tbody.innerHTML='<tr class="empty-row"><td colspan="5">Profile not linked.</td></tr>';return;}
-  try{
-    const{data:rows,error}=await supabase.from('daily_schedule')
-      .select(`id,is_cancelled,
-        time_slot:time_slots!time_slot_id(start_time,end_time,slot_type,sort_order),
-        room:rooms!room_id(room_code),
-        course:courses!course_id(year,program,division),
-        subject:subjects!subject_id(subject_name)`)
-      .eq('schedule_date',todayStr)
-      .eq('assigned_faculty_id',myFacultyId)
-      .eq('is_cancelled',false);
-    if(error)throw error;
-    const lectures=(rows??[]).filter(r=>r.time_slot?.slot_type==='lecture')
-      .sort((a,b)=>(a.time_slot?.sort_order??0)-(b.time_slot?.sort_order??0));
-    if(!lectures.length){
-      tbody.innerHTML=`<tr><td colspan="5"><div class="empty-state">
-        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <div>No lectures scheduled for you today.</div></div></td></tr>`;return;
+    if (!facultyId) {
+      content.innerHTML = `
+        <div class="error-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <h2>No Faculty Profile Linked</h2>
+          <p>Your user account is not linked to a Faculty profile. This portal is strictly for active faculty members to view their specific schedules. Contact your administrator if this is a mistake.</p>
+        </div>
+      `;
+      return;
     }
-    const ids=lectures.map(r=>r.id);
-    const{data:exRows}=await supabase.from('lecture_execution')
-      .select('daily_schedule_id,faculty_status').in('daily_schedule_id',ids);
-    const exMap={};for(const ex of(exRows??[]))exMap[ex.daily_schedule_id]=ex.faculty_status;
-    tbody.innerHTML=lectures.map(r=>`<tr>
-      <td style="white-space:nowrap;font-weight:500">${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}</td>
-      <td style="color:var(--accent);font-weight:600">${r.room?.room_code??'—'}</td>
-      <td>${cName(r.course)}</td>
-      <td>${r.subject?.subject_name??'—'}</td>
-      <td>${sBadge(exMap[r.id])}</td>
-    </tr>`).join('');
-  }catch(e){toast(e.message,'error');tbody.innerHTML='<tr class="empty-row"><td colspan="5">Error loading.</td></tr>';}
-}
 
-// ══ HISTORY ══════════════════════════════════════════════════════
-let historyData=[];
+    const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+    const displayDate = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-document.getElementById('histSearchBtn').addEventListener('click',loadHistory);
-document.getElementById('histClearBtn').addEventListener('click',()=>{
-  ['histFrom','histTo'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('histStatus').value='';
-  document.getElementById('historyBody').innerHTML='<tr class="empty-row"><td colspan="6">Set a date range and search.</td></tr>';
-  historyData=[];
-});
+    try {
+      // 1. Fetch Today's Schedule
+      const { data: scheduleData, error: sErr } = await supabase.from('daily_schedule')
+        .select(`
+          id, schedule_date, is_cancelled,
+          time_slot:time_slot_id(start_time, end_time, slot_label, slot_type, sort_order),
+          room:room_id(room_code),
+          course:course_id(year, program, division),
+          subject:subject_id(subject_name)
+        `)
+        .eq('assigned_faculty_id', facultyId)
+        .eq('schedule_date', todayStr);
+      if (sErr) throw sErr;
 
-async function loadHistory(){
-  if(!myFacultyId)return;
-  const from=document.getElementById('histFrom').value;
-  const to=document.getElementById('histTo').value;
-  const status=document.getElementById('histStatus').value;
-  const tbody=document.getElementById('historyBody');
-  tbody.innerHTML='<tr class="empty-row"><td colspan="6"><span class="spin" style="display:inline-block"></span> Loading…</td></tr>';
-  try{
-    let q=supabase.from('daily_schedule').select(`
-      id,schedule_date,
-      time_slot:time_slots!time_slot_id(start_time,end_time,slot_type,sort_order),
-      room:rooms!room_id(room_code),
-      course:courses!course_id(year,program,division),
-      subject:subjects!subject_id(subject_name)`)
-      .eq('assigned_faculty_id',myFacultyId)
-      .eq('is_cancelled',false)
-      .order('schedule_date',{ascending:false});
-    if(from)q=q.gte('schedule_date',from);
-    if(to)  q=q.lte('schedule_date',to);
-    const{data:rows,error}=await q;if(error)throw error;
-    const lectures=(rows??[]).filter(r=>r.time_slot?.slot_type==='lecture');
-    if(!lectures.length){tbody.innerHTML='<tr class="empty-row"><td colspan="6">No records found.</td></tr>';historyData=[];return;}
-    const ids=lectures.map(r=>r.id);
-    const{data:exRows}=await supabase.from('lecture_execution')
-      .select('daily_schedule_id,faculty_status').in('daily_schedule_id',ids);
-    const exMap={};for(const ex of(exRows??[]))exMap[ex.daily_schedule_id]=ex.faculty_status;
-    let rows2=lectures.map(r=>({...r,status:exMap[r.id]??'not_marked'}));
-    if(status)rows2=rows2.filter(r=>r.status===status);
-    if(!rows2.length){tbody.innerHTML='<tr class="empty-row"><td colspan="6">No records match filter.</td></tr>';historyData=[];return;}
-    historyData=rows2;
-    tbody.innerHTML=rows2.map(r=>`<tr>
-      <td style="white-space:nowrap">${fmtDate(r.schedule_date)}</td>
-      <td style="white-space:nowrap">${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}</td>
-      <td style="color:var(--accent);font-weight:600">${r.room?.room_code??'—'}</td>
-      <td>${cName(r.course)}</td>
-      <td>${r.subject?.subject_name??'—'}</td>
-      <td>${sBadge(r.status)}</td>
-    </tr>`).join('');
-  }catch(e){toast(e.message,'error');tbody.innerHTML='<tr class="empty-row"><td colspan="6">Error.</td></tr>';}
-}
+      // Filter and sort schedule
+      const lecturesToday = (scheduleData || []).filter(s => s.time_slot?.slot_type === 'lecture');
+      lecturesToday.sort((a,b) => (a.time_slot?.sort_order || 0) - (b.time_slot?.sort_order || 0));
 
-// Export PDF
-document.getElementById('exportHistPdf').addEventListener('click',()=>{
-  if(!historyData.length){toast('No data. Run a search first.','warn');return;}
-  const flat = historyData.map(r=>({
-    date:    fmtDate(r.schedule_date),
-    time:    `${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}`,
-    room:    r.room?.room_code??'—',
-    course:  cName(r.course),
-    subject: r.subject?.subject_name??'—',
-    status:  SL[r.status]??'—',
-  }));
-  exportToPDF(
-    flat,
-    [{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Room',key:'room'},
-     {header:'Course',key:'course',pdfWidth:28},{header:'Subject',key:'subject',pdfWidth:42},
-     {header:'Status',key:'status',pdfWidth:20}],
-    'Lecture History Report',
-    `Lecture_History_${myFacultyName.replace(/\s+/g,'_')}`,
-    `Faculty: ${myFacultyName}`,
-    generatedBy
-  );
-});
+      const activeLecturesCount = lecturesToday.filter(s => !s.is_cancelled).length;
 
-// Export Excel
-document.getElementById('exportHistXls').addEventListener('click',()=>{
-  if(!historyData.length){toast('No data. Run a search first.','warn');return;}
-  const flat = historyData.map(r=>({
-    date:    fmtDate(r.schedule_date),
-    time:    `${fmtTime(r.time_slot?.start_time)}–${fmtTime(r.time_slot?.end_time)}`,
-    room:    r.room?.room_code??'—',
-    course:  cName(r.course),
-    subject: r.subject?.subject_name??'—',
-    status:  SL[r.status]??'—',
-  }));
-  exportToExcel(
-    flat,
-    [{header:'Date',key:'date',width:12},{header:'Time',key:'time',width:12},
-     {header:'Room',key:'room',width:8},{header:'Course',key:'course',width:16},
-     {header:'Subject',key:'subject',width:28},{header:'Status',key:'status',width:14}],
-    `Lecture_History_${myFacultyName.replace(/\s+/g,'_')}`
-  );
-});
+      // 2. Fetch Recent Executions (Last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const { data: execData, error: eErr } = await supabase.from('lecture_execution')
+        .select(`
+          schedule_date, faculty_status,
+          daily_schedule:daily_schedule_id(subject:subject_id(subject_name))
+        `)
+        .gte('schedule_date', thirtyDaysAgo.toLocaleDateString('en-CA'))
+        .order('schedule_date', { ascending: false }); // Note: RLS or assigned_faculty_id filter needed if table has it
+      
+      // Filter executions to only those belonging to this faculty (safeguard)
+      // Since lecture_execution doesn't store assigned_faculty_id directly in the schema provided usually, 
+      // we need an inner join or handle it. Let's do a safe fetch.
+      const { data: myExecsRaw, error: meErr } = await supabase
+        .from('lecture_execution')
+        .select(`schedule_date, faculty_status, daily_schedule!inner(assigned_faculty_id, subject:subject_id(subject_name))`)
+        .eq('daily_schedule.assigned_faculty_id', facultyId)
+        .order('schedule_date', { ascending: false })
+        .limit(10);
+      
+      const myExecs = myExecsRaw || [];
+      const lateCount = myExecs.filter(e => e.faculty_status === 'late').length;
 
-// ══ LEAVES ═══════════════════════════════════════════════════════
-document.getElementById('leaveSearchBtn').addEventListener('click',loadLeaves);
-document.getElementById('leaveClearBtn').addEventListener('click',()=>{
-  ['leaveFrom','leaveTo'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('leavesBody').innerHTML='<tr class="empty-row"><td colspan="5">Set a date range and search.</td></tr>';
-});
+      // 3. Fetch Recent Leaves
+      const { data: myLeaves, error: lErr } = await supabase.from('faculty_leaves')
+        .select('leave_date, leave_type, status')
+        .eq('faculty_id', facultyId)
+        .order('leave_date', { ascending: false })
+        .limit(10);
+      
+      const approvedLeavesCount = (myLeaves || []).filter(l => l.status === 'approved').length;
 
-async function loadLeaves(){
-  if(!myFacultyId)return;
-  const from=document.getElementById('leaveFrom').value;
-  const to=document.getElementById('leaveTo').value;
-  const tbody=document.getElementById('leavesBody');
-  tbody.innerHTML='<tr class="empty-row"><td colspan="5"><span class="spin" style="display:inline-block"></span></td></tr>';
-  try{
-    let q=supabase.from('faculty_leaves').select(`
-      leave_date,leave_type,reason,status,
-      entered_by_admin:admin_users!entered_by(full_name)`)
-      .eq('faculty_id',myFacultyId)
-      .order('leave_date',{ascending:false});
-    if(from)q=q.gte('leave_date',from);
-    if(to)  q=q.lte('leave_date',to);
-    const{data,error}=await q;if(error)throw error;
-    if(!data?.length){tbody.innerHTML='<tr class="empty-row"><td colspan="5">No leave records found.</td></tr>';return;}
-    const half=new Set(['half_day_morning','half_day_afternoon']);
-    tbody.innerHTML=data.map(r=>`<tr>
-      <td style="white-space:nowrap;font-weight:500">${fmtDate(r.leave_date)}</td>
-      <td><span class="badge ${half.has(r.leave_type)?'badge-halfday':'badge-leave'}">${LL[r.leave_type]??r.leave_type}</span></td>
-      <td style="color:var(--text-muted)">${r.reason??'—'}</td>
-      <td style="color:var(--text-muted)">${r.entered_by_admin?.full_name??'—'}</td>
-      <td><span class="badge ${r.status==='approved'?'badge-active':'badge-inactive'}">${r.status}</span></td>
-    </tr>`).join('');
-  }catch(e){toast(e.message,'error');}
-}
+      // Build UI
+      let html = `
+        <div class="portal-top">
+          <div class="welcome-display">
+            <div class="welcome-title">Welcome back, ${session.profile?.full_name.split(' ')[0] || 'Professor'}</div>
+            <div class="welcome-subtitle">Here is your professional summary for today.</div>
+          </div>
+          <div class="date-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            ${displayDate}
+          </div>
+        </div>
 
-// ══ MY SUBJECTS (CSF) ════════════════════════════════════════════
-async function loadCSF(){
-  const container=document.getElementById('csfContainer');
-  if(!myFacultyId){container.innerHTML='<div class="grid-placeholder"><div>Profile not linked.</div></div>';return;}
-  try{
-    const{data,error}=await supabase.from('course_subject_faculty')
-      .select(`
-        id,is_active,
-        course:courses!course_id(id,year,program,division),
-        subject:subjects!subject_id(id,subject_name)`)
-      .eq('faculty_id',myFacultyId)
-      .eq('is_active',true)
-      .order('id');
-    if(error)throw error;
-    if(!data?.length){
-      container.innerHTML=`<div class="empty-state">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <div>No subject assignments found. Contact your administrator.</div>
-      </div>`;return;
-    }
-    container.innerHTML=`<div class="csf-grid">${data.map(r=>`
-      <div class="csf-card">
-        <div class="csf-card-course">${cName(r.course)}</div>
-        <div class="csf-card-subject">${r.subject?.subject_name??'—'}</div>
-      </div>`).join('')}</div>`;
-  }catch(e){toast(e.message,'error');}
-}
+        <div class="stats-grid">
+          <div class="stat-card blue">
+            <div class="stat-label">Scheduled Today</div>
+            <div class="stat-value">${activeLecturesCount}</div>
+            <div class="stat-desc">active lecture slots</div>
+          </div>
+          <div class="stat-card yellow">
+            <div class="stat-label">Late Marks (Recent)</div>
+            <div class="stat-value">${lateCount}</div>
+            <div class="stat-desc">in the last 10 records</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Leaves Taken</div>
+            <div class="stat-value">${approvedLeavesCount}</div>
+            <div class="stat-desc">approved records found</div>
+          </div>
+        </div>
 
-// ══ TIMETABLE ════════════════════════════════════════════════════
-// My timetable day toggle
-['myTtWeekday','myTtSaturday'].forEach(id=>{
-  document.getElementById(id).addEventListener('click',()=>{
-    document.getElementById('myTtWeekday').classList.toggle('active',id==='myTtWeekday');
-    document.getElementById('myTtSaturday').classList.toggle('active',id==='myTtSaturday');
-    loadMyTt(id==='myTtWeekday'?'weekday':'saturday');
-  });
-});
+        <div class="portal-grid">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Today's Schedule
+              </div>
+            </div>
+            <div class="timeline">
+      `;
 
-// Full timetable day toggle
-['fullTtWeekday','fullTtSaturday'].forEach(id=>{
-  document.getElementById(id).addEventListener('click',()=>{
-    document.getElementById('fullTtWeekday').classList.toggle('active',id==='fullTtWeekday');
-    document.getElementById('fullTtSaturday').classList.toggle('active',id==='fullTtSaturday');
-    loadFullTt(id==='fullTtWeekday'?'weekday':'saturday');
-  });
-});
-
-async function fetchTimetableData(dayType){
-  const[slotsRes,roomsRes,ttRes]=await Promise.all([
-    supabase.from('time_slots').select('id,slot_label,start_time,end_time,slot_type,sort_order')
-      .eq('day_type',dayType).order('sort_order'),
-    supabase.from('rooms').select('id,room_code').eq('is_active',true).order('room_code'),
-    supabase.from('master_timetable').select(`
-      id,time_slot_id,room_id,faculty_id,
-      course:courses!course_id(year,program,division),
-      subject:subjects!subject_id(subject_name),
-      faculty:faculty!faculty_id(id,full_name)`)
-      .eq('day_type',dayType).eq('is_active',true),
-  ]);
-  if(slotsRes.error)throw slotsRes.error;
-  if(roomsRes.error)throw roomsRes.error;
-  const slots=slotsRes.data??[];
-  const rooms=roomsRes.data??[];
-  // Build map
-  const ttMap={};
-  for(const row of(ttRes.data??[])){
-    if(!ttMap[row.time_slot_id])ttMap[row.time_slot_id]={};
-    ttMap[row.time_slot_id][row.room_id]=row;
-  }
-  return{slots,rooms,ttMap};
-}
-
-function renderTtGrid(slots,rooms,ttMap,myFacultyId,containerId){
-  const container=document.getElementById(containerId);
-  if(!slots.length||!rooms.length){
-    container.innerHTML='<div class="tt-grid"><div class="grid-placeholder"><div>No data found.</div></div></div>';return;
-  }
-  const cols=`grid-template-columns:84px repeat(${rooms.length},minmax(100px,1fr))`;
-  let h=`<div class="tt-grid">`;
-  h+=`<div class="tt-head" style="${cols}"><div class="th-cell">Time</div>${rooms.map(r=>`<div class="th-cell">Rm ${r.room_code}</div>`).join('')}</div>`;
-  for(const slot of slots){
-    const isB=slot.slot_type!=='lecture';
-    h+=`<div class="tt-row${isB?' is-break':''}" style="${cols}">`;
-    h+=`<div class="time-cell"><span class="tl">${slot.slot_label??''}</span><span class="tr">${slot.start_time.slice(0,5)}–${slot.end_time.slice(0,5)}</span></div>`;
-    if(isB){
-      const lbl=slot.slot_type==='lunch'?'🍽 Lunch':'☕ Recess';
-      h+=`<div class="break-span" style="grid-column:2/${rooms.length+2}">${lbl}</div>`;
-    }else{
-      for(const room of rooms){
-        const row=ttMap[slot.id]?.[room.id];
-        if(!row){h+=`<div class="lc"><div class="lc-empty">—</div></div>`;continue;}
-        const ismine=myFacultyId&&row.faculty_id===myFacultyId;
-        h+=`<div class="lc${ismine?' mine':''}">
-          <div class="lc-course">${cName(row.course)}</div>
-          <div class="lc-subject">${row.subject?.subject_name??'—'}</div>
-          <div class="lc-faculty">${row.faculty?.full_name??'—'}</div>
-          ${ismine?'<span class="mine-tag">★ You</span>':''}
-        </div>`;
+      if (lecturesToday.length === 0) {
+        html += `<div class="timeline-empty">You have no lectures scheduled for today.<br/>Enjoy your day!</div>`;
+      } else {
+        lecturesToday.forEach(lec => {
+          const t = lec.time_slot;
+          const sTime = t.start_time.slice(0,5);
+          const eTime = t.end_time.slice(0,5);
+          const cName = lec.course ? (lec.course.division ? `${lec.course.year} ${lec.course.program} ${lec.course.division}` : `${lec.course.year} ${lec.course.program}`) : 'Unknown Course';
+          const sName = lec.subject?.subject_name || 'Unknown Subject';
+          const rCode = lec.room?.room_code || 'TBA';
+          
+          if (lec.is_cancelled) {
+            html += `
+              <div class="tl-item">
+                <div class="tl-time"><strong>${sTime}</strong><span>${eTime}</span></div>
+                <div class="tl-dot cancelled"></div>
+                <div class="tl-content cancelled">
+                  <div class="tl-course">CANCELLED</div>
+                  <div class="tl-subject">${sName}</div>
+                  <div class="tl-room">Room ${rCode}</div>
+                </div>
+              </div>
+            `;
+          } else {
+            html += `
+              <div class="tl-item">
+                <div class="tl-time"><strong>${sTime}</strong><span>${eTime}</span></div>
+                <div class="tl-dot"></div>
+                <div class="tl-content">
+                  <div class="tl-course">${cName}</div>
+                  <div class="tl-subject">${sName}</div>
+                  <div class="tl-room">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Room ${rCode}
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        });
       }
-    }
-    h+=`</div>`;
-  }
-  h+=`</div>`;
-  container.innerHTML=h;
-}
 
-async function loadMyTt(dayType){
-  document.getElementById('myTtGrid').innerHTML='<div class="tt-grid"><div class="grid-placeholder"><span class="spin" style="display:inline-block"></span></div></div>';
-  try{
-    const{slots,rooms,ttMap}=await fetchTimetableData(dayType);
-    // For "my timetable" — only show rooms where I have at least one lecture
-    const myRoomIds=new Set();
-    for(const[tsId,rm]of Object.entries(ttMap)){
-      for(const[roomId,row]of Object.entries(rm)){
-        if(myFacultyId&&row.faculty_id===myFacultyId)myRoomIds.add(roomId);
+      html += `
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:1.5rem;">
+            
+            <div class="panel-card" style="flex:1;">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  Recent Executions
+                </div>
+              </div>
+              <ul class="history-list">
+      `;
+
+      if (myExecs.length === 0) {
+        html += `<li class="hl-item" style="justify-content:center; color:var(--text-muted); padding: 2rem;">No recent executions recorded.</li>`;
+      } else {
+        myExecs.forEach(ex => {
+          const sName = ex.daily_schedule?.subject?.subject_name || 'Subject';
+          const fDate = new Date(ex.schedule_date).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+          let bgClass = 'bg-gray';
+          if(ex.faculty_status === 'on_time') bgClass = 'bg-green';
+          else if(ex.faculty_status === 'late') bgClass = 'bg-amber';
+          else if(ex.faculty_status === 'not_engaged') bgClass = 'bg-red';
+
+          html += `
+            <li class="hl-item">
+              <div class="hl-main">
+                <span class="hl-title">${sName}</span>
+                <span class="hl-date">${fDate}</span>
+              </div>
+              <span class="hl-badge ${bgClass}">${STATUS_LABELS[ex.faculty_status] || 'Unknown'}</span>
+            </li>
+          `;
+        });
       }
+
+      html += `
+              </ul>
+            </div>
+
+            <div class="panel-card" style="flex:1;">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  Leave Status
+                </div>
+              </div>
+              <ul class="history-list">
+      `;
+
+      if (myLeaves.length === 0) {
+        html += `<li class="hl-item" style="justify-content:center; color:var(--text-muted); padding: 2rem;">No leave history found.</li>`;
+      } else {
+        myLeaves.forEach(lv => {
+          const lName = LEAVE_LABELS[lv.leave_type] || lv.leave_type.toUpperCase();
+          const fDate = new Date(lv.leave_date).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+          let bgClass = 'bg-gray';
+          if(lv.status === 'approved') bgClass = 'bg-green';
+          else if(lv.status === 'rejected') bgClass = 'bg-red';
+          else if(lv.status === 'pending') bgClass = 'bg-amber';
+
+          html += `
+            <li class="hl-item">
+              <div class="hl-main">
+                <span class="hl-title">${lName}</span>
+                <span class="hl-date">${fDate}</span>
+              </div>
+              <span class="hl-badge ${bgClass}">${lv.status}</span>
+            </li>
+          `;
+        });
+      }
+
+      html += `
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      `;
+
+      content.innerHTML = html;
+
+    } catch (e) {
+      console.error(e);
+      content.innerHTML = `
+        <div class="error-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <h2>Error Loading Portal</h2>
+          <p>We encountered an issue fetching your data. Please try refreshing the page or contact support if the issue persists.</p>
+        </div>
+      `;
     }
-    // Show all rooms but highlight mine — or filter to only my rooms if cleaner
-    renderTtGrid(slots,rooms,ttMap,myFacultyId,'myTtGrid');
-  }catch(e){toast(e.message,'error');}
-}
 
-async function loadFullTt(dayType){
-  document.getElementById('fullTtGrid').innerHTML='<div class="tt-grid"><div class="grid-placeholder"><span class="spin" style="display:inline-block"></span></div></div>';
-  try{
-    const{slots,rooms,ttMap}=await fetchTimetableData(dayType);
-    renderTtGrid(slots,rooms,ttMap,myFacultyId,'fullTtGrid');
-  }catch(e){toast(e.message,'error');}
-}
-
-// ── Bootstrap ─────────────────────────────────────────────────────
-loadToday();
+  })();
 </script>
 </body>
 </html>
