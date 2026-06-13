@@ -525,7 +525,7 @@ function updateStats(){
   document.getElementById('cntTotal').textContent=total;
 }
 
-// ── A0 PDF Export Logic ──────────────────────────────────────────────────────
+  // ── A0 PDF Export Logic ──────────────────────────────────────────────────────
 document.getElementById('exportPdfBtn').addEventListener('click', () => {
   if (!timeSlots.length || !rooms.length || Object.keys(scheduleMap).length === 0) return toast('No schedule data to export', 'error');
   if (!window.jspdf) { alert('PDF library not loaded.'); return; }
@@ -558,24 +558,12 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
       rooms.forEach(room => {
         const row = scheduleMap[slot.id]?.[room.id];
         if (row) {
-          if(row.is_cancelled){
-             rowData.push({ content: `CANCELLED\n${row.cancel_reason || ''}`, styles: { halign: 'center', valign: 'middle', textColor: [200, 50, 50], fontStyle: 'bold' } });
-          } else {
-             const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
-             const s = row.subject?.subject_name || '';
-             let f = row.assigned_faculty?.full_name || '';
-             
-             let fColor = [40, 40, 40];
-             if(row.assigned_faculty && absentIds.has(row.assigned_faculty.id)) {
-                f += '\n[ABSENT]';
-                fColor = [224, 92, 107];
-             } else if (row.assigned_faculty && isDoublebooked(row.assigned_faculty.id, slot.id, row.id)) {
-                f += '\n[DOUBLE BOOKED]';
-                fColor = [245, 166, 35];
-             }
-             
-             rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: fColor } });
-          }
+          // Extracted clean text configurations without status banners or conditional warning flags
+          const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
+          const s = row.subject?.subject_name || '';
+          const f = row.assigned_faculty?.full_name || '';
+          
+          rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
         } else {
           rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
         }
@@ -648,6 +636,7 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
 
   doc.save(`Daily_Schedule_${selectedDate}.pdf`);
 });
+        
 
 document.getElementById('exportExcelBtn').addEventListener('click', () => {
   if (!timeSlots.length || !rooms.length || Object.keys(scheduleMap).length === 0) return toast('No schedule data to export', 'error');
