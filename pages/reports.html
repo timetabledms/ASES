@@ -1123,7 +1123,7 @@
     document.getElementById('rc1Grid').innerHTML=h;
   }
 
-  // ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
   // RC1 PDF export — A0 Sized Grid + Lecture Taken Report on Page 2+
   // ══════════════════════════════════════════════════════════════════
   document.getElementById('rc1ExportPdf').addEventListener('click', async () => {
@@ -1183,23 +1183,51 @@
             }
             
             const s = row.is_cancelled ? 'cancelled' : (rc1ExecMap[row.id] ?? 'not_marked');
-            const cname = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
-            const sub = row.subject?.subject_name ?? '';
-            const fac = row.assigned_faculty?.full_name ?? '';
             const lbl = row.is_cancelled ? 'CANCELLED' : (RC1_STATUS_LBL[s] ?? 'Not Marked');
+            const cname = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
             
-            rowData.push(`${cname}\n${sub}\n${fac}\n[${lbl}]`);
+            const origFId = row.original_faculty?.id;
+            const assignFId = row.assigned_faculty?.id;
+            const isReplaced = row.is_rescheduled && origFId && assignFId && (origFId !== assignFId);
+            
+            // Build cell text for the Grid
+            if (isReplaced) {
+              const origS = row.subject?.subject_name ?? '—';
+              const origF = row.original_faculty?.full_name ?? '—';
+              const newS = row.csf?.subject?.subject_name ?? origS; // Fallback if csf not joined in RC1
+              const newF = row.assigned_faculty?.full_name ?? '—';
+              rowData.push(`${cname}\n\n[Absent]\n${origS}\n${origF}\n\n[Replaced By]\n${newS}\n${newF}\n[${lbl}]`);
+            } else {
+              const sub = row.subject?.subject_name ?? '';
+              const fac = row.original_faculty?.full_name || row.assigned_faculty?.full_name || '';
+              rowData.push(`${cname}\n${sub}\n${fac}\n[${lbl}]`);
+            }
 
-            // Populate Faculty Stats 
-            if (!row.is_cancelled && row.assigned_faculty?.id) {
-              const fId = row.assigned_faculty.id;
-              if (facStats[fId]) {
-                facStats[fId].allotted++;
-                if (s === 'on_time') {
-                  facStats[fId].taken++;
-                } else if (s === 'late') {
-                  facStats[fId].taken++;
-                  facStats[fId].late++;
+            // --- Populate Faculty Stats Dual-Logic ---
+            if (!row.is_cancelled) {
+              if (isReplaced) {
+                // 1. Absent Faculty: Gets 1 Allotted, but 0 Taken
+                if (facStats[origFId]) {
+                  facStats[origFId].allotted++;
+                }
+                
+                // 2. Replacement Faculty: Gets 1 Allotted, and Taken based on execution status
+                if (facStats[assignFId]) {
+                  facStats[assignFId].allotted++;
+                  if (s === 'on_time' || s === 'late') {
+                    facStats[assignFId].taken++;
+                    if (s === 'late') facStats[assignFId].late++;
+                  }
+                }
+              } else {
+                // Normal Lecture Layout
+                const fId = assignFId || origFId;
+                if (fId && facStats[fId]) {
+                  facStats[fId].allotted++;
+                  if (s === 'on_time' || s === 'late') {
+                    facStats[fId].taken++;
+                    if (s === 'late') facStats[fId].late++;
+                  }
                 }
               }
             }
@@ -1218,8 +1246,8 @@
         head, body,
         startY: 330,
         theme: 'grid',
-        styles: { fontSize: 16, cellPadding: 10, valign: 'middle', halign: 'center', overflow: 'linebreak', lineColor: [180, 180, 180], lineWidth: 1 },
-        headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', fontSize: 18, halign: 'center' },
+        styles: { fontSize: 13, cellPadding: 10, valign: 'middle', halign: 'center', overflow: 'linebreak', lineColor: [180, 180, 180], lineWidth: 1 },
+        headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', fontSize: 16, halign: 'center' },
         columnStyles: { 0: { cellWidth: 140, fontStyle: 'bold' } },
         margin: { top: 330, left: 50, right: 50, bottom: 60 },
         tableWidth: 'auto',
@@ -1304,12 +1332,9 @@
           ]);
       }
 
-      // Force a new page for the Lecture Taken Report
       doc.addPage();
 
-      // Track drawn pages so the header doesn't overlap if both tables are on the same page
       const drawnPages = new Set();
-      
       const drawPageHeader = function(data) {
           if (drawnPages.has(data.pageNumber)) return;
           drawnPages.add(data.pageNumber);
@@ -1355,7 +1380,6 @@
       }
 
       if (visBody.length > 0) {
-          // If FT table rendered, append slightly below it. Otherwise start at 330.
           let finalY = doc.lastAutoTable ? (doc.lastAutoTable.finalY || 330) : 330;
           let newStartY = doc.lastAutoTable ? finalY + 100 : 330;
           
