@@ -20,13 +20,19 @@ export async function markExecution(dailyScheduleId, payload, adminId) {
     modification_note = null, remarks = null,
   } = payload;
 
+  // SAFEGUARD: Guarantee that if this is a replacement, the 'actual_faculty' 
+  // is strictly logged as the replacement faculty, ensuring reports run correctly.
+  const final_actual_faculty_id = is_replaced && replacement_faculty_id 
+                                    ? replacement_faculty_id 
+                                    : (actual_faculty_id || null);
+
   const { data, error } = await supabase
     .from('lecture_execution')
     .upsert(
       {
         daily_schedule_id:     dailyScheduleId,
         schedule_date,
-        actual_faculty_id:     actual_faculty_id || null,
+        actual_faculty_id:     final_actual_faculty_id,
         faculty_status,
         is_time_changed,
         is_room_changed,
@@ -57,8 +63,8 @@ export async function markExecution(dailyScheduleId, payload, adminId) {
  * BLOCKS with an error if the swap would create a room conflict.
  *
  * A conflict exists if:
- *  - Room of A already has a DIFFERENT (non-A, non-B) lecture at B's time slot
- *  - Room of B already has a DIFFERENT lecture at A's time slot
+ * - Room of A already has a DIFFERENT (non-A, non-B) lecture at B's time slot
+ * - Room of B already has a DIFFERENT lecture at A's time slot
  */
 export async function swapLectureTimes(scheduleIdA, scheduleIdB, date, adminId) {
   // Fetch both schedule rows with their time slot and room info
