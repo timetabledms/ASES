@@ -44,8 +44,8 @@
     .lc{padding:.42rem .5rem;border-right:1px solid var(--border);min-height:66px;position:relative;transition:background .15s;cursor:pointer;display:flex;flex-direction:column;gap:.1rem}
     .lc:last-child{border-right:none}
     .lc:hover{background:var(--bg-hover)}
-    .lc.s-absent{background:rgba(224,92,107,.12)!important;border-left:3px solid var(--error)!important}
-    .lc.s-absent:hover{background:rgba(224,92,107,.2)!important}
+    .lc.s-absent{background:rgba(224,92,107,.05)!important;border-left:3px solid var(--error)!important}
+    .lc.s-absent:hover{background:rgba(224,92,107,.1)!important}
     .lc.s-resolved{background:rgba(62,207,142,.08)!important;border-left:3px solid var(--success)!important}
     .lc.s-cancelled{background:rgba(107,112,137,.08)!important;border-left:3px solid var(--text-muted)!important;opacity:.6}
     .lc.s-warn{background:rgba(245,166,35,.1)!important;border-left:3px solid var(--warn)!important}
@@ -284,7 +284,6 @@ let selectedDate=localDateStr();
 let timeSlots=[],rooms=[],scheduleMap={},absentIds=new Set();
 let activeCell=null,selectedOpt=null;
 
-// Flatpickr
 flatpickr('#datePicker',{dateFormat:'Y-m-d',defaultDate:new Date(),disableMobile:true,
   onChange([d]){
     if(!d)return;
@@ -331,13 +330,11 @@ function courseName(c){
   return c.division?`${c.year} ${c.program} ${c.division}`:`${c.year} ${c.program}`;
 }
 
-// Controls
 document.getElementById('generateBtn').addEventListener('click',() => {
   document.getElementById('genTypeDateStr').textContent = new Date(selectedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   document.getElementById('generateTypeModal').classList.add('open');
 });
 document.getElementById('generateTypeX').addEventListener('click',() => document.getElementById('generateTypeModal').classList.remove('open'));
-
 document.getElementById('btnGenMaster').addEventListener('click', () => {
   document.getElementById('generateTypeModal').classList.remove('open');
   generateOrLoad(false, 'master');
@@ -346,12 +343,9 @@ document.getElementById('btnGenBlank').addEventListener('click', () => {
   document.getElementById('generateTypeModal').classList.remove('open');
   generateOrLoad(false, 'blank');
 });
-
 document.getElementById('reloadBtn').addEventListener('click',loadSchedule);
-
 document.getElementById('regenerateBtn').addEventListener('click',()=>document.getElementById('regenModal').classList.add('open'));
 document.getElementById('regenX').addEventListener('click',()=>document.getElementById('regenModal').classList.remove('open'));
-
 document.getElementById('regenMasterBtn').addEventListener('click', async () => {
   document.getElementById('regenModal').classList.remove('open');
   await generateOrLoad(true, 'master');
@@ -369,16 +363,11 @@ async function generateOrLoad(force=false, mode='master'){
   try{
     const{data:existing}=await supabase.from('daily_schedule').select('id').eq('schedule_date',selectedDate).limit(1);
     const exists=existing&&existing.length>0;
-    
-    // If it already exists and we aren't forcing, just load it.
     if(exists&&!force){await loadSchedule();document.getElementById('dangerBar').style.display='';toast('Schedule loaded.','info');return;}
-    
-    // If forcing, wipe the existing schedule for this date
     if(force&&exists){
       const{error:de}=await supabase.from('daily_schedule').delete().eq('schedule_date',selectedDate);
       if(de)throw de;
     }
-    
     const dayType=getDayType(selectedDate);
     if(dayType==='sunday'){toast('No schedule on Sundays.','warn');gridEmpty('No schedule on Sundays.');return;}
     const{data:hol}=await supabase.from('holidays').select('name').eq('holiday_date',selectedDate).maybeSingle();
@@ -403,7 +392,6 @@ async function generateOrLoad(force=false, mode='master'){
     } else {
       toast('Blank schedule created.','success');
     }
-    
     await loadSchedule();
     document.getElementById('dangerBar').style.display='';
   }catch(e){toast(e.message,'error');gridEmpty('Failed: '+e.message);}
@@ -421,6 +409,7 @@ async function loadSchedule(){
     const[sR,rR,scR,lR]=await Promise.all([
       supabase.from('time_slots').select('id,slot_label,start_time,end_time,slot_type,sort_order').eq('day_type',slotDayType(dayType)).order('sort_order'),
       supabase.from('rooms').select('id,room_code').eq('is_active',true).order('room_code'),
+      // Fetch Original, Replacement, AND the CSF (to get Replacement Subject)
       supabase.from('daily_schedule').select(`
         id,is_cancelled,cancel_reason,is_rescheduled,original_faculty_id,
         time_slot_id,room_id,course_id,
@@ -428,19 +417,27 @@ async function loadSchedule(){
         room:rooms!room_id(id,room_code),
         course:courses!course_id(id,course_code,year,program,division),
         subject:subjects!subject_id(id,subject_name),
-        assigned_faculty:faculty!assigned_faculty_id(id,full_name)
+        assigned_faculty:faculty!assigned_faculty_id(id,full_name),
+        original_faculty:faculty!original_faculty_id(id,full_name),
+        csf:course_subject_faculty!csf_id(
+          subject:subjects!subject_id(subject_name)
+        )
       `).eq('schedule_date',selectedDate),
       supabase.from('faculty_leaves').select('faculty_id').eq('leave_date',selectedDate).eq('status','approved'),
     ]);
     if(sR.error)throw sR.error;if(rR.error)throw rR.error;if(scR.error)throw scR.error;
-    timeSlots=sR.data??[];rooms=rR.data??[];
+    
+    timeSlots=sR.data??[];
+    rooms=rR.data??[];
     absentIds=new Set((lR.data??[]).map(l=>l.faculty_id));
     scheduleMap={};
+    
     for(const row of(scR.data??[])){
-      const t=row.time_slot_id,r=row.room_id;
+      const t=row.time_slot_id, r=row.room_id;
       if(!scheduleMap[t])scheduleMap[t]={};
       scheduleMap[t][r]=row;
     }
+    
     renderGrid();updateStats();
     ['statChips','legendRow'].forEach(id=>document.getElementById(id).style.display='');
     document.getElementById('reloadBtn').style.display='';
@@ -489,17 +486,45 @@ function renderCell(row,slot,room){
   if(!row){
     return`<div class="lc s-empty" ${base}><div class="lc-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>`;
   }
+  
   let state='normal';
-  const fId=row.assigned_faculty?.id;
-  if(row.is_cancelled)state='cancelled';
-  else if(row.is_rescheduled)state='resolved';
-  else if(fId&&absentIds.has(fId))state='absent';
-  else if(fId&&isDoublebooked(fId,slot.id,row.id))state='warn';
-  const badge={absent:'<span class="lc-badge absent">⚠ ABSENT</span>',warn:'<span class="lc-badge warn">⚠ DOUBLE</span>',resolved:'<span class="lc-badge resolved">✓ RESCHEDULED</span>',cancelled:'<span class="lc-badge cancelled">CANCELLED</span>',normal:''}[state]??'';
+  const origFId = row.original_faculty?.id;
+  const currFId = row.assigned_faculty?.id;
+  const isReplaced = row.is_rescheduled && origFId !== currFId;
+  
+  if(row.is_cancelled) state='cancelled';
+  else if(isReplaced) state='resolved';
+  else if(origFId && absentIds.has(origFId)) state='absent';
+  else if(currFId && isDoublebooked(currFId,slot.id,row.id)) state='warn';
+  
+  if (isReplaced) {
+    // DUAL RENDER: Shows both original absent lecture & replacement
+    const origSub = row.subject?.subject_name ?? '—';
+    const origFac = row.original_faculty?.full_name ?? '—';
+    const newSub = row.csf?.subject?.subject_name ?? '—';
+    const newFac = row.assigned_faculty?.full_name ?? '—';
+    
+    return `<div class="lc s-resolved" data-id="${row.id}" data-course="${row.course_id??''}" data-state="resolved" ${base}>
+      <div class="lc-course">${courseName(row.course)}</div>
+      
+      <div style="border-bottom: 1px dashed rgba(62,207,142,.4); padding-bottom: 3px; margin-bottom: 3px;">
+        <div class="lc-subject" style="font-size:.65rem; color:var(--error); text-decoration:line-through">${origSub}</div>
+        <div class="lc-faculty" style="font-size:.6rem; color:var(--error); text-decoration:line-through">Prof. ${origFac}</div>
+      </div>
+      
+      <div class="lc-subject">${newSub}</div>
+      <div class="lc-faculty" style="color:var(--success); font-weight:600">Prof. ${newFac}</div>
+      <span class="lc-badge resolved">✓ REPLACED</span>
+    </div>`;
+  }
+
+  // Normal Render
+  const badge={absent:'<span class="lc-badge absent">⚠ ABSENT</span>',warn:'<span class="lc-badge warn">⚠ DOUBLE</span>',cancelled:'<span class="lc-badge cancelled">CANCELLED</span>',normal:''}[state]??'';
+  
   return`<div class="lc s-${state}" data-id="${row.id}" data-course="${row.course_id??''}" data-state="${state}" ${base}>
     <div class="lc-course">${courseName(row.course)}</div>
     <div class="lc-subject">${row.subject?.subject_name??'—'}</div>
-    <div class="lc-faculty">${row.assigned_faculty?.full_name??'—'}</div>
+    <div class="lc-faculty">Prof. ${row.original_faculty?.full_name??'—'}</div>
     ${badge}
   </div>`;
 }
@@ -513,7 +538,7 @@ function updateStats(){
       total++;
       if(row.is_cancelled){cancelled++;continue;}
       if(row.is_rescheduled){resolved++;continue;}
-      const fId=row.assigned_faculty?.id;
+      const fId=row.original_faculty?.id;
       if(fId&&absentIds.has(fId))absent++;
       else if(fId&&isDoublebooked(fId,tsId,row.id))warn++;
     }
@@ -525,7 +550,7 @@ function updateStats(){
   document.getElementById('cntTotal').textContent=total;
 }
 
-  // ── A0 PDF Export Logic ──────────────────────────────────────────────────────
+// ── Export Logic ──────────────────────────────────────────────────────────────
 document.getElementById('exportPdfBtn').addEventListener('click', () => {
   if (!timeSlots.length || !rooms.length || Object.keys(scheduleMap).length === 0) return toast('No schedule data to export', 'error');
   if (!window.jspdf) { alert('PDF library not loaded.'); return; }
@@ -535,12 +560,10 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
   const pageW = doc.internal.pageSize.width;
   const pageH = doc.internal.pageSize.height;
 
-  // Build Head
   const headRow = ['Time', ...rooms.map(r => `Room ${r.room_code}`)];
   const head = [headRow];
-  
-  // Build Body
   const body = [];
+  
   timeSlots.forEach(slot => {
     const timeLabel = slot.slot_type === 'lecture'
         ? `${slot.slot_label || ''}\n\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`
@@ -558,12 +581,21 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
       rooms.forEach(room => {
         const row = scheduleMap[slot.id]?.[room.id];
         if (row) {
-          // Extracted clean text configurations without status banners or conditional warning flags
+          const isReplaced = row.is_rescheduled && row.original_faculty?.id !== row.assigned_faculty?.id;
           const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
-          const s = row.subject?.subject_name || '';
-          const f = row.assigned_faculty?.full_name || '';
           
-          rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
+          if (isReplaced) {
+             const origS = row.subject?.subject_name || '';
+             const origF = row.original_faculty?.full_name || '';
+             const newS = row.csf?.subject?.subject_name || '';
+             const newF = row.assigned_faculty?.full_name || '';
+             
+             rowData.push({ content: `${c}\n\n[Original/Absent]\n${origS}\n${origF}\n\n[Replaced By]\n${newS}\n${newF}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40], fontSize: 10 } });
+          } else {
+             const s = row.subject?.subject_name || '';
+             const f = row.original_faculty?.full_name || '';
+             rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
+          }
         } else {
           rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
         }
@@ -572,87 +604,41 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
     }
   });
 
-  // Render massive autoTable
   doc.autoTable({
-    head, body,
-    startY: 330,
-    theme: 'grid',
-    styles: { 
-      fontSize: 14, 
-      cellPadding: 16, 
-      valign: 'middle', 
-      halign: 'center', 
-      overflow: 'linebreak',
-      lineColor: [180, 180, 180],
-      lineWidth: 1
-    },
-    headStyles: { 
-      fillColor: [26, 34, 68], 
-      textColor: 255, 
-      fontStyle: 'bold', 
-      fontSize: 16, 
-      halign: 'center' 
-    },
+    head, body, startY: 330, theme: 'grid',
+    styles: { fontSize: 14, cellPadding: 16, valign: 'middle', halign: 'center', overflow: 'linebreak', lineColor: [180, 180, 180], lineWidth: 1 },
+    headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', fontSize: 16, halign: 'center' },
     columnStyles: { 0: { cellWidth: 160, fontStyle: 'bold' } },
-    margin: { top: 330, left: 80, right: 80, bottom: 80 },
-    tableWidth: 'auto',
-    didParseCell(data) {
-      if (data.section === 'body' && data.column.index > 0 && data.cell.raw) {
-        const text = String(data.cell.raw.content || data.cell.raw);
-        if (text.includes('Lunch Break') || text.includes('Recess') || text === '-') {
-           data.cell.styles.fillColor = [250, 250, 250];
-        }
-      }
-    },
+    margin: { top: 330, left: 80, right: 80, bottom: 80 }, tableWidth: 'auto',
     didDrawPage(data) {
-      if(window._ASES_LOGO_DATA){
-        try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 80, 70, 180, 180); } catch(e){}
-      }
+      if(window._ASES_LOGO_DATA) try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 80, 70, 180, 180); } catch(e){}
       const cx = pageW / 2;
-      
       doc.setFont('times', 'bold'); doc.setFontSize(46); doc.setTextColor(26, 34, 68);
       doc.text('B. K. Birla College, Kalyan', cx, 100, { align: 'center' });
-      
       doc.setFont('times', 'normal'); doc.setFontSize(26); doc.setTextColor(50, 60, 90);
       doc.text('(Empowered Autonomous Status)', cx, 140, { align: 'center' });
-      
       doc.setFont('times', 'bolditalic'); doc.setFontSize(30);
       doc.text('Department of Management Studies', cx, 185, { align: 'center' });
-      
       doc.setFont('helvetica', 'bold'); doc.setFontSize(34); doc.setTextColor(26, 34, 68);
       doc.text('Daily Schedule', cx, 250, { align: 'center' });
-      
       const dtStr = new Date(selectedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
       doc.setFont('helvetica', 'normal'); doc.setFontSize(22); doc.setTextColor(90, 100, 120);
       doc.text(`Date: ${dtStr}`, cx, 290, { align: 'center' });
-      
-      // Footer
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(16); doc.setTextColor(120);
-      doc.text(`Report Generated By: ${generatedBy}`, 80, pageH - 40);
-      doc.text(`Report Generated On: ${new Date().toLocaleString('en-IN')}`, 80, pageH - 20);
-      doc.text(`Page ${data.pageNumber}`, pageW / 2, pageH - 20, { align: 'center' });
     }
   });
-
   doc.save(`Daily_Schedule_${selectedDate}.pdf`);
 });
         
-
 document.getElementById('exportExcelBtn').addEventListener('click', () => {
   if (!timeSlots.length || !rooms.length || Object.keys(scheduleMap).length === 0) return toast('No schedule data to export', 'error');
   
-  const wsData = [];
-  const merges = [];
-
-  // Header Row
+  const wsData = []; const merges = [];
   const headRow = ["Time"];
   rooms.forEach(r => headRow.push(`Room ${r.room_code}`));
   wsData.push(headRow);
 
   let rowIndex = 1;
-
   timeSlots.forEach(slot => {
-     // Extra newline space \n\n for lecture slots
      const timeLabel = slot.slot_type === 'lecture'
           ? `${slot.slot_label || ''}\n\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`
           : `${slot.slot_label || ''}\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`;
@@ -665,33 +651,34 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
         merges.push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: rooms.length } });
         rowIndex += 1;
      } else {
-        // Lecture block (3 separate vertical rows per time slot)
-        const row1 = [timeLabel]; // Contains Class
-        const row2 = [""];        // Contains Subject
-        const row3 = [""];        // Contains Teacher
+        const row1 = [timeLabel]; const row2 = [""]; const row3 = [""];
 
         rooms.forEach(room => {
            const row = scheduleMap[slot.id]?.[room.id];
            if (row) {
               if(row.is_cancelled){
-                 row1.push("CANCELLED");
-                 row2.push(row.cancel_reason || "");
-                 row3.push("");
+                 row1.push("CANCELLED"); row2.push(row.cancel_reason || ""); row3.push("");
               } else {
+                 const isReplaced = row.is_rescheduled && row.original_faculty?.id !== row.assigned_faculty?.id;
                  const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '-';
-                 const s = row.subject?.subject_name || '-';
-                 let f = row.assigned_faculty?.full_name || '-';
-                 if(row.assigned_faculty && absentIds.has(row.assigned_faculty.id)) f += ' (ABSENT)';
                  
-                 row1.push(c);
-                 row2.push(s);
-                 row3.push(f);
+                 if (isReplaced) {
+                    const origS = row.subject?.subject_name || '-';
+                    const origF = row.original_faculty?.full_name || '-';
+                    const newS = row.csf?.subject?.subject_name || '-';
+                    const newF = row.assigned_faculty?.full_name || '-';
+                    
+                    row1.push(c);
+                    row2.push(`[${origS}] -> ${newS}`);
+                    row3.push(`[${origF} Absent] -> ${newF}`);
+                 } else {
+                    const s = row.subject?.subject_name || '-';
+                    let f = row.original_faculty?.full_name || '-';
+                    if(row.original_faculty && absentIds.has(row.original_faculty.id)) f += ' (ABSENT)';
+                    row1.push(c); row2.push(s); row3.push(f);
+                 }
               }
-           } else {
-              row1.push("-");
-              row2.push("");
-              row3.push("");
-           }
+           } else { row1.push("-"); row2.push(""); row3.push(""); }
         });
         
         wsData.push(row1, row2, row3);
@@ -702,11 +689,7 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
 
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!merges'] = merges;
-
-  const cols = [{ wch: 18 }]; // Time column
-  rooms.forEach(() => cols.push({ wch: 30 })); // Room columns
-  ws['!cols'] = cols;
-
+  const cols = [{ wch: 18 }]; rooms.forEach(() => cols.push({ wch: 30 })); ws['!cols'] = cols;
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Daily Schedule");
   XLSX.writeFile(wb, `Daily_Schedule_${selectedDate}.xlsx`);
@@ -769,12 +752,20 @@ async function openModal(cell){
 }
 
 function buildInfo(row){
-  return`<span class="info-lbl">Course</span><span class="info-val">${courseName(row.course)}</span>
+  const isReplaced = row.is_rescheduled && row.original_faculty?.id !== row.assigned_faculty?.id;
+  
+  if (isReplaced) {
+     return `<span class="info-lbl">Course</span><span class="info-val">${courseName(row.course)}</span>
+      <span class="info-lbl">Original</span><span class="info-val" style="color:var(--error);text-decoration:line-through">${row.subject?.subject_name} (Prof. ${row.original_faculty?.full_name})</span>
+      <span class="info-lbl">Replaced By</span><span class="info-val" style="color:var(--success);font-weight:bold">${row.csf?.subject?.subject_name} (Prof. ${row.assigned_faculty?.full_name})</span>`;
+  }
+
+  return `<span class="info-lbl">Course</span><span class="info-val">${courseName(row.course)}</span>
     <span class="info-lbl">Subject</span><span class="info-val">${row.subject?.subject_name??'—'}</span>
-    <span class="info-lbl">Faculty</span><span class="info-val">${row.assigned_faculty?.full_name??'—'}</span>
+    <span class="info-lbl">Faculty</span><span class="info-val">${row.original_faculty?.full_name??'—'}</span>
     <span class="info-lbl">Status</span><span class="info-val">${
-      row.is_cancelled?'🚫 Cancelled':row.is_rescheduled?'✅ Rescheduled':
-      absentIds.has(row.assigned_faculty?.id)?'⚠ Faculty Absent':'✓ Normal'
+      row.is_cancelled?'🚫 Cancelled':
+      absentIds.has(row.original_faculty?.id)?'⚠ Faculty Absent':'✓ Normal'
     }</span>`;
 }
 
@@ -829,21 +820,31 @@ document.getElementById('saveBtn').addEventListener('click',async()=>{
   const btn=document.getElementById('saveBtn');btn.disabled=true;
   try{
     if(activeCell.scheduleId){
+      
+      // CRITICAL LOGIC: Keep original course_id and subject_id untouched!
+      // ONLY update the csf_id and assigned_faculty_id so we have both the plan and the reality.
       const{error}=await supabase.from('daily_schedule').update({
-        csf_id:selectedOpt.csfId,subject_id:selectedOpt.subjectId,
-        assigned_faculty_id:selectedOpt.facultyId,is_rescheduled:true,
-        is_cancelled:false,cancel_reason:null,
-        course_id:activeCell.courseId
+        csf_id:selectedOpt.csfId,
+        assigned_faculty_id:selectedOpt.facultyId,
+        is_rescheduled:true,
+        is_cancelled:false,
+        cancel_reason:null
       }).eq('id',activeCell.scheduleId);
       if(error)throw error;
 
-      await supabase.from('lecture_execution')
-        .update({
-          faculty_status:     'not_marked',
-          actual_faculty_id:  selectedOpt.facultyId,
-          updated_at:         new Date().toISOString(),
-        })
-        .eq('daily_schedule_id', activeCell.scheduleId);
+      const { error: execErr } = await supabase.from('lecture_execution')
+        .upsert({
+          daily_schedule_id: activeCell.scheduleId,
+          schedule_date: selectedDate,
+          faculty_status: 'not_marked',
+          actual_faculty_id: selectedOpt.facultyId,
+          replacement_faculty_id: selectedOpt.facultyId,
+          is_replaced: true,
+          marked_by: session.user.id,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'daily_schedule_id' });
+      
+      if (execErr) throw execErr;
 
     }else{
       const{error}=await supabase.from('daily_schedule').insert({
