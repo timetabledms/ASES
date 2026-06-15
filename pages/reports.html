@@ -1246,6 +1246,7 @@
                 
                 // 2. Replacement Faculty: 0 Allotted, and Taken based on execution status
                 if (facStats[assignFId]) {
+                  // Notice: We NO LONGER increment allotted for the replacement faculty here.
                   if (s === 'on_time' || s === 'late') {
                     facStats[assignFId].taken++;
                     if (s === 'late') facStats[assignFId].late++;
@@ -1332,7 +1333,8 @@
       
       facultyList.forEach(f => {
           const s = facStats[f.id];
-          const extra = s.taken - s.allotted; // Formula: Taken - Allotted
+          // Prevent negative numbers: if taken - allotted is less than 0, show 0
+          const extra = Math.max(0, s.taken - s.allotted); 
           
           if (f.faculty_type === 'visiting') {
               visAllotted += s.allotted;
