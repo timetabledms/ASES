@@ -1219,13 +1219,15 @@
             
             const origFId = row.original_faculty?.id;
             const assignFId = row.assigned_faculty?.id;
-            const isReplaced = row.is_rescheduled && origFId && assignFId && (origFId !== assignFId);
+            
+            // Highly robust check: If original and assigned IDs exist and are different, it IS a replacement.
+            const isReplaced = origFId && assignFId && (origFId !== assignFId);
             
             // Build cell text for the Grid
             if (isReplaced) {
               const origS = row.subject?.subject_name ?? '—';
               const origF = row.original_faculty?.full_name ?? '—';
-              const newS = row.csf?.subject?.subject_name ?? origS; // Fallback if csf not joined
+              const newS = row.csf?.subject?.subject_name ?? origS; 
               const newF = row.assigned_faculty?.full_name ?? '—';
               rowData.push(`${cname}\n\n[Absent]\n${origS}\n${origF}\n\n[Replaced By]\n${newS}\n${newF}\n[${lbl}]`);
             } else {
@@ -1242,9 +1244,9 @@
                   facStats[origFId].allotted++;
                 }
                 
-                // 2. Replacement Faculty: Gets 1 Allotted, and Taken based on execution status
+                // 2. Replacement Faculty: 0 Allotted, and Taken based on execution status
                 if (facStats[assignFId]) {
-                  facStats[assignFId].allotted++;
+                  // Notice: We NO LONGER increment allotted for the replacement faculty here.
                   if (s === 'on_time' || s === 'late') {
                     facStats[assignFId].taken++;
                     if (s === 'late') facStats[assignFId].late++;
@@ -1441,7 +1443,7 @@
       btn.innerHTML = originalHtml;
     }
   });
-
+  
   // ══════════════════════════════════════════════════════════════════
   // RC2 — Faculty Load Report
   // ══════════════════════════════════════════════════════════════════
