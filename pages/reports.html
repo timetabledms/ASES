@@ -1123,7 +1123,7 @@
     document.getElementById('rc1Grid').innerHTML=h;
   }
 
- // ══════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════
   // RC1 PDF export — A0 Sized Grid + Lecture Taken Report on Page 2+
   // ══════════════════════════════════════════════════════════════════
   document.getElementById('rc1ExportPdf').addEventListener('click', async () => {
@@ -1191,7 +1191,6 @@
             rowData.push(`${cname}\n${sub}\n${fac}\n[${lbl}]`);
 
             // Populate Faculty Stats 
-            // Note: Lec Taken already evaluates purely to "on_time" and "late" (marked lec only)
             if (!row.is_cancelled && row.assigned_faculty?.id) {
               const fId = row.assigned_faculty.id;
               if (facStats[fId]) {
