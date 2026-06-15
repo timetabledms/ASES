@@ -1154,7 +1154,7 @@
     document.getElementById('rc1Grid').innerHTML=h;
   }
 
-  // ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
   // RC1 PDF export — A0 Sized Grid + Lecture Taken Report on Page 2+
   // ══════════════════════════════════════════════════════════════════
   document.getElementById('rc1ExportPdf').addEventListener('click', async () => {
@@ -1246,7 +1246,6 @@
                 
                 // 2. Replacement Faculty: 0 Allotted, and Taken based on execution status
                 if (facStats[assignFId]) {
-                  // Notice: We NO LONGER increment allotted for the replacement faculty here.
                   if (s === 'on_time' || s === 'late') {
                     facStats[assignFId].taken++;
                     if (s === 'late') facStats[assignFId].late++;
@@ -1325,24 +1324,28 @@
       });
 
       // --- 3. Build & Draw Lecture Taken Report (Page 2+) ---
-      let ftAllotted = 0, ftTaken = 0, ftLate = 0;
-      let visAllotted = 0, visTaken = 0, visLate = 0;
+      let ftAllotted = 0, ftTaken = 0, ftLate = 0, ftExtra = 0;
+      let visAllotted = 0, visTaken = 0, visLate = 0, visExtra = 0;
       
       const ftBody = [];
       const visBody = [];
       
       facultyList.forEach(f => {
           const s = facStats[f.id];
+          const extra = s.taken - s.allotted; // Formula: Taken - Allotted
+          
           if (f.faculty_type === 'visiting') {
               visAllotted += s.allotted;
               visTaken += s.taken;
               visLate += s.late;
-              visBody.push([ s.name, s.allotted, s.taken, s.late ]);
+              visExtra += extra;
+              visBody.push([ s.name, s.allotted, s.taken, s.late, extra ]);
           } else {
               ftAllotted += s.allotted;
               ftTaken += s.taken;
               ftLate += s.late;
-              ftBody.push([ s.name, s.allotted, s.taken, s.late ]);
+              ftExtra += extra;
+              ftBody.push([ s.name, s.allotted, s.taken, s.late, extra ]);
           }
       });
       
@@ -1352,7 +1355,8 @@
               { content: 'TOTAL (Full-Time)', styles: { fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 245] } },
               { content: ftAllotted.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } },
               { content: ftTaken.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } },
-              { content: ftLate.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } }
+              { content: ftLate.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } },
+              { content: ftExtra.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } }
           ]);
       }
 
@@ -1361,7 +1365,8 @@
               { content: 'TOTAL (Visiting)', styles: { fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 245] } },
               { content: visAllotted.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } },
               { content: visTaken.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } },
-              { content: visLate.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } }
+              { content: visLate.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } },
+              { content: visExtra.toString(), styles: { fontStyle: 'bold', fillColor: [240, 240, 245] } }
           ]);
       }
 
@@ -1395,7 +1400,7 @@
 
       if (ftBody.length > 0) {
           doc.autoTable({
-              head: [['Faculty Name (Full-Time)', 'Lec Allotted', 'Lec Taken', 'Late Marked']],
+              head: [['Faculty Name (Full-Time)', 'Lec Allotted', 'Lec Taken', 'Late Marked', 'Extra']],
               body: ftBody,
               startY: 330,
               theme: 'grid',
@@ -1403,11 +1408,12 @@
               headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 28 },
               columnStyles: {
                   0: { cellWidth: 'auto', halign: 'left' },
-                  1: { cellWidth: 250, halign: 'center' },
-                  2: { cellWidth: 250, halign: 'center' },
-                  3: { cellWidth: 250, halign: 'center' }
+                  1: { cellWidth: 200, halign: 'center' },
+                  2: { cellWidth: 200, halign: 'center' },
+                  3: { cellWidth: 200, halign: 'center' },
+                  4: { cellWidth: 200, halign: 'center' }
               },
-              margin: { top: 330, left: 200, right: 200, bottom: 80 },
+              margin: { top: 330, left: 150, right: 150, bottom: 80 },
               didDrawPage: drawPageHeader
           });
       }
@@ -1417,7 +1423,7 @@
           let newStartY = doc.lastAutoTable ? finalY + 100 : 330;
           
           doc.autoTable({
-              head: [['Faculty Name (Visiting)', 'Lec Allotted', 'Lec Taken', 'Late Marked']],
+              head: [['Faculty Name (Visiting)', 'Lec Allotted', 'Lec Taken', 'Late Marked', 'Extra']],
               body: visBody,
               startY: newStartY,
               theme: 'grid',
@@ -1425,11 +1431,12 @@
               headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 28 },
               columnStyles: {
                   0: { cellWidth: 'auto', halign: 'left' },
-                  1: { cellWidth: 250, halign: 'center' },
-                  2: { cellWidth: 250, halign: 'center' },
-                  3: { cellWidth: 250, halign: 'center' }
+                  1: { cellWidth: 200, halign: 'center' },
+                  2: { cellWidth: 200, halign: 'center' },
+                  3: { cellWidth: 200, halign: 'center' },
+                  4: { cellWidth: 200, halign: 'center' }
               },
-              margin: { top: 330, left: 200, right: 200, bottom: 80 },
+              margin: { top: 330, left: 150, right: 150, bottom: 80 },
               didDrawPage: drawPageHeader
           });
       }
