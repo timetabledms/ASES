@@ -2,37 +2,6 @@
  * ASES — Daily Scheduler
  * ───────────────────────
  * Generates and manages the working schedule for a specific date.
- *
- * DB tables expected:
- *
- *   master_timetable (id, day_type, time_slot_id, room_id, course_id,
- *                     subject_id, csf_id, faculty_id, is_active)
- *
- *   daily_schedule (
- *     id uuid PK,
- *     schedule_date date NOT NULL,
- *     master_timetable_id uuid FK,
- *     time_slot_id uuid FK → time_slots,
- *     room_id uuid FK → rooms,
- *     course_id uuid FK → courses,
- *     subject_id uuid FK → subjects,
- *     csf_id uuid FK → course_subject_faculty,
- *     assigned_faculty_id uuid FK → profiles,
- *     original_faculty_id uuid FK → profiles,   ← faculty from master (for absent tracking)
- *     is_rescheduled bool DEFAULT false,
- *     is_cancelled bool DEFAULT false,
- *     cancel_reason text,
- *     generated_by uuid FK → profiles,
- *     created_at timestamptz DEFAULT now()
- *   )
- *
- *   course_subject_faculty (id, course_id, subject_id, faculty_id, is_active)
- *     joined → subjects(name), profiles(full_name)
- *
- *   time_slots (id, label, start_time, end_time, slot_type, day_type, sort_order)
- *     slot_type: 'lecture' | 'recess' | 'lunch'
- *
- *   faculty_leaves (faculty_id, leave_date, status='approved')
  */
 
 import { supabase } from '../config/supabase.js';
@@ -137,6 +106,7 @@ export async function loadDailySchedule(date) {
         course:courses!course_id (id, course_code, year, program, division),
         subject:subjects!subject_id (id, subject_name),
         assigned_faculty:faculty!assigned_faculty_id (id, full_name),
+        original_faculty:faculty!original_faculty_id (id, full_name),
         csf_id,
         course_id,
         time_slot_id
@@ -155,8 +125,17 @@ export async function loadDailySchedule(date) {
 
   const absentFacultyIds = (leavesRes.data ?? []).map(l => l.faculty_id);
 
+  // MAPPING HACK: Force the UI to display the original planned faculty, 
+  // ignoring the replacement data for the Daily Scheduler visual grid.
+  const rows = (scheduleRes.data ?? []).map(r => {
+    if (r.original_faculty) {
+      r.assigned_faculty = r.original_faculty;
+    }
+    return r;
+  });
+
   return {
-    rows:            scheduleRes.data ?? [],
+    rows,
     absentFacultyIds,
   };
 }
@@ -227,13 +206,13 @@ export async function uncancelSlot(scheduleId) {
  * Does NOT exclude warned options — admin decides.
  *
  * @returns {Array<{
- *   csfId: string,
- *   subjectId: string,
- *   subjectName: string,
- *   facultyId: string,
- *   facultyName: string,
- *   warnAbsent: boolean,
- *   warnBusy: boolean
+ * csfId: string,
+ * subjectId: string,
+ * subjectName: string,
+ * facultyId: string,
+ * facultyName: string,
+ * warnAbsent: boolean,
+ * warnBusy: boolean
  * }>}
  */
 export async function getAvailableReplacementOptions(courseId, date, timeSlotId) {
