@@ -12,9 +12,9 @@ import { supabase } from '../config/supabase.js';
  * Faculty role forces facultyId = myFacultyId (enforced client-side + RLS).
  *
  * @param {object} filters
- *   fromDate, toDate, facultyId, faculty_status,
- *   isModified, isReplaced, isTimeChanged, isRoomChanged,
- *   courseId, subjectId, roomId   ← client-side post-filter
+ * fromDate, toDate, facultyId, faculty_status,
+ * isModified, isReplaced, isTimeChanged, isRoomChanged,
+ * courseId, subjectId, roomId   ← client-side post-filter
  * @param {'admin'|'faculty'} role
  * @param {string|null} myFacultyId
  */
@@ -55,12 +55,13 @@ export async function getFilteredReport(filters = {}, role = 'admin', myFacultyI
   // ── Server-side filters ───────────────────────────────────────────
   if (filters.fromDate)        q = q.gte('schedule_date', filters.fromDate);
   if (filters.toDate)          q = q.lte('schedule_date', filters.toDate);
-  if (filters.facultyId)       q = q.eq('actual_faculty_id', filters.facultyId);
-  if (filters.faculty_status)  q = q.eq('faculty_status', filters.faculty_status);
   if (filters.isModified)      q = q.eq('is_modified', true);
   if (filters.isReplaced)      q = q.eq('is_replaced', true);
   if (filters.isTimeChanged)   q = q.eq('is_time_changed', true);
   if (filters.isRoomChanged)   q = q.eq('is_room_changed', true);
+
+  // NOTE: facultyId and faculty_status are intentionally removed from server-side 
+  // filtering to allow client-side handling of "Replaced" logic (One lecture, dual statuses).
 
   q = q.order('schedule_date', { ascending: false });
 
@@ -70,6 +71,42 @@ export async function getFilteredReport(filters = {}, role = 'admin', myFacultyI
   let rows = data ?? [];
 
   // ── Client-side filters ───────────────────────────────────────────
+  
+  // 1. Dual-Faculty Identity Check
+  if (filters.facultyId) {
+    rows = rows.filter(r => 
+      r.actual_faculty?.id === filters.facultyId || 
+      r.daily_schedule?.assigned_faculty?.id === filters.facultyId
+    );
+  }
+
+  // 2. Dual-Status Check
+  if (filters.faculty_status) {
+    rows = rows.filter(r => {
+      // If we are explicitly looking for 'not_engaged'
+      if (filters.faculty_status === 'not_engaged') {
+         // Return true if the row explicitly says 'not_engaged'
+         if (r.faculty_status === 'not_engaged') return true;
+         
+         // If a replacement happened, it inherently means the original faculty was "Not Engaged"
+         if (r.is_replaced) {
+            // If we are filtering by a specific faculty, only show as 'not_engaged' 
+            // if they were the ORIGINAL assigned faculty.
+            if (filters.facultyId) {
+               return r.daily_schedule?.assigned_faculty?.id === filters.facultyId;
+            }
+            // If viewing all faculties, count the replaced slot as 'not engaged' for the original.
+            return true; 
+         }
+         return false;
+      }
+      
+      // Standard match for everything else (on_time, late, etc.)
+      return r.faculty_status === filters.faculty_status;
+    });
+  }
+
+  // 3. Entity Filters
   if (filters.courseId)  rows = rows.filter(r => r.daily_schedule?.course?.id  === filters.courseId);
   if (filters.subjectId) rows = rows.filter(r => r.daily_schedule?.subject?.id === filters.subjectId);
   if (filters.roomId)    rows = rows.filter(r => r.daily_schedule?.room?.id    === filters.roomId);
