@@ -264,6 +264,7 @@ async function loadDay(date) {
     const{data:holChk}=await supabase.from('holidays').select('name').eq('holiday_date',loadDate).maybeSingle();
     if(holChk){gridEmpty(`🎉 Holiday: ${holChk.name}. No execution log for this day.`);document.getElementById('statChips').style.display='none';document.getElementById('legendRow').style.display='none';return;}
 
+    // QUERY UPDATED: Now fetches original_faculty_id and the nested csf replacement subject
     const [slotsRes, roomsRes, schedRes, execRes] = await Promise.all([
       supabase.from('time_slots')
         .select('id,slot_label,start_time,end_time,slot_type,sort_order')
@@ -273,12 +274,14 @@ async function loadDay(date) {
       supabase.from('daily_schedule')
         .select(`
           id, is_cancelled, cancel_reason, is_rescheduled,
-          time_slot_id, room_id, course_id, subject_id, assigned_faculty_id,
+          time_slot_id, room_id, course_id, subject_id, assigned_faculty_id, original_faculty_id,
           time_slot:time_slots!time_slot_id(id,slot_label,start_time,end_time,slot_type,sort_order),
           room:rooms!room_id(id,room_code),
           course:courses!course_id(id,year,program,division),
           subject:subjects!subject_id(id,subject_name),
-          assigned_faculty:faculty!assigned_faculty_id(id,full_name)
+          assigned_faculty:faculty!assigned_faculty_id(id,full_name),
+          original_faculty:faculty!original_faculty_id(id,full_name),
+          csf:course_subject_faculty!csf_id(subject:subjects!subject_id(subject_name))
         `)
         .eq('schedule_date', loadDate),
       supabase.from('lecture_execution')
@@ -368,11 +371,16 @@ function renderGrid() {
 function renderCell(row) {
   if (!row) return `<div class="ec s-empty"></div>`;
 
+  // UI LOGIC: Determine if this is a replaced lecture to show the new reality
+  const isReplaced = row.is_rescheduled && row.original_faculty_id && row.original_faculty_id !== row.assigned_faculty_id;
+  const displaySubject = isReplaced ? (row.csf?.subject?.subject_name ?? '—') : (row.subject?.subject_name ?? '—');
+  const displayFaculty = row.assigned_faculty?.full_name ?? '—';
+
   if (row.is_cancelled) {
     return `<div class="ec s-cancelled">
       <div class="ec-course">${cName(row.course)}</div>
-      <div class="ec-subject">${row.subject?.subject_name??'—'}</div>
-      <div class="ec-faculty">${row.assigned_faculty?.full_name??'—'}</div>
+      <div class="ec-subject">${displaySubject}</div>
+      <div class="ec-faculty">Prof. ${displayFaculty}</div>
       <span class="status-pill sp-cancelled">CANCELLED</span>
     </div>`;
   }
@@ -383,10 +391,13 @@ function renderCell(row) {
   const pc     = PILL_CLASS[status]   ?? 'sp-not-marked';
   const lbl    = STATUS_LABEL[status] ?? 'Not Marked';
 
+  // Include a small visual tag if it's a replacement lecture
+  const replacementTag = isReplaced ? `<span style="font-size:0.55rem;color:var(--accent);font-weight:700">(SUB)</span>` : '';
+
   return `<div class="ec ${sc} clickable" data-id="${row.id}" data-status="${status}">
     <div class="ec-course">${cName(row.course)}</div>
-    <div class="ec-subject">${row.subject?.subject_name??'—'}</div>
-    <div class="ec-faculty">${row.assigned_faculty?.full_name??'—'}</div>
+    <div class="ec-subject">${displaySubject}</div>
+    <div class="ec-faculty">Prof. ${displayFaculty} ${replacementTag}</div>
     <span class="status-pill ${pc}">${lbl}</span>
     <span class="click-hint">click to update</span>
   </div>`;
@@ -516,16 +527,19 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
           return;
         }
         
+        const isReplaced = row.is_rescheduled && row.original_faculty_id && row.original_faculty_id !== row.assigned_faculty_id;
         const ex = execMap[row.id];
         const s = row.is_cancelled ? 'cancelled' : (ex?.faculty_status ?? 'not_marked');
         const cname = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
-        const sub = row.subject?.subject_name ?? '';
-        const fac = row.assigned_faculty?.full_name ?? '';
+        
+        // Export logic: Print reality
+        const sub = isReplaced ? (row.csf?.subject?.subject_name ?? '—') : (row.subject?.subject_name ?? '—');
+        const fac = row.assigned_faculty?.full_name ?? '—';
         
         const STATUS_LBL = {on_time:'On Time', late:'Late', not_engaged:'Not Engaged', not_marked:'Not Marked', cancelled:'CANCELLED'};
         const lbl = row.is_cancelled ? 'CANCELLED' : (STATUS_LBL[s] ?? 'Not Marked');
         
-        rowData.push(`${cname}\n${sub}\n${fac}\n[${lbl}]`);
+        rowData.push(`${cname}\n${sub}\nProf. ${fac}\n[${lbl}]`);
       });
       body.push(rowData);
     }
@@ -628,18 +642,21 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
         rooms.forEach(room => {
            const row = scheduleMap[slot.id]?.[room.id];
            if (row) {
+              const isReplaced = row.is_rescheduled && row.original_faculty_id && row.original_faculty_id !== row.assigned_faculty_id;
               const ex = execMap[row.id];
               const s = row.is_cancelled ? 'cancelled' : (ex?.faculty_status ?? 'not_marked');
               const STATUS_LBL = {on_time:'On Time', late:'Late', not_engaged:'Not Engaged', not_marked:'Not Marked', cancelled:'CANCELLED'};
               
               const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '-';
-              const sub = row.subject?.subject_name || '-';
-              let f = row.assigned_faculty?.full_name || '-';
+              
+              const sub = isReplaced ? (row.csf?.subject?.subject_name ?? '-') : (row.subject?.subject_name ?? '-');
+              const f = row.assigned_faculty?.full_name || '-';
+              
               let statusStr = `[${STATUS_LBL[s] ?? 'Not Marked'}]`;
               
               row1.push(c);
               row2.push(sub);
-              row3.push(f);
+              row3.push(`Prof. ${f}`);
               row4.push(statusStr);
            } else {
               row1.push("-");
