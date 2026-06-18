@@ -55,7 +55,7 @@
     .ts-wrapper.single .ts-control input { min-width: 0 !important; }
     
     /* Table Search and Sorting UI */
-    .table-wrap { width: 100%; overflow-x: auto; }
+    .table-wrap { width: 100%; overflow-x: auto; margin-bottom: 1.5rem; }
     .table-wrap table { width: 100% !important; table-layout: fixed; }
     .table-search { padding: 0.45rem 0.8rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; min-width: 220px; background: var(--bg-input); color: var(--text-primary); outline: none; transition: border-color 0.2s; }
     .table-search:focus { border-color: var(--accent); }
@@ -113,6 +113,7 @@
 
       <div class="report-panel">
 
+        <!-- R1: Daily Summary -->
         <div class="report-section active" id="r1">
           <div class="report-header">
             <div class="report-title">Daily Summary</div>
@@ -131,6 +132,7 @@
           <div class="table-wrap"><table id="r1Table"><thead><tr><th>Time</th><th>Room</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th><th>Flags</th></tr></thead><tbody id="r1Body"><tr class="empty-row"><td colspan="7">Select a date and run report.</td></tr></tbody></table></div>
         </div>
 
+        <!-- R2: Faculty Lectures -->
         <div class="report-section" id="r2">
           <div class="report-header">
             <div class="report-title">Faculty Lectures</div>
@@ -154,6 +156,7 @@
           <div class="table-wrap"><table id="r2Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Status</th><th>Flags</th><th>Remarks</th></tr></thead><tbody id="r2Body"><tr class="empty-row"><td colspan="7">Set filters and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- R3: Leave Summary -->
         <div class="report-section" id="r3">
           <div class="report-header">
             <div class="report-title">Faculty Leave Summary</div>
@@ -174,6 +177,7 @@
           <div id="r3Summary" style="margin-top:1rem"></div>
         </div>
 
+        <!-- R4: By Course -->
         <div class="report-section" id="r4">
           <div class="report-header">
             <div class="report-title">By Course</div>
@@ -194,6 +198,7 @@
           <div class="table-wrap"><table id="r4Table"><thead><tr><th>Date</th><th>Time</th><th>Subject</th><th>Faculty</th><th>Room</th><th>Status</th><th>Flags</th></tr></thead><tbody id="r4Body"><tr class="empty-row"><td colspan="7">Select course and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- R5: By Subject -->
         <div class="report-section" id="r5">
           <div class="report-header">
             <div class="report-title">By Subject</div>
@@ -215,6 +220,7 @@
           <div class="table-wrap"><table id="r5Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Faculty</th><th>Room</th><th>Status</th></tr></thead><tbody id="r5Body"><tr class="empty-row"><td colspan="6">Select subject and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- R6: By Room -->
         <div class="report-section" id="r6">
           <div class="report-header">
             <div class="report-title">By Room</div>
@@ -234,6 +240,7 @@
           <div class="table-wrap"><table id="r6Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th></tr></thead><tbody id="r6Body"><tr class="empty-row"><td colspan="6">Select room and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- R7: Modifications Log -->
         <div class="report-section" id="r7">
           <div class="report-header">
             <div class="report-title">Modifications Log</div>
@@ -260,6 +267,7 @@
           <div class="table-wrap"><table id="r7Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Flags</th><th>Note</th></tr></thead><tbody id="r7Body"><tr class="empty-row"><td colspan="7">Set date range and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- R8: Not Engaged -->
         <div class="report-section" id="r8">
           <div class="report-header">
             <div class="report-title">Not Engaged / Not Marked</div>
@@ -283,6 +291,7 @@
           <div class="table-wrap"><table id="r8Table"><thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Subject</th><th>Faculty</th><th>Status</th><th>Remarks</th></tr></thead><tbody id="r8Body"><tr class="empty-row"><td colspan="7">Set filters and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- R9: Rescheduled Slots -->
         <div class="report-section" id="r9">
           <div class="report-header">
             <div class="report-title">Rescheduled Slots</div>
@@ -301,6 +310,7 @@
           <div class="table-wrap"><table id="r9Table"><thead><tr><th>Date</th><th>Time</th><th>Room</th><th>Course</th><th>New Subject</th><th>New Faculty</th></tr></thead><tbody id="r9Body"><tr class="empty-row"><td colspan="6">Set date range and run.</td></tr></tbody></table></div>
         </div>
 
+        <!-- RC1: Daily Execution Report -->
         <div class="report-section" id="rc1">
           <div class="report-header">
             <div class="report-title">Daily Execution Report</div>
@@ -320,31 +330,65 @@
           </div></div>
         </div>
 
+        <!-- RC2: Faculty Load Report -->
         <div class="report-section" id="rc2">
           <div class="report-header">
             <div class="report-title">Faculty Load Report</div>
             <div class="export-btns">
-              <input type="text" id="rc2Search" class="table-search" placeholder="🔍 Search table..."/>
+              <input type="text" id="rc2Search" class="table-search" placeholder="🔍 Search records..."/>
               <button class="btn btn-ghost btn-sm" id="rc2ExportPdf">PDF</button>
               <button class="btn btn-ghost btn-sm" id="rc2ExportXls">Excel</button>
             </div>
           </div>
-          <div class="filter-card">
+          <div class="filter-card" style="align-items: center;">
             <div class="field"><label>From Date *</label><input type="text" id="rc2From" placeholder="From" readonly/></div>
             <div class="field"><label>To Date *</label><input type="text" id="rc2To" placeholder="To" readonly/></div>
-            <div class="field"><label>Faculty</label><select id="rc2Faculty"><option value="">All Faculty</option></select></div>
-            <button class="btn btn-primary btn-sm" id="rc2Run">Run Report</button>
+            <div class="field">
+              <label>Faculty Type</label>
+              <select id="rc2Type">
+                <option value="all">All Types</option>
+                <option value="full_time">Full-Time</option>
+                <option value="visiting">Visiting</option>
+              </select>
+            </div>
+            <div class="field" style="flex:2; min-width: 250px;">
+              <label>Select Faculty</label>
+              <select id="rc2Faculty" multiple placeholder="All Faculty (Select to filter)"></select>
+            </div>
+            <button class="btn btn-primary btn-sm" id="rc2Run" style="height: 38px;">Run Report</button>
           </div>
           <div class="result-count" id="rc2Count"></div>
-          <div class="table-wrap">
-            <table id="rc2Table">
-              <thead><tr>
-                <th>Class</th><th>Subject</th><th>Load</th>
-                <th>Teacher Name</th><th>Scheduled</th><th>Late</th><th>Extra</th>
-              </tr></thead>
-              <tbody id="rc2Body"><tr class="empty-row"><td colspan="7">Set date range and run report.</td></tr></tbody>
-            </table>
+          
+          <div id="rc2TablesContainer" style="display:none; flex-direction:column; gap:2rem;">
+            <!-- Full-Time Table -->
+            <div id="rc2FtContainer">
+              <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem; color: var(--text-primary);">Full-Time Faculty</h3>
+              <div class="table-wrap">
+                <table id="rc2FtTable">
+                  <thead><tr>
+                    <th>Class</th><th>Subject</th><th>Load</th><th>Teacher Name</th><th>Lec Taken</th><th>Late</th><th>Extra</th>
+                  </tr></thead>
+                  <tbody id="rc2FtBody"></tbody>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Visiting Table -->
+            <div id="rc2VisContainer">
+              <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem; color: var(--text-primary);">Visiting Faculty</h3>
+              <div class="table-wrap">
+                <table id="rc2VisTable">
+                  <thead><tr>
+                    <th>Class</th><th>Subject</th><th>Load</th><th>Teacher Name</th><th>Lec Taken</th><th>Late</th><th>Extra</th>
+                  </tr></thead>
+                  <tbody id="rc2VisBody"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
+          
+          <div id="rc2EmptyState" style="padding:2rem;text-align:center;color:var(--text-muted)">Set date range and run report.</div>
+          
         </div>
 
       </div></div></div>
@@ -368,7 +412,6 @@
   } from '../js/modules/reports.js';
   import { exportToExcel, exportToPDF, preloadLogoForPDF } from '../js/utils/exportHelpers.js';
 
-  // Embedded toast function
   function toast(msg, type='success') {
     const c = document.getElementById('toast');
     if (!c) return;
@@ -400,7 +443,6 @@
   // ── Load & Sort Dropdowns ─────────────────────────────────────────
   const { faculty, courses, subjects, rooms } = await getReportDropdowns();
 
-  // Explicitly SORT all dropdown options alphabetically by Name
   faculty.sort((a,b) => (a.full_name||'').localeCompare(b.full_name||''));
   courses.sort((a,b) => courseLbl(a).localeCompare(courseLbl(b)));
   subjects.sort((a,b) => (a.subject_name||'').localeCompare(b.subject_name||''));
@@ -409,8 +451,12 @@
   function populateSelect(selId, items, labelFn, valueFn, placeholder='All') {
     const sel = document.getElementById(selId);
     if (!sel) return;
-    const hasBlank = sel.options.length && sel.options[0].value === '';
-    if (!hasBlank) sel.innerHTML = `<option value="">${placeholder}</option>`;
+    if (placeholder !== null) {
+      const hasBlank = sel.options.length && sel.options[0].value === '';
+      if (!hasBlank) sel.innerHTML = `<option value="">${placeholder}</option>`;
+    } else {
+      sel.innerHTML = '';
+    }
     items.forEach(item => {
       const opt = document.createElement('option');
       opt.value = valueFn(item);
@@ -420,8 +466,11 @@
   }
 
   const facultyOpts = f => `Prof. ${f.full_name}`;
-  ['r2Faculty','r3Faculty','r5Faculty','r8Faculty','rc2Faculty'].forEach(id =>
+  ['r2Faculty','r3Faculty','r5Faculty','r8Faculty'].forEach(id =>
     populateSelect(id, faculty, facultyOpts, f => f.id));
+
+  // Multi-select populate for RC2
+  populateSelect('rc2Faculty', faculty, facultyOpts, f => f.id, null);
 
   const courseOpts = c => courseLbl(c);
   ['r4Course','r8Course'].forEach(id =>
@@ -438,21 +487,28 @@
    'r6From','r6To','r8From','r8To','r9From','r9To','rc1Date','rc2From','rc2To']
     .forEach(id => flatpickr('#'+id, fpOpts));
 
-  // ── Tom Select inits (Filters Dropdowns) ──────────────────────────
+  // ── Tom Select inits ──────────────────────────
   ['r2Faculty','r3Faculty','r4Course','r5Subject','r5Faculty',
-   'r6Room','r8Faculty','r8Course','rc2Faculty','r2Status',
-   'r4Status','r5Status','r7ModType','r8Status'].forEach(id => {
+   'r6Room','r8Faculty','r8Course','r2Status',
+   'r4Status','r5Status','r7ModType','r8Status', 'rc2Type'].forEach(id => {
     try { new TomSelect('#'+id, { allowEmptyOption:true }); } catch {}
   });
 
-  // ── UI Table Sorting & Filtering (Universal Function) ─────────────
-  function bindTableFilter(inputId, tbodyId) {
+  // Multiple Tom Select for RC2
+  try { new TomSelect('#rc2Faculty', { plugins: ['remove_button'], maxItems: null }); } catch {}
+
+  // ── UI Table Sorting & Filtering ─────────────
+  function bindTableFilter(inputId, tbodyIds) {
     const input = document.getElementById(inputId);
     if(!input) return;
     input.addEventListener('input', function() {
       const val = this.value.toLowerCase();
-      const rows = document.getElementById(tbodyId).querySelectorAll('tr:not(.empty-row)');
-      rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(val) ? '' : 'none'; });
+      if (!Array.isArray(tbodyIds)) tbodyIds = [tbodyIds];
+      
+      tbodyIds.forEach(id => {
+          const rows = document.getElementById(id)?.querySelectorAll('tr:not(.empty-row)');
+          if(rows) rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(val) ? '' : 'none'; });
+      });
     });
   }
 
@@ -482,10 +538,15 @@
     });
   }
 
-  ['r1','r2','r3','r4','r5','r6','r7','r8','r9','rc2'].forEach(prefix => {
+  ['r1','r2','r3','r4','r5','r6','r7','r8','r9'].forEach(prefix => {
     bindTableFilter(`${prefix}Search`, `${prefix}Body`);
     makeTableSortable(`${prefix}Table`, `${prefix}Body`);
   });
+
+  // Bind advanced RC2 dual-table search & sort
+  bindTableFilter('rc2Search', ['rc2FtBody', 'rc2VisBody']);
+  makeTableSortable('rc2FtTable', 'rc2FtBody');
+  makeTableSortable('rc2VisTable', 'rc2VisBody');
 
   // ── Helpers ───────────────────────────────────────────────────────
   function sBadge(status) {
@@ -507,11 +568,13 @@
   }
 
   function emptyRow(id, cols, msg) {
-    document.getElementById(id).innerHTML = `<tr class="empty-row"><td colspan="${cols}">${msg}</td></tr>`;
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = `<tr class="empty-row"><td colspan="${cols}">${msg}</td></tr>`;
   }
 
   function loadingRow(id, cols) {
-    document.getElementById(id).innerHTML = `<tr class="empty-row"><td colspan="${cols}"><span class="spin"></span> Loading…</td></tr>`;
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = `<tr class="empty-row"><td colspan="${cols}"><span class="spin"></span> Loading…</td></tr>`;
   }
 
   // ── R1: Daily Summary ─────────────────────────────────────────────
@@ -922,8 +985,8 @@
       else rows=rows.filter(r=>r.faculty_status==='not_engaged'||r.faculty_status==='not_marked');
       
       rows.sort((a,b) => {
-         const nameA = a.actual_faculty?.full_name || '';
-         const nameB = b.actual_faculty?.full_name || '';
+         const nameA = a.daily_schedule?.original_faculty?.full_name || '';
+         const nameB = b.daily_schedule?.original_faculty?.full_name || '';
          if (nameA !== nameB) return nameA.localeCompare(nameB);
          if (a.schedule_date !== b.schedule_date) return (a.schedule_date||'').localeCompare(b.schedule_date||'');
          return (a.daily_schedule?.time_slot?.start_time || '').localeCompare(b.daily_schedule?.time_slot?.start_time || '');
@@ -932,24 +995,38 @@
       
       setCount('r8Count',rows.length);
       if(!rows.length){emptyRow('r8Body',7,'No records found.');return;}
-      document.getElementById('r8Body').innerHTML=rows.map(r=>`<tr>
-        <td>${fmtDate(r.schedule_date)}</td>
-        <td>${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}</td>
-        <td>${courseLbl(r.daily_schedule?.course)}</td>
-        <td>${r.daily_schedule?.subject?.subject_name??'—'}</td>
-        <td>${r.actual_faculty?.full_name??'—'}</td>
-        <td>${sBadge(r.faculty_status)}</td>
-        <td style="color:var(--text-muted);font-size:.8rem">${r.remarks??'—'}</td>
-      </tr>`).join('');
+      document.getElementById('r8Body').innerHTML=rows.map(r=>{
+        const isReplaced = r.is_replaced;
+        const blamedFaculty = isReplaced ? r.daily_schedule?.original_faculty?.full_name : (r.actual_faculty?.full_name || r.daily_schedule?.assigned_faculty?.full_name);
+        const blamedSubject = r.daily_schedule?.subject?.subject_name ?? '—';
+        
+        return `<tr>
+          <td>${fmtDate(r.schedule_date)}</td>
+          <td>${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}</td>
+          <td>${courseLbl(r.daily_schedule?.course)}</td>
+          <td>${blamedSubject}</td>
+          <td style="color:var(--error);font-weight:600">${blamedFaculty ?? '—'}</td>
+          <td>${sBadge(r.faculty_status)}</td>
+          <td style="color:var(--text-muted);font-size:.8rem">${r.remarks ?? (isReplaced ? '(Replaced by proxy)' : '—')}</td>
+        </tr>`;
+      }).join('');
     } catch(e){toast(e.message,'error');emptyRow('r8Body',7,'Error.');}
   });
   
   ['r8ExportPdf','r8ExportXls'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{
-    const flat=r8Data.map(r=>({date:fmtDate(r.schedule_date),
-      time:`${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}`,
-      course:courseLbl(r.daily_schedule?.course),subject:r.daily_schedule?.subject?.subject_name??'—',
-      faculty:r.actual_faculty?.full_name??'—',status:STATUS_LABELS[r.faculty_status]??'—',
-      remarks:r.remarks??'—'}));
+    const flat=r8Data.map(r=>{
+      const isReplaced = r.is_replaced;
+      const blamedFaculty = isReplaced ? r.daily_schedule?.original_faculty?.full_name : (r.actual_faculty?.full_name || r.daily_schedule?.assigned_faculty?.full_name);
+      return {
+        date:fmtDate(r.schedule_date),
+        time:`${fmtTime(r.daily_schedule?.time_slot?.start_time)}–${fmtTime(r.daily_schedule?.time_slot?.end_time)}`,
+        course:courseLbl(r.daily_schedule?.course),
+        subject:r.daily_schedule?.subject?.subject_name??'—',
+        faculty:blamedFaculty??'—',
+        status:STATUS_LABELS[r.faculty_status]??'—',
+        remarks:r.remarks ?? (isReplaced ? 'Replaced by proxy' : '—')
+      };
+    });
     const cols=[{header:'Date',key:'date'},{header:'Time',key:'time'},{header:'Course',key:'course'},
       {header:'Subject',key:'subject',width:26},{header:'Faculty',key:'faculty',width:22},
       {header:'Status',key:'status'},{header:'Remarks',key:'remarks',width:30}];
@@ -1022,7 +1099,6 @@
     try {
       const dayType = new Date(rc1Date+'T00:00:00').getDay()===6?'saturday':'weekday';
       
-      // CRITICAL UPDATE: Fetching original_faculty AND csf (Replacement Subject)
       const [slotsRes, roomsRes, schedRes, execRes] = await Promise.all([
         supabase.from('time_slots').select('id,slot_label,start_time,end_time,slot_type,sort_order').eq('day_type',dayType).order('sort_order'),
         supabase.from('rooms').select('id,room_code').eq('is_active',true).order('room_code'),
@@ -1154,9 +1230,6 @@
     document.getElementById('rc1Grid').innerHTML=h;
   }
 
-// ══════════════════════════════════════════════════════════════════
-  // RC1 PDF export — A0 Sized Grid + Lecture Taken Report on Page 2+
-  // ══════════════════════════════════════════════════════════════════
   document.getElementById('rc1ExportPdf').addEventListener('click', async () => {
     if(!rc1Slots.length){toast('Run the report first.','warn');return;}
     if(!window.jspdf){alert('PDF library not loaded.');return;}
@@ -1168,18 +1241,13 @@
 
     try {
       const { jsPDF } = window.jspdf;
-      
       const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a0' });
       const pageW = doc.internal.pageSize.width;
       const pageH = doc.internal.pageSize.height;
       const dateLabel = fmtDate(rc1Date);
 
-      // --- 1. Fetch Active Faculty Data for Page 2 ---
       const { data: facultyList, error: facErr } = await supabase
-        .from('faculty')
-        .select('id, full_name, faculty_type')
-        .eq('is_active', true)
-        .order('full_name');
+        .from('faculty').select('id, full_name, faculty_type').eq('is_active', true).order('full_name');
       
       if (facErr) throw facErr;
 
@@ -1188,7 +1256,6 @@
         facStats[f.id] = { name: f.full_name, allotted: 0, taken: 0, late: 0 };
       });
 
-      // --- 2. Build Daily Execution Timetable (Page 1) ---
       const head = [['Time', ...rc1Rooms.map(r => `Room ${r.room_code}`)]];
       const body = [];
 
@@ -1208,10 +1275,7 @@
           
           rc1Rooms.forEach(room => {
             const row = rc1ScheduleMap[slot.id]?.[room.id];
-            if (!row) {
-              rowData.push(''); // Empty cell
-              return;
-            }
+            if (!row) { rowData.push(''); return; }
             
             const s = row.is_cancelled ? 'cancelled' : (rc1ExecMap[row.id] ?? 'not_marked');
             const lbl = row.is_cancelled ? 'CANCELLED' : (RC1_STATUS_LBL[s] ?? 'Not Marked');
@@ -1219,11 +1283,8 @@
             
             const origFId = row.original_faculty?.id;
             const assignFId = row.assigned_faculty?.id;
-            
-            // Highly robust check: If original and assigned IDs exist and are different, it IS a replacement.
             const isReplaced = origFId && assignFId && (origFId !== assignFId);
             
-            // Build cell text for the Grid
             if (isReplaced) {
               const origS = row.subject?.subject_name ?? '—';
               const origF = row.original_faculty?.full_name ?? '—';
@@ -1236,24 +1297,16 @@
               rowData.push(`${cname}\n${sub}\n${fac}\n[${lbl}]`);
             }
 
-            // --- Populate Faculty Stats Dual-Logic ---
             if (!row.is_cancelled) {
               if (isReplaced) {
-                // 1. Absent Faculty: Gets 1 Allotted, but 0 Taken
-                if (facStats[origFId]) {
-                  facStats[origFId].allotted++;
-                }
-                
-                // 2. Replacement Faculty: 0 Allotted, and Taken based on execution status
+                if (facStats[origFId]) facStats[origFId].allotted++;
                 if (facStats[assignFId]) {
-                  // Notice: We NO LONGER increment allotted for the replacement faculty here.
                   if (s === 'on_time' || s === 'late') {
                     facStats[assignFId].taken++;
                     if (s === 'late') facStats[assignFId].late++;
                   }
                 }
               } else {
-                // Normal Lecture Layout
                 const fId = assignFId || origFId;
                 if (fId && facStats[fId]) {
                   facStats[fId].allotted++;
@@ -1274,11 +1327,8 @@
         not_engaged: [253, 232, 234], not_marked: [240, 240, 240], cancelled: [230, 230, 230]
       };
 
-      // Render Page 1 (The Massive Grid)
       doc.autoTable({
-        head, body,
-        startY: 330,
-        theme: 'grid',
+        head, body, startY: 330, theme: 'grid',
         styles: { fontSize: 13, cellPadding: 10, valign: 'middle', halign: 'center', overflow: 'linebreak', lineColor: [180, 180, 180], lineWidth: 1 },
         headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', fontSize: 16, halign: 'center' },
         columnStyles: { 0: { cellWidth: 140, fontStyle: 'bold' } },
@@ -1288,23 +1338,17 @@
           if (data.section === 'body' && data.column.index > 0 && data.cell.raw) {
             const text = String(data.cell.raw.content || data.cell.raw);
             if (!text || text === '') return;
-            
             let fill = [255, 255, 255];
             if (text.includes('[On Time]')) fill = statusFill.on_time;
             else if (text.includes('[Late]')) fill = statusFill.late;
             else if (text.includes('[Not Engaged]')) fill = statusFill.not_engaged;
             else if (text.includes('[Not Marked]')) fill = statusFill.not_marked;
             else if (text.includes('[CANCELLED]')) fill = statusFill.cancelled;
-
-            if (!text.includes('Lunch Break') && !text.includes('Recess') && text !== '-') {
-               data.cell.styles.fillColor = fill;
-            }
+            if (!text.includes('Lunch Break') && !text.includes('Recess') && text !== '-') data.cell.styles.fillColor = fill;
           }
         },
         didDrawPage(data) {
-          if(window._ASES_LOGO_DATA){
-            try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 50, 70, 180, 180); } catch(e){}
-          }
+          if(window._ASES_LOGO_DATA) try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 50, 70, 180, 180); } catch(e){}
           const cx = pageW / 2;
           doc.setFont('times', 'bold'); doc.setFontSize(46); doc.setTextColor(26, 34, 68);
           doc.text('B. K. Birla College, Kalyan', cx, 100, { align: 'center' });
@@ -1316,7 +1360,6 @@
           doc.text('Daily Execution Report', cx, 250, { align: 'center' });
           doc.setFont('helvetica', 'normal'); doc.setFontSize(22); doc.setTextColor(90, 100, 120);
           doc.text(`Date: ${dateLabel}`, cx, 290, { align: 'center' });
-          
           doc.setFont('helvetica', 'normal'); doc.setFontSize(16); doc.setTextColor(120);
           doc.text(`Report Generated By: ${generatedBy}`, 50, pageH - 40);
           doc.text(`Report Generated On: ${new Date().toLocaleString('en-IN')}`, 50, pageH - 20);
@@ -1324,34 +1367,22 @@
         }
       });
 
-      // --- 3. Build & Draw Lecture Taken Report (Page 2+) ---
       let ftAllotted = 0, ftTaken = 0, ftLate = 0, ftExtra = 0;
       let visAllotted = 0, visTaken = 0, visLate = 0, visExtra = 0;
-      
-      const ftBody = [];
-      const visBody = [];
+      const ftBody = [], visBody = [];
       
       facultyList.forEach(f => {
           const s = facStats[f.id];
-          // Prevent negative numbers: if taken - allotted is less than 0, show 0
           const extra = Math.max(0, s.taken - s.allotted); 
-          
           if (f.faculty_type === 'visiting') {
-              visAllotted += s.allotted;
-              visTaken += s.taken;
-              visLate += s.late;
-              visExtra += extra;
+              visAllotted += s.allotted; visTaken += s.taken; visLate += s.late; visExtra += extra;
               visBody.push([ s.name, s.allotted, s.taken, s.late, extra ]);
           } else {
-              ftAllotted += s.allotted;
-              ftTaken += s.taken;
-              ftLate += s.late;
-              ftExtra += extra;
+              ftAllotted += s.allotted; ftTaken += s.taken; ftLate += s.late; ftExtra += extra;
               ftBody.push([ s.name, s.allotted, s.taken, s.late, extra ]);
           }
       });
       
-      // Add Total Rows
       if (ftBody.length > 0) {
           ftBody.push([
               { content: 'TOTAL (Full-Time)', styles: { fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 245] } },
@@ -1378,10 +1409,7 @@
       const drawPageHeader = function(data) {
           if (drawnPages.has(data.pageNumber)) return;
           drawnPages.add(data.pageNumber);
-          
-          if(window._ASES_LOGO_DATA){
-            try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 80, 70, 180, 180); } catch(e){}
-          }
+          if(window._ASES_LOGO_DATA) try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 80, 70, 180, 180); } catch(e){}
           const cx = pageW / 2;
           doc.setFont('times', 'bold'); doc.setFontSize(46); doc.setTextColor(26, 34, 68);
           doc.text('B. K. Birla College, Kalyan', cx, 100, { align: 'center' });
@@ -1393,7 +1421,6 @@
           doc.text('Lecture Taken Report', cx, 250, { align: 'center' });
           doc.setFont('helvetica', 'normal'); doc.setFontSize(22); doc.setTextColor(90, 100, 120);
           doc.text(`Date: ${dateLabel}`, cx, 290, { align: 'center' });
-
           doc.setFont('helvetica', 'normal'); doc.setFontSize(16); doc.setTextColor(120);
           doc.text(`Report Generated By: ${generatedBy}`, 80, pageH - 40);
           doc.text(`Report Generated On: ${new Date().toLocaleString('en-IN')}`, 80, pageH - 20);
@@ -1408,13 +1435,7 @@
               theme: 'grid',
               styles: { fontSize: 26, cellPadding: 20, valign: 'middle', lineColor: [180, 180, 180], lineWidth: 1 },
               headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 28 },
-              columnStyles: {
-                  0: { cellWidth: 'auto', halign: 'left' },
-                  1: { cellWidth: 200, halign: 'center' },
-                  2: { cellWidth: 200, halign: 'center' },
-                  3: { cellWidth: 200, halign: 'center' },
-                  4: { cellWidth: 200, halign: 'center' }
-              },
+              columnStyles: { 0: { cellWidth: 'auto', halign: 'left' }, 1: { cellWidth: 200, halign: 'center' }, 2: { cellWidth: 200, halign: 'center' }, 3: { cellWidth: 200, halign: 'center' }, 4: { cellWidth: 200, halign: 'center' } },
               margin: { top: 330, left: 150, right: 150, bottom: 80 },
               didDrawPage: drawPageHeader
           });
@@ -1423,7 +1444,6 @@
       if (visBody.length > 0) {
           let finalY = doc.lastAutoTable ? (doc.lastAutoTable.finalY || 330) : 330;
           let newStartY = doc.lastAutoTable ? finalY + 100 : 330;
-          
           doc.autoTable({
               head: [['Faculty Name (Visiting)', 'Lec Allotted', 'Lec Taken', 'Late Marked', 'Extra']],
               body: visBody,
@@ -1431,26 +1451,15 @@
               theme: 'grid',
               styles: { fontSize: 26, cellPadding: 20, valign: 'middle', lineColor: [180, 180, 180], lineWidth: 1 },
               headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 28 },
-              columnStyles: {
-                  0: { cellWidth: 'auto', halign: 'left' },
-                  1: { cellWidth: 200, halign: 'center' },
-                  2: { cellWidth: 200, halign: 'center' },
-                  3: { cellWidth: 200, halign: 'center' },
-                  4: { cellWidth: 200, halign: 'center' }
-              },
+              columnStyles: { 0: { cellWidth: 'auto', halign: 'left' }, 1: { cellWidth: 200, halign: 'center' }, 2: { cellWidth: 200, halign: 'center' }, 3: { cellWidth: 200, halign: 'center' }, 4: { cellWidth: 200, halign: 'center' } },
               margin: { top: 330, left: 150, right: 150, bottom: 80 },
               didDrawPage: drawPageHeader
           });
       }
 
       doc.save(`Daily_Execution_Report_${rc1Date}.pdf`);
-
-    } catch (e) {
-      toast('Error generating PDF: ' + e.message, 'error');
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = originalHtml;
-    }
+    } catch (e) { toast('Error generating PDF: ' + e.message, 'error'); } 
+    finally { btn.disabled = false; btn.innerHTML = originalHtml; }
   });
   
   // ══════════════════════════════════════════════════════════════════
@@ -1461,10 +1470,18 @@
   document.getElementById('rc2Run').addEventListener('click', async () => {
     const from=document.getElementById('rc2From').value;
     const to=document.getElementById('rc2To').value;
-    const facId=document.getElementById('rc2Faculty').value||null;
+    
+    // Multiple Selector Value Extraction
+    const facSelect = document.getElementById('rc2Faculty');
+    const selectedFacIds = Array.from(facSelect.selectedOptions).map(o => o.value).filter(v => v);
+    const typeFilter = document.getElementById('rc2Type').value;
+
     if(!from||!to){toast('From and To dates are required.','warn');return;}
     const btn=document.getElementById('rc2Run');btn.disabled=true;
-    loadingRow('rc2Body',7);
+    
+    document.getElementById('rc2TablesContainer').style.display = 'none';
+    document.getElementById('rc2EmptyState').style.display = 'block';
+    document.getElementById('rc2EmptyState').innerHTML = `<span class="spin" style="display:inline-block"></span> Loading…`;
     document.getElementById('rc2Search').value = '';
 
     try {
@@ -1481,13 +1498,20 @@
       while (curr <= end) {
           const d = new Date(curr.getTime() - (curr.getTimezoneOffset() * 60000));
           const dateStr = d.toISOString().split('T')[0];
-          
           if (!holidayDates.has(dateStr) && curr.getDay() !== 0) { 
-              const dayName = daysMap[curr.getDay()];
-              dayCounts[dayName]++;
+              dayCounts[daysMap[curr.getDay()]]++;
           }
           curr.setDate(curr.getDate() + 1);
       }
+
+      // Fetch Faculty Type mapping
+      const { data: facData } = await supabase.from('faculty').select('id, full_name, faculty_type');
+      const facMap = {};
+      const facIdToName = {};
+      (facData || []).forEach(f => {
+          facMap[f.full_name] = f.faculty_type;
+          facIdToName[f.id] = f.full_name;
+      });
 
       let masterQuery = supabase.from('master_timetable').select(`
           day_type,
@@ -1495,22 +1519,19 @@
           subject:subjects!subject_id ( id, subject_name ),
           assigned_faculty:faculty!faculty_id ( id, full_name )
       `);
-      if (facId) masterQuery = masterQuery.eq('faculty_id', facId);
       
       const { data: masterData, error: masterError } = await masterQuery;
       if (masterError) throw masterError;
 
       let dailyQuery = supabase.from('daily_schedule').select(`
-          id, schedule_date, is_cancelled,
+          id, schedule_date, is_cancelled, is_rescheduled, original_faculty_id, assigned_faculty_id,
           course:courses!course_id ( id, year, program, division ),
           subject:subjects!subject_id ( id, subject_name ),
-          assigned_faculty:faculty!assigned_faculty_id ( id, full_name )
+          assigned_faculty:faculty!assigned_faculty_id ( id, full_name ),
+          original_faculty:faculty!original_faculty_id ( id, full_name ),
+          csf:course_subject_faculty!csf_id ( subject:subjects!subject_id (subject_name) )
       `)
-      .gte('schedule_date', from)
-      .lte('schedule_date', to)
-      .eq('is_cancelled', false); 
-      
-      if (facId) dailyQuery = dailyQuery.eq('assigned_faculty_id', facId);
+      .gte('schedule_date', from).lte('schedule_date', to).eq('is_cancelled', false); 
       
       const { data: dailyDataAll, error: dailyError } = await dailyQuery;
       if (dailyError) throw dailyError;
@@ -1531,52 +1552,112 @@
       const groupMap = {};
       const getCourseKey = (c) => c ? (c.division ? `${c.year} ${c.program} ${c.division}` : `${c.year} ${c.program}`) : 'Unknown';
       
+      // 1. Build LOAD based strictly on Master Timetable (Original Plans)
       (masterData ?? []).forEach(row => {
           const courseKey = getCourseKey(row.course);
           const subKey = row.subject?.subject_name ?? 'Unknown';
           const fName = row.assigned_faculty?.full_name ?? '—';
           const key = `${fName}|||${courseKey}|||${subKey}`;
           
-          if (!groupMap[key]) {
-              groupMap[key] = { course: courseKey, subject: subKey, faculty: fName, load: 0, scheduled: 0, late: 0 };
-          }
+          if (!groupMap[key]) groupMap[key] = { course: courseKey, subject: subKey, faculty: fName, load: 0, taken: 0, late: 0 };
           groupMap[key].load += (dayCounts[row.day_type] || 0);
       });
 
+      // 2. Build TAKEN based strictly on Actual Execution (Reality)
       dailyData.forEach(row => {
           const courseKey = getCourseKey(row.course);
-          const subKey = row.subject?.subject_name ?? 'Unknown';
-          const fName = row.assigned_faculty?.full_name ?? '—';
-          const key = `${fName}|||${courseKey}|||${subKey}`;
+          const origFName = row.original_faculty?.full_name ?? '—';
+          const assignFName = row.assigned_faculty?.full_name ?? '—';
+          const isReplaced = row.is_rescheduled && row.original_faculty_id && row.assigned_faculty_id && (row.original_faculty_id !== row.assigned_faculty_id);
           
-          if (!groupMap[key]) {
-              groupMap[key] = { course: courseKey, subject: subKey, faculty: fName, load: 0, scheduled: 0, late: 0 };
+          const exStatus = execMap[row.id];
+
+          if (isReplaced) {
+              // Replacement Faculty: Gets +Taken, +Late, but 0 Load
+              const newSub = row.csf?.subject?.subject_name ?? row.subject?.subject_name;
+              const repKey = `${assignFName}|||${courseKey}|||${newSub}`;
+              
+              if (!groupMap[repKey]) groupMap[repKey] = { course: courseKey, subject: newSub, faculty: assignFName, load: 0, taken: 0, late: 0 };
+              
+              if (exStatus === 'on_time' || exStatus === 'late') {
+                  groupMap[repKey].taken++;
+                  if (exStatus === 'late') groupMap[repKey].late++;
+              }
+              // Original faculty gets no 'Taken' credit here
+          } else {
+              // Normal Faculty
+              const normSub = row.subject?.subject_name ?? 'Unknown';
+              const normKey = `${origFName}|||${courseKey}|||${normSub}`;
+              
+              if (!groupMap[normKey]) groupMap[normKey] = { course: courseKey, subject: normSub, faculty: origFName, load: 0, taken: 0, late: 0 };
+              
+              if (exStatus === 'on_time' || exStatus === 'late') {
+                  groupMap[normKey].taken++;
+                  if (exStatus === 'late') groupMap[normKey].late++;
+              }
           }
-          groupMap[key].scheduled++;
-          if (execMap[row.id] === 'late') groupMap[key].late++;
       });
 
-      rc2Data = Object.values(groupMap).map(g => ({
-          ...g, extra: Math.max(0, g.scheduled - g.load)
-      })).sort((a,b) => a.faculty.localeCompare(b.faculty) || a.course.localeCompare(b.course));
+      // Filter by Type & Multi-Select
+      rc2Data = Object.values(groupMap)
+          .map(g => ({ ...g, extra: Math.max(0, g.taken - g.load), facType: facMap[g.faculty] || 'full_time' }))
+          .filter(g => {
+              if (typeFilter !== 'all' && g.facType !== typeFilter) return false;
+              if (selectedFacIds.length > 0) {
+                  const selNames = selectedFacIds.map(id => facIdToName[id]);
+                  if (!selNames.includes(g.faculty)) return false;
+              }
+              return true;
+          })
+          .sort((a,b) => a.faculty.localeCompare(b.faculty) || a.course.localeCompare(b.course));
 
       document.getElementById('rc2Count').textContent = `${rc2Data.length} row(s) found`;
 
-      if (!rc2Data.length) { emptyRow('rc2Body', 7, 'No data found for this period.'); return; }
+      if (!rc2Data.length) { 
+          document.getElementById('rc2EmptyState').innerHTML = 'No data found for these filters.';
+          return; 
+      }
 
-      document.getElementById('rc2Body').innerHTML = rc2Data.map(r => `<tr>
-          <td><strong>${r.course}</strong></td>
-          <td>${r.subject}</td>
-          <td style="text-align:center;font-weight:600">${r.load}</td>
-          <td>${r.faculty}</td>
-          <td style="text-align:center;color:var(--success);font-weight:600">${r.scheduled}</td>
-          <td style="text-align:center;color:${r.late > 0 ? 'var(--warn)' : 'var(--text-muted)'};font-weight:600">${r.late}</td>
-          <td style="text-align:center;color:${r.extra > 0 ? 'var(--accent)' : 'var(--text-muted)'};font-weight:600">${r.extra}</td>
-      </tr>`).join('');
+      document.getElementById('rc2EmptyState').style.display = 'none';
+      document.getElementById('rc2TablesContainer').style.display = 'flex';
+
+      const ftData = rc2Data.filter(d => d.facType !== 'visiting');
+      const visData = rc2Data.filter(d => d.facType === 'visiting');
+
+      if (ftData.length) {
+          document.getElementById('rc2FtContainer').style.display = 'block';
+          document.getElementById('rc2FtBody').innerHTML = ftData.map(r => `<tr>
+              <td><strong>${r.course}</strong></td>
+              <td>${r.subject}</td>
+              <td style="text-align:center;font-weight:600">${r.load}</td>
+              <td>${r.faculty}</td>
+              <td style="text-align:center;color:var(--success);font-weight:600">${r.taken}</td>
+              <td style="text-align:center;color:${r.late > 0 ? 'var(--warn)' : 'var(--text-muted)'};font-weight:600">${r.late}</td>
+              <td style="text-align:center;color:${r.extra > 0 ? 'var(--accent)' : 'var(--text-muted)'};font-weight:600">${r.extra}</td>
+          </tr>`).join('');
+      } else {
+          document.getElementById('rc2FtContainer').style.display = 'none';
+      }
+
+      if (visData.length) {
+          document.getElementById('rc2VisContainer').style.display = 'block';
+          document.getElementById('rc2VisBody').innerHTML = visData.map(r => `<tr>
+              <td><strong>${r.course}</strong></td>
+              <td>${r.subject}</td>
+              <td style="text-align:center;font-weight:600">${r.load}</td>
+              <td>${r.faculty}</td>
+              <td style="text-align:center;color:var(--success);font-weight:600">${r.taken}</td>
+              <td style="text-align:center;color:${r.late > 0 ? 'var(--warn)' : 'var(--text-muted)'};font-weight:600">${r.late}</td>
+              <td style="text-align:center;color:${r.extra > 0 ? 'var(--accent)' : 'var(--text-muted)'};font-weight:600">${r.extra}</td>
+          </tr>`).join('');
+      } else {
+          document.getElementById('rc2VisContainer').style.display = 'none';
+      }
       
     } catch (e) {
         toast(e.message, 'error');
-        emptyRow('rc2Body', 7, 'Error: ' + e.message);
+        document.getElementById('rc2EmptyState').style.display = 'block';
+        document.getElementById('rc2EmptyState').innerHTML = 'Error: ' + e.message;
     } finally {
         btn.disabled = false;
     }
@@ -1595,26 +1676,14 @@
     const to = document.getElementById('rc2To').value;
     const subtitle = `Period: ${fmtDate(from)} to ${fmtDate(to)}`;
 
-    const head = [['Class', 'Subject', 'Load', 'Teacher Name', 'Scheduled', 'Late', 'Extra']];
-    const body = rc2Data.map(r => [r.course, r.subject, r.load, r.faculty, r.scheduled, r.late, r.extra]);
+    const head = [['Class', 'Subject', 'Load', 'Teacher Name', 'Lec Taken', 'Late', 'Extra']];
 
-    doc.autoTable({
-      head, body,
-      startY: 46,
-      margin: { top: 46, left: 14, right: 14 },
-      theme: 'grid',
-      styles: { fontSize: 7.5, cellPadding: 2, valign: 'middle' },
-      headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold' },
-      columnStyles: { 
-         0: { cellWidth: 26 }, 
-         1: { cellWidth: 46 }, 
-         2: { cellWidth: 12, halign: 'center' }, 
-         3: { cellWidth: 'auto' }, 
-         4: { cellWidth: 16, halign: 'center' }, 
-         5: { cellWidth: 10, halign: 'center' }, 
-         6: { cellWidth: 10, halign: 'center' } 
-      },
-      didDrawPage(data) {
+    const ftData = rc2Data.filter(d => d.facType !== 'visiting');
+    const visData = rc2Data.filter(d => d.facType === 'visiting');
+
+    let currentY = 46;
+
+    const drawHeader = function(data) {
         if(window._ASES_LOGO_DATA) {
           try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 14, 8, 24, 24); } catch(e) {}
         }
@@ -1635,19 +1704,63 @@
         doc.text(`Report Generated On: ${new Date().toLocaleString('en-IN')}`, 14, pageH - 4.5);
         doc.setTextColor(150);
         doc.text(`Page ${data.pageNumber}`, pageW / 2, pageH - 4.5, { align: 'center' });
-      }
-    });
+    };
+
+    if (ftData.length > 0) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(26, 34, 68);
+      doc.text('Full-Time Faculty', 14, currentY);
+      currentY += 4;
+
+      doc.autoTable({
+        head, body: ftData.map(r => [r.course, r.subject, r.load, r.faculty, r.taken, r.late, r.extra]),
+        startY: currentY,
+        margin: { left: 14, right: 14, bottom: 20 },
+        theme: 'grid',
+        styles: { fontSize: 7.5, cellPadding: 2, valign: 'middle' },
+        headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold' },
+        columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 46 }, 2: { cellWidth: 12, halign: 'center' }, 3: { cellWidth: 'auto' }, 4: { cellWidth: 16, halign: 'center' }, 5: { cellWidth: 10, halign: 'center' }, 6: { cellWidth: 10, halign: 'center' } },
+        didDrawPage: drawHeader
+      });
+      currentY = doc.lastAutoTable.finalY + 15;
+    }
+
+    if (visData.length > 0) {
+      // Check if we need a new page for the title
+      if (currentY + 20 > pageH) { doc.addPage(); currentY = 46; }
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(26, 34, 68);
+      doc.text('Visiting Faculty', 14, currentY);
+      currentY += 4;
+
+      doc.autoTable({
+        head, body: visData.map(r => [r.course, r.subject, r.load, r.faculty, r.taken, r.late, r.extra]),
+        startY: currentY,
+        margin: { left: 14, right: 14, bottom: 20 },
+        theme: 'grid',
+        styles: { fontSize: 7.5, cellPadding: 2, valign: 'middle' },
+        headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold' },
+        columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 46 }, 2: { cellWidth: 12, halign: 'center' }, 3: { cellWidth: 'auto' }, 4: { cellWidth: 16, halign: 'center' }, 5: { cellWidth: 10, halign: 'center' }, 6: { cellWidth: 10, halign: 'center' } },
+        didDrawPage: drawHeader
+      });
+    }
 
     doc.save('Faculty_Load_Report.pdf');
   });
 
   document.getElementById('rc2ExportXls').addEventListener('click',()=>{
     if(!rc2Data.length){toast('Run report first.','warn');return;}
+    
+    // Add Type column dynamically for easy filtering in Excel
+    const excelData = rc2Data.map(r => ({
+       type: r.facType === 'visiting' ? 'Visiting' : 'Full-Time',
+       ...r
+    }));
+
     exportToExcel(
-      rc2Data,
-      [{header:'Class',key:'course',width:20},{header:'Subject',key:'subject',width:35},
+      excelData,
+      [{header:'Faculty Type',key:'type',width:15}, {header:'Class',key:'course',width:20},{header:'Subject',key:'subject',width:35},
        {header:'Load',key:'load',width:8},{header:'Teacher Name',key:'faculty',width:28},
-       {header:'Scheduled',key:'scheduled',width:12},{header:'Late',key:'late',width:8},
+       {header:'Lec Taken',key:'taken',width:12},{header:'Late',key:'late',width:8},
        {header:'Extra',key:'extra',width:8}],
       'Faculty_Load_Report'
     );
