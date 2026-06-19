@@ -26,6 +26,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initSidebar(userSession, 'remarks');
 
+    // ==========================================
+    // NEW: Set default date to today
+    // ==========================================
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    document.getElementById('remark-date').value = `${yyyy}-${mm}-${dd}`;
+
     // 2. Load Initial Data
     await fetchActiveFaculty();
     await fetchAllRemarksFromDB();
@@ -64,7 +73,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             alert('Remark added successfully!');
             form.reset();
+            
+            // Reset the date back to today after submission
+            document.getElementById('remark-date').value = `${yyyy}-${mm}-${dd}`;
             document.getElementById('selected-faculty-id').value = ''; // Clear hidden ID
+            
             await fetchAllRemarksFromDB(); 
             
         } catch (error) {
