@@ -1541,6 +1541,68 @@
   // ══════════════════════════════════════════════════════════════════
   let rc2Data=[];
 
+  // --- HELPER FUNCTION FOR UI TOTALS ---
+  function generateRc2HtmlWithTotals(dataArray) {
+      if (!dataArray.length) return '';
+      let html = '';
+      let currentFaculty = dataArray[0].faculty;
+      
+      let sLoad=0, sSched=0, sTaken=0, sLate=0, sExtra=0;
+      let gLoad=0, gSched=0, gTaken=0, gLate=0, gExtra=0;
+
+      const addSubtotal = (facName) => {
+          html += `<tr style="background-color: var(--bg-hover); font-weight: 700;">
+              <td colspan="2" style="text-align: right; color: var(--text-primary);">Total for ${facName}:</td>
+              <td style="text-align:center;">${sLoad}</td>
+              <td></td>
+              <td style="text-align:center;">${sSched}</td>
+              <td style="text-align:center;color:var(--success);">${sTaken}</td>
+              <td style="text-align:center;color:${sLate>0?'var(--warn)':'inherit'};">${sLate}</td>
+              <td style="text-align:center;color:${sExtra>0?'var(--accent)':'inherit'};">${sExtra}</td>
+          </tr>`;
+      };
+
+      dataArray.forEach((r, idx) => {
+          // If faculty changes, print subtotal for previous faculty
+          if (r.faculty !== currentFaculty) {
+              addSubtotal(currentFaculty);
+              sLoad=0; sSched=0; sTaken=0; sLate=0; sExtra=0; // Reset
+              currentFaculty = r.faculty;
+          }
+          
+          sLoad+=r.load; sSched+=r.scheduled; sTaken+=r.taken; sLate+=r.late; sExtra+=r.extra;
+          gLoad+=r.load; gSched+=r.scheduled; gTaken+=r.taken; gLate+=r.late; gExtra+=r.extra;
+
+          // Standard Row
+          html += `<tr>
+              <td><strong>${r.course}</strong></td>
+              <td>${r.subject}</td>
+              <td style="text-align:center;font-weight:600">${r.load}</td>
+              <td>${r.faculty}</td>
+              <td style="text-align:center;font-weight:600">${r.scheduled}</td>
+              <td style="text-align:center;color:var(--success);font-weight:600">${r.taken}</td>
+              <td style="text-align:center;color:${r.late>0?'var(--warn)':'var(--text-muted)'};font-weight:600">${r.late}</td>
+              <td style="text-align:center;color:${r.extra>0?'var(--accent)':'var(--text-muted)'};font-weight:600">${r.extra}</td>
+          </tr>`;
+
+          // If last row, print subtotal
+          if (idx === dataArray.length - 1) addSubtotal(currentFaculty);
+      });
+
+      // Print Grand Total
+      html += `<tr style="background-color: rgba(79, 106, 245, 0.08); border-top: 2px solid var(--border); font-weight: 800; font-size: 1.02rem;">
+          <td colspan="2" style="text-align: right; color: var(--accent);">GRAND TOTAL:</td>
+          <td style="text-align:center; color: var(--accent);">${gLoad}</td>
+          <td></td>
+          <td style="text-align:center; color: var(--accent);">${gSched}</td>
+          <td style="text-align:center; color: var(--success);">${gTaken}</td>
+          <td style="text-align:center; color: var(--warn);">${gLate}</td>
+          <td style="text-align:center; color: var(--accent);">${gExtra}</td>
+      </tr>`;
+      
+      return html;
+  }
+
   document.getElementById('rc2Run').addEventListener('click', async () => {
     const from=document.getElementById('rc2From').value;
     const to=document.getElementById('rc2To').value;
@@ -1578,7 +1640,6 @@
           curr.setDate(curr.getDate() + 1);
       }
 
-      // Fetch Faculty Type mapping
       const { data: facData } = await supabase.from('faculty').select('id, full_name, faculty_type');
       const facMap = {};
       const facIdToName = {};
@@ -1588,10 +1649,8 @@
       });
 
       let masterQuery = supabase.from('master_timetable').select(`
-          day_type,
-          course:courses!course_id ( id, year, program, division ),
-          subject:subjects!subject_id ( id, subject_name ),
-          assigned_faculty:faculty!faculty_id ( id, full_name )
+          day_type, course:courses!course_id ( id, year, program, division ),
+          subject:subjects!subject_id ( id, subject_name ), assigned_faculty:faculty!faculty_id ( id, full_name )
       `);
       
       const { data: masterData, error: masterError } = await masterQuery;
@@ -1615,9 +1674,7 @@
       const ids = dailyData.map(r => r.id);
       let execRows = [];
       if (ids.length) {
-          const { data: ex } = await supabase.from('lecture_execution')
-              .select('daily_schedule_id, faculty_status')
-              .in('daily_schedule_id', ids);
+          const { data: ex } = await supabase.from('lecture_execution').select('daily_schedule_id, faculty_status').in('daily_schedule_id', ids);
           execRows = ex ?? [];
       }
       const execMap = {};
@@ -1626,7 +1683,6 @@
       const groupMap = {};
       const getCourseKey = (c) => c ? (c.division ? `${c.year} ${c.program} ${c.division}` : `${c.year} ${c.program}`) : 'Unknown';
       
-      // 1. Build LOAD based strictly on Master Timetable (Original Plans)
       (masterData ?? []).forEach(row => {
           const courseKey = getCourseKey(row.course);
           const subKey = row.subject?.subject_name ?? 'Unknown';
@@ -1637,40 +1693,33 @@
           groupMap[key].load += (dayCounts[row.day_type] || 0);
       });
 
-      // 2. Build SCHEDULED and TAKEN based strictly on Actual Execution (Reality)
       dailyData.forEach(row => {
           const courseKey = getCourseKey(row.course);
           const origFName = row.original_faculty?.full_name ?? '—';
           const assignFName = row.assigned_faculty?.full_name ?? '—';
           const isReplaced = row.is_rescheduled && row.original_faculty_id && row.assigned_faculty_id && (row.original_faculty_id !== row.assigned_faculty_id);
-          
           const exStatus = execMap[row.id];
 
           if (isReplaced) {
-              // A. Original Absent Faculty gets +1 Scheduled (Allotted), but 0 Taken
               const origSub = row.subject?.subject_name ?? 'Unknown';
               const origKey = `${origFName}|||${courseKey}|||${origSub}`;
               
               if (!groupMap[origKey]) groupMap[origKey] = { course: courseKey, subject: origSub, faculty: origFName, load: 0, scheduled: 0, taken: 0, late: 0 };
               groupMap[origKey].scheduled++;
 
-              // B. Replacement Proxy Faculty gets 0 Scheduled, but +1 Taken
               const newSub = row.csf?.subject?.subject_name ?? row.subject?.subject_name;
               const repKey = `${assignFName}|||${courseKey}|||${newSub}`;
               
               if (!groupMap[repKey]) groupMap[repKey] = { course: courseKey, subject: newSub, faculty: assignFName, load: 0, scheduled: 0, taken: 0, late: 0 };
-              
               if (exStatus === 'on_time' || exStatus === 'late') {
                   groupMap[repKey].taken++;
                   if (exStatus === 'late') groupMap[repKey].late++;
               }
           } else {
-              // C. Normal Faculty gets +1 Scheduled AND +1 Taken
               const normSub = row.subject?.subject_name ?? 'Unknown';
               const normKey = `${origFName}|||${courseKey}|||${normSub}`;
               
               if (!groupMap[normKey]) groupMap[normKey] = { course: courseKey, subject: normSub, faculty: origFName, load: 0, scheduled: 0, taken: 0, late: 0 };
-              
               groupMap[normKey].scheduled++;
               if (exStatus === 'on_time' || exStatus === 'late') {
                   groupMap[normKey].taken++;
@@ -1679,22 +1728,21 @@
           }
       });
 
-      // Filter by Type & Multi-Select & Calculate Extra
+      // UPDATE 1: Filter by Type & Multi-Select & Calculate Extra correctly (Taken - Scheduled)
       rc2Data = Object.values(groupMap)
-          .map(g => ({ ...g, extra: Math.max(0, g.taken - g.load), facType: facMap[g.faculty] || 'full_time' }))
+          .map(g => ({ ...g, extra: Math.max(0, g.taken - g.scheduled), facType: facMap[g.faculty] || 'full_time' }))
           .filter(g => {
               if (typeFilter !== 'all' && g.facType !== typeFilter) return false;
               if (selectedFacIds.length > 0) {
                   const selNames = selectedFacIds.map(id => facIdToName[id]);
                   if (!selNames.includes(g.faculty)) return false;
               }
-              // Optional: Only show rows that actually have data
               if (g.load === 0 && g.scheduled === 0 && g.taken === 0) return false;
               return true;
           })
-          .sort((a,b) => a.faculty.localeCompare(b.faculty) || a.course.localeCompare(b.course));
+          .sort((a,b) => a.faculty.localeCompare(b.faculty) || a.course.localeCompare(b.course)); // Required for subtotals grouping
 
-      document.getElementById('rc2Count').textContent = `${rc2Data.length} row(s) found`;
+      document.getElementById('rc2Count').textContent = `${rc2Data.length} active class rows found`;
 
       if (!rc2Data.length) { 
           document.getElementById('rc2EmptyState').innerHTML = 'No data found for these filters.';
@@ -1707,34 +1755,17 @@
       const ftData = rc2Data.filter(d => d.facType !== 'visiting');
       const visData = rc2Data.filter(d => d.facType === 'visiting');
 
+      // UPDATE 2: Generate Tables using dynamic Subtotal UI function
       if (ftData.length) {
           document.getElementById('rc2FtContainer').style.display = 'block';
-          document.getElementById('rc2FtBody').innerHTML = ftData.map(r => `<tr>
-              <td><strong>${r.course}</strong></td>
-              <td>${r.subject}</td>
-              <td style="text-align:center;font-weight:600">${r.load}</td>
-              <td>${r.faculty}</td>
-              <td style="text-align:center;font-weight:600">${r.scheduled}</td>
-              <td style="text-align:center;color:var(--success);font-weight:600">${r.taken}</td>
-              <td style="text-align:center;color:${r.late > 0 ? 'var(--warn)' : 'var(--text-muted)'};font-weight:600">${r.late}</td>
-              <td style="text-align:center;color:${r.extra > 0 ? 'var(--accent)' : 'var(--text-muted)'};font-weight:600">${r.extra}</td>
-          </tr>`).join('');
+          document.getElementById('rc2FtBody').innerHTML = generateRc2HtmlWithTotals(ftData);
       } else {
           document.getElementById('rc2FtContainer').style.display = 'none';
       }
 
       if (visData.length) {
           document.getElementById('rc2VisContainer').style.display = 'block';
-          document.getElementById('rc2VisBody').innerHTML = visData.map(r => `<tr>
-              <td><strong>${r.course}</strong></td>
-              <td>${r.subject}</td>
-              <td style="text-align:center;font-weight:600">${r.load}</td>
-              <td>${r.faculty}</td>
-              <td style="text-align:center;font-weight:600">${r.scheduled}</td>
-              <td style="text-align:center;color:var(--success);font-weight:600">${r.taken}</td>
-              <td style="text-align:center;color:${r.late > 0 ? 'var(--warn)' : 'var(--text-muted)'};font-weight:600">${r.late}</td>
-              <td style="text-align:center;color:${r.extra > 0 ? 'var(--accent)' : 'var(--text-muted)'};font-weight:600">${r.extra}</td>
-          </tr>`).join('');
+          document.getElementById('rc2VisBody').innerHTML = generateRc2HtmlWithTotals(visData);
       } else {
           document.getElementById('rc2VisContainer').style.display = 'none';
       }
@@ -1747,6 +1778,52 @@
         btn.disabled = false;
     }
   });
+
+  // --- HELPER FUNCTION FOR PDF TOTALS ---
+  function generatePdfBodyWithTotals(dataArray) {
+      if(!dataArray.length) return [];
+      const body = [];
+      let currentFaculty = dataArray[0].faculty;
+      let sLoad=0, sSched=0, sTaken=0, sLate=0, sExtra=0;
+      let gLoad=0, gSched=0, gTaken=0, gLate=0, gExtra=0;
+
+      const addSubtotal = (facName) => {
+          body.push([
+              { content: `Total for ${facName}:`, colSpan: 2, styles: { halign: 'right', fontStyle: 'bold', fillColor: [240,240,245] } },
+              { content: sLoad.toString(), styles: { halign: 'center', fontStyle: 'bold', fillColor: [240,240,245] } },
+              { content: '', styles: { fillColor: [240,240,245] } },
+              { content: sSched.toString(), styles: { halign: 'center', fontStyle: 'bold', fillColor: [240,240,245] } },
+              { content: sTaken.toString(), styles: { halign: 'center', fontStyle: 'bold', fillColor: [240,240,245] } },
+              { content: sLate.toString(), styles: { halign: 'center', fontStyle: 'bold', fillColor: [240,240,245] } },
+              { content: sExtra.toString(), styles: { halign: 'center', fontStyle: 'bold', fillColor: [240,240,245] } }
+          ]);
+      };
+
+      dataArray.forEach((r, idx) => {
+          if(r.faculty !== currentFaculty) {
+              addSubtotal(currentFaculty);
+              sLoad=0; sSched=0; sTaken=0; sLate=0; sExtra=0;
+              currentFaculty = r.faculty;
+          }
+          sLoad+=r.load; sSched+=r.scheduled; sTaken+=r.taken; sLate+=r.late; sExtra+=r.extra;
+          gLoad+=r.load; gSched+=r.scheduled; gTaken+=r.taken; gLate+=r.late; gExtra+=r.extra;
+
+          body.push([r.course, r.subject, r.load.toString(), r.faculty, r.scheduled.toString(), r.taken.toString(), r.late.toString(), r.extra.toString()]);
+
+          if(idx === dataArray.length - 1) addSubtotal(currentFaculty);
+      });
+
+      body.push([
+          { content: `GRAND TOTAL:`, colSpan: 2, styles: { halign: 'right', fontStyle: 'bold', fillColor: [220,225,240], textColor: [26,34,68] } },
+          { content: gLoad.toString(), styles: { halign: 'center', fontStyle: 'bold', fillColor: [220,225,240], textColor: [26,34,68] } },
+          { content: '', styles: { fillColor: [220,225,240] } },
+          { content: gSched.toString(), styles: { halign: 'center', fontStyle: 'bold', fillColor: [220,225,240], textColor: [26,34,68] } },
+          { content: gTaken.toString(), styles: { halign: 'center', fontStyle: 'bold', fillColor: [220,225,240], textColor: [26,34,68] } },
+          { content: gLate.toString(), styles: { halign: 'center', fontStyle: 'bold', fillColor: [220,225,240], textColor: [26,34,68] } },
+          { content: gExtra.toString(), styles: { halign: 'center', fontStyle: 'bold', fillColor: [220,225,240], textColor: [26,34,68] } }
+      ]);
+      return body;
+  }
 
   document.getElementById('rc2ExportPdf').addEventListener('click', () => {
     if (!rc2Data.length) { toast('Run report first.', 'warn'); return; }
@@ -1791,27 +1868,23 @@
         doc.text(`Page ${data.pageNumber}`, pageW / 2, pageH - 4.5, { align: 'center' });
     };
 
+    // UPDATE 3: Inject dynamic PDF rows with subtotals
     if (ftData.length > 0) {
       doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(26, 34, 68);
       doc.text('Full-Time Faculty', 14, currentY);
       currentY += 4;
 
       doc.autoTable({
-        head, body: ftData.map(r => [r.course, r.subject, r.load, r.faculty, r.scheduled, r.taken, r.late, r.extra]),
+        head, body: generatePdfBodyWithTotals(ftData),
         startY: currentY,
         margin: { top: 52, left: 14, right: 14, bottom: 20 },
         theme: 'grid',
         styles: { fontSize: 7.5, cellPadding: 2, valign: 'middle' },
         headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold' },
         columnStyles: { 
-            0: { cellWidth: 26 }, 
-            1: { cellWidth: 38 }, 
-            2: { cellWidth: 12, halign: 'center' }, 
-            3: { cellWidth: 'auto' }, 
-            4: { cellWidth: 18, halign: 'center' }, 
-            5: { cellWidth: 18, halign: 'center' }, 
-            6: { cellWidth: 12, halign: 'center' }, 
-            7: { cellWidth: 12, halign: 'center' } 
+            0: { cellWidth: 26 }, 1: { cellWidth: 38 }, 2: { cellWidth: 12, halign: 'center' }, 
+            3: { cellWidth: 'auto' }, 4: { cellWidth: 18, halign: 'center' }, 
+            5: { cellWidth: 18, halign: 'center' }, 6: { cellWidth: 12, halign: 'center' }, 7: { cellWidth: 12, halign: 'center' } 
         },
         didDrawPage: drawHeader
       });
@@ -1826,21 +1899,16 @@
       currentY += 4;
 
       doc.autoTable({
-        head, body: visData.map(r => [r.course, r.subject, r.load, r.faculty, r.scheduled, r.taken, r.late, r.extra]),
+        head, body: generatePdfBodyWithTotals(visData),
         startY: currentY,
         margin: { top: 52, left: 14, right: 14, bottom: 20 },
         theme: 'grid',
         styles: { fontSize: 7.5, cellPadding: 2, valign: 'middle' },
         headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold' },
         columnStyles: { 
-            0: { cellWidth: 26 }, 
-            1: { cellWidth: 38 }, 
-            2: { cellWidth: 12, halign: 'center' }, 
-            3: { cellWidth: 'auto' }, 
-            4: { cellWidth: 18, halign: 'center' }, 
-            5: { cellWidth: 18, halign: 'center' }, 
-            6: { cellWidth: 12, halign: 'center' }, 
-            7: { cellWidth: 12, halign: 'center' } 
+            0: { cellWidth: 26 }, 1: { cellWidth: 38 }, 2: { cellWidth: 12, halign: 'center' }, 
+            3: { cellWidth: 'auto' }, 4: { cellWidth: 18, halign: 'center' }, 
+            5: { cellWidth: 18, halign: 'center' }, 6: { cellWidth: 12, halign: 'center' }, 7: { cellWidth: 12, halign: 'center' } 
         },
         didDrawPage: drawHeader
       });
@@ -1849,13 +1917,47 @@
     doc.save('Lecture_Taken_Report.pdf');
   });
 
+  // --- HELPER FUNCTION FOR EXCEL TOTALS ---
+  function generateXlsBodyWithTotals(dataArray, typeLabel) {
+      if(!dataArray.length) return [];
+      const out = [];
+      let currentFaculty = dataArray[0].faculty;
+      let sLoad=0, sSched=0, sTaken=0, sLate=0, sExtra=0;
+      let gLoad=0, gSched=0, gTaken=0, gLate=0, gExtra=0;
+
+      const addSubtotal = (facName) => {
+          out.push({ type: '', course: 'Total for ' + facName + ':', subject: '', load: sLoad, faculty: '', scheduled: sSched, taken: sTaken, late: sLate, extra: sExtra });
+      };
+
+      dataArray.forEach((r, idx) => {
+          if(r.faculty !== currentFaculty) {
+              addSubtotal(currentFaculty);
+              sLoad=0; sSched=0; sTaken=0; sLate=0; sExtra=0;
+              currentFaculty = r.faculty;
+          }
+          sLoad+=r.load; sSched+=r.scheduled; sTaken+=r.taken; sLate+=r.late; sExtra+=r.extra;
+          gLoad+=r.load; gSched+=r.scheduled; gTaken+=r.taken; gLate+=r.late; gExtra+=r.extra;
+
+          out.push({ type: typeLabel, course: r.course, subject: r.subject, load: r.load, faculty: r.faculty, scheduled: r.scheduled, taken: r.taken, late: r.late, extra: r.extra });
+
+          if(idx === dataArray.length - 1) addSubtotal(currentFaculty);
+      });
+
+      out.push({ type: '', course: 'GRAND TOTAL:', subject: '', load: gLoad, faculty: '', scheduled: gSched, taken: gTaken, late: gLate, extra: gExtra });
+      return out;
+  }
+
   document.getElementById('rc2ExportXls').addEventListener('click',()=>{
     if(!rc2Data.length){toast('Run report first.','warn');return;}
     
-    const excelData = rc2Data.map(r => ({
-       type: r.facType === 'visiting' ? 'Visiting' : 'Full-Time',
-       ...r
-    }));
+    // UPDATE 4: Generate Excel rows respecting the subtotals and grand totals
+    const ftData = rc2Data.filter(d => d.facType !== 'visiting');
+    const visData = rc2Data.filter(d => d.facType === 'visiting');
+
+    const excelData = [
+        ...generateXlsBodyWithTotals(ftData, 'Full-Time'),
+        ...generateXlsBodyWithTotals(visData, 'Visiting')
+    ];
 
     exportToExcel(
       excelData,
@@ -1866,6 +1968,7 @@
       'Lecture_Taken_Report'
     );
   });
+  
 </script>
 </body>
 </html>
