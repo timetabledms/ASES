@@ -1,17 +1,47 @@
 import { supabase } from '../config/supabase.js';
+import { initSidebar } from '../components/sidebar.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // ==========================================
+    // 1. INITIALIZE AUTH & SIDEBAR (The missing piece!)
+    // ==========================================
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    
+    // Redirect to login if they aren't authenticated
+    if (authError || !session) {
+        window.location.href = '../index.html';
+        return;
+    }
+
+    // Fetch user details to correctly populate the sidebar profile
+    const { data: userData } = await supabase
+        .from('admin_users')
+        .select('full_name, role')
+        .eq('id', session.user.id)
+        .single();
+
+    const userSession = {
+        profile: { full_name: userData?.full_name || 'User' },
+        role: userData?.role || 'admin'
+    };
+
+    // Inject the sidebar and highlight the 'remarks' tab!
+    initSidebar(userSession, 'remarks');
+
+    // ==========================================
+    // 2. LOAD PAGE DATA
+    // ==========================================
     const form = document.getElementById('remark-form');
     
-    // Initialize page by loading dropdowns and table data
     await loadFacultyDropdown();
     await loadRemarks();
 
-    // Handle form submission
+    // ==========================================
+    // 3. FORM SUBMISSION LOGIC
+    // ==========================================
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Get values from the form
         const date = document.getElementById('remark-date').value;
         const startTime = document.getElementById('start-time').value;
         const endTime = document.getElementById('end-time').value;
@@ -19,28 +49,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         const remarkText = document.getElementById('remark-text').value;
 
         try {
-            // Insert into Supabase database
             const { error } = await supabase
                 .from('faculty_remarks')
-                .insert([
-                    {
-                        date: date,
-                        start_time: startTime,
-                        end_time: endTime,
-                        faculty_id: facultyId,
-                        remark: remarkText
-                    }
-                ]);
+                .insert([{
+                    date: date,
+                    start_time: startTime,
+                    end_time: endTime,
+                    faculty_id: facultyId,
+                    remark: remarkText
+                }]);
 
             if (error) throw error;
 
             alert('Remark added successfully!');
-            form.reset(); // Clear the form
-            await loadRemarks(); // Refresh the table to show the new entry
+            form.reset();
+            await loadRemarks(); // Refresh table
             
         } catch (error) {
             console.error('Error adding remark:', error);
-            alert('Failed to add remark. Please check the console for details.');
+            alert('Failed to add remark. Please check the console.');
         }
     });
 });
@@ -52,12 +79,11 @@ async function loadFacultyDropdown() {
             .from('faculty')
             .select('id, full_name')
             .eq('is_active', true)
-            .order('full_name', { ascending: true }); // Alphabetize the dropdown
+            .order('full_name', { ascending: true });
 
         if (error) throw error;
 
         const select = document.getElementById('faculty-select');
-        
         facultyList.forEach(person => {
             const option = document.createElement('option');
             option.value = person.id;
@@ -66,8 +92,6 @@ async function loadFacultyDropdown() {
         });
     } catch (error) {
         console.error('Error loading faculty:', error);
-        const select = document.getElementById('faculty-select');
-        select.innerHTML = '<option value="">Error loading faculty</option>';
     }
 }
 
@@ -79,33 +103,27 @@ async function loadRemarks() {
     try {
         const { data: remarks, error } = await supabase
             .from('faculty_remarks')
-            .select(`
-                *,
-                faculty ( full_name )
-            `)
+            .select('*, faculty(full_name)')
             .order('date', { ascending: false })
             .order('start_time', { ascending: false });
 
         if (error) throw error;
 
-        tbody.innerHTML = ''; // Clear loading state
+        tbody.innerHTML = ''; 
 
-        // Handle empty state
         if (remarks.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No remarks found.</td></tr>';
             return;
         }
 
-        // Helper function to format time (e.g., "14:30:00" -> "14:30")
         const formatTime = (timeStr) => timeStr ? timeStr.substring(0, 5) : '';
 
-        // Populate table rows
         remarks.forEach(record => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${record.date}</td>
                 <td>${formatTime(record.start_time)} - ${formatTime(record.end_time)}</td>
-                <td>${record.faculty?.full_name || '<span style="color:red;">Unknown Faculty</span>'}</td>
+                <td>${record.faculty?.full_name || 'Unknown Faculty'}</td>
                 <td>${record.remark}</td>
             `;
             tbody.appendChild(tr);
