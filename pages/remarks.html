@@ -7,42 +7,81 @@
     <link rel="stylesheet" href="../css/theme.css">
     
     <style>
-        .remarks-log-card { margin-top: 2rem; }
-        
-        textarea {
-            width: 100%; background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 8px; padding: 0.75rem 1rem; font-family: var(--ff-body);
-            color: var(--text-primary); resize: vertical; outline: none; transition: border-color 0.2s;
+        /* --- Form Grid & Spacing --- */
+        .grid-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            align-items: start;
         }
-        textarea:focus { border-color: var(--accent); }
+        .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group label { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); }
+        
+        .form-control {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-main);
+            color: var(--text-primary);
+            font-family: var(--ff-body);
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .form-control:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(79, 106, 245, 0.1); }
+        textarea.form-control { resize: vertical; min-height: 80px; }
 
-        /* UI/UX Enhancements for Table Controls */
+        /* --- Custom Autocomplete (Search Faculty) --- */
+        .autocomplete-wrapper { position: relative; width: 100%; }
+        .suggestions-list {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 8px; max-height: 200px; overflow-y: auto;
+            z-index: 1000; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            list-style: none; padding: 0; margin: 0.25rem 0 0 0;
+            display: none; /* Hidden by default */
+        }
+        .suggestions-list.active { display: block; }
+        .suggestions-list li {
+            padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid var(--border);
+            font-size: 0.9rem; color: var(--text-primary); transition: background 0.2s;
+        }
+        .suggestions-list li:last-child { border-bottom: none; }
+        .suggestions-list li:hover { background: rgba(79, 106, 245, 0.05); color: var(--accent); }
+
+        /* --- Table Controls & UI --- */
+        .remarks-log-card { margin-top: 2rem; padding: 1.5rem; }
         .table-header-flex {
             display: flex; justify-content: space-between; align-items: center; 
             margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;
+            padding-bottom: 1rem; border-bottom: 1px solid var(--border);
         }
-        .table-controls {
-            display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
-        }
+        .table-header-flex h3 { margin: 0; font-size: 1.25rem; }
+        
+        .table-controls { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        
         .control-input, .control-select {
             padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid var(--border);
             background: var(--bg-main); color: var(--text-primary);
-            font-family: var(--ff-body); font-size: 0.9rem; outline: none; transition: border-color 0.2s;
+            font-family: var(--ff-body); font-size: 0.9rem; outline: none; transition: all 0.2s;
         }
         .control-input:focus, .control-select:focus { border-color: var(--accent); }
-        .control-input { width: 250px; }
+        .control-input { width: 260px; }
         
         .btn-export {
-            display: flex; align-items: center; gap: 0.5rem; background: var(--success, #10b981); 
-            color: white; border: none; padding: 0.6rem 1rem; border-radius: 8px; 
-            font-weight: 600; cursor: pointer; transition: opacity 0.2s; font-size: 0.9rem;
+            display: inline-flex; align-items: center; gap: 0.5rem; background: var(--success, #10b981); 
+            color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; 
+            font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem;
         }
-        .btn-export:hover { opacity: 0.9; }
-        .btn-export svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .btn-export:hover { background: #059669; transform: translateY(-1px); }
+        .btn-export svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
     </style>
 </head>
 <body>
 
+    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-college" id="sidebarCollege"></div>
       <nav id="sideNav"></nav>
@@ -59,6 +98,7 @@
       </div>
     </aside>
 
+    <!-- Main Content -->
     <main class="main">
         <div class="topbar">
             <div>
@@ -68,43 +108,55 @@
         </div>
 
         <div class="content">
+            <!-- Input Section -->
             <div class="card">
-                <h3>Add New Remark</h3>
+                <h3 style="margin-top: 0; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">Add New Remark</h3>
                 <form id="remark-form" class="grid-form">
+                    
                     <div class="form-group">
                         <label>Date</label>
-                        <input type="date" id="remark-date" required>
+                        <input type="date" id="remark-date" class="form-control" required>
                     </div>
+                    
+                    <!-- NEW: Searchable Faculty Input -->
                     <div class="form-group">
                         <label>Faculty</label>
-                        <select id="faculty-select" required>
-                            <option value="">Select Faculty...</option>
-                        </select>
+                        <div class="autocomplete-wrapper">
+                            <input type="text" id="faculty-search" class="form-control" placeholder="Type to search faculty..." autocomplete="off" required>
+                            <ul id="faculty-suggestions" class="suggestions-list"></ul>
+                            <input type="hidden" id="selected-faculty-id" required>
+                        </div>
                     </div>
+
                     <div class="form-group">
                         <label>Start Time</label>
-                        <input type="time" id="start-time" required>
+                        <input type="time" id="start-time" class="form-control" required>
                     </div>
+
                     <div class="form-group">
                         <label>End Time</label>
-                        <input type="time" id="end-time" required>
+                        <input type="time" id="end-time" class="form-control" required>
                     </div>
+
                     <div class="form-group full-width">
                         <label>Remark</label>
-                        <textarea id="remark-text" rows="3" required placeholder="Enter details about the extra activity..."></textarea>
+                        <textarea id="remark-text" class="form-control" rows="3" required placeholder="Enter details about the extra activity..."></textarea>
                     </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Save Remark</button>
+
+                    <div class="form-actions full-width" style="margin-top: 0.5rem;">
+                        <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem;">Save Remark</button>
                     </div>
                 </form>
             </div>
 
+            <!-- Data Display Section -->
             <div class="card remarks-log-card">
                 
+                <!-- Table Controls (Now Horizontal) -->
                 <div class="table-header-flex">
                     <h3>Remarks Log</h3>
                     <div class="table-controls">
-                        <input type="text" id="search-input" class="control-input" placeholder="Search faculty or keyword...">
+                        <input type="text" id="table-search-input" class="control-input" placeholder="Search logs...">
                         <select id="sort-select" class="control-select">
                             <option value="date-desc">Newest First</option>
                             <option value="date-asc">Oldest First</option>
@@ -129,7 +181,7 @@
                         </thead>
                         <tbody id="remarks-tbody">
                             <tr>
-                                <td colspan="4" style="text-align: center; padding: 2rem;">Loading remarks...</td>
+                                <td colspan="4" style="text-align: center; padding: 3rem; color: var(--text-muted);">Loading remarks...</td>
                             </tr>
                         </tbody>
                     </table>
