@@ -234,6 +234,7 @@ CREATE TABLE public.holidays (
     CONSTRAINT holidays_declared_by_fkey FOREIGN KEY (declared_by) REFERENCES public.admin_users(id) ON DELETE SET NULL
 );
 
+
 -- 🔐 STEP 5: Row-Level Security (RLS) Configuration
 ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rooms ENABLE ROW LEVEL SECURITY;
@@ -278,3 +279,33 @@ CREATE POLICY "Allow full access for administrators" ON public.faculty_leaves FO
 
 CREATE POLICY "Allow public read access for authenticated users" ON public.holidays FOR SELECT USING (auth.role() = 'authenticated');[cite: 4]
 CREATE POLICY "Allow full access for administrators" ON public.holidays FOR ALL USING (public.is_admin());[cite: 4]
+
+
+
+-- ==============================================================================
+-- FACULTY REMARKS FEATURE
+-- Tracks what extra activities faculty are doing during specific periods
+-- ==============================================================================
+
+-- Create the faculty_remarks table
+CREATE TABLE IF NOT EXISTS public.faculty_remarks (
+    id UUID NOT NULL DEFAULT gen_random_uuid(),
+    date DATE NOT NULL,
+    start_time TIME WITHOUT TIME ZONE NOT NULL,
+    end_time TIME WITHOUT TIME ZONE NOT NULL,
+    faculty_id UUID NOT NULL,
+    remark TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    CONSTRAINT faculty_remarks_pkey PRIMARY KEY (id),
+    CONSTRAINT faculty_remarks_faculty_id_fkey FOREIGN KEY (faculty_id) REFERENCES public.faculty(id) ON DELETE CASCADE
+);
+
+-- Enable Row Level Security
+ALTER TABLE public.faculty_remarks ENABLE ROW LEVEL SECURITY;
+
+-- Apply standard RLS policies
+CREATE POLICY "Allow public read access for authenticated users" 
+ON public.faculty_remarks FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow full access for administrators" 
+ON public.faculty_remarks FOR ALL USING (public.is_admin());
