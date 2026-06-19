@@ -1236,7 +1236,7 @@
   function renderRc1Remarks() {
     const container = document.getElementById('rc1Remarks');
     if (!rc1RemarksData || rc1RemarksData.length === 0) {
-        container.innerHTML = `<div style="font-family: var(--ff-body); font-size: 0.9rem; color: var(--text-muted); font-style: italic;">* No extra faculty remarks or activities recorded for this date.</div>`;
+        container.innerHTML = `<div style="font-family: var(--ff-body); font-size: 0.9rem; color: var(--text-muted); font-style: italic;">* No extra faculty remarks recorded for this date.</div>`;
         container.style.display = 'block';
         return;
     }
@@ -1258,7 +1258,7 @@
     container.innerHTML = `
         <div class="remarks-report-section" style="page-break-inside: avoid; background: var(--bg-card); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border);">
             <h3 style="font-family: var(--ff-display); font-size: 1.15rem; color: var(--text-primary); margin-top: 0; margin-bottom: 12px; border-bottom: 2px solid var(--border); padding-bottom: 8px;">
-                Faculty Remarks & Extra Activities
+                Faculty Remarks
             </h3>
             <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
@@ -1427,7 +1427,7 @@
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(22);
         doc.setTextColor(26, 34, 68);
-        doc.text('Faculty Remarks & Extra Activities', 50, remarksStartY);
+        doc.text('Faculty Remarks', 50, remarksStartY);
 
         doc.autoTable({
             head: [['Time', 'Faculty Name', 'Remark / Activity Details']],
