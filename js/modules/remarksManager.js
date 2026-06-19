@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const date = document.getElementById('remark-date').value;
         const startTime = document.getElementById('start-time').value;
         const endTime = document.getElementById('end-time').value;
-        const facultyId = document.getElementById('selected-faculty-id').value; // Get from hidden input
+        const facultyId = document.getElementById('selected-faculty-id').value; 
         const remarkText = document.getElementById('remark-text').value;
 
         if (!facultyId) {
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // Reset the date back to today after submission
             document.getElementById('remark-date').value = `${yyyy}-${mm}-${dd}`;
-            document.getElementById('selected-faculty-id').value = ''; // Clear hidden ID
+            document.getElementById('selected-faculty-id').value = ''; 
             
             await fetchAllRemarksFromDB(); 
             
@@ -92,7 +92,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // --- TOAST NOTIFICATION LOGIC --- //
 function showToast(message, type = 'success') {
-    // Inject styles if they don't exist yet
     if (!document.getElementById('ases-toast-styles')) {
         const style = document.createElement('style');
         style.id = 'ases-toast-styles';
@@ -109,7 +108,6 @@ function showToast(message, type = 'success') {
         document.head.appendChild(style);
     }
 
-    // Create container if missing
     let container = document.getElementById('ases-toast-container');
     if (!container) {
         container = document.createElement('div');
@@ -118,28 +116,21 @@ function showToast(message, type = 'success') {
         document.body.appendChild(container);
     }
 
-    // Create toast element
     const toast = document.createElement('div');
     toast.className = `ases-toast ${type}`;
     
-    // Icon SVG based on type
-    let iconSvg = '';
-    if (type === 'success') {
-        iconSvg = `<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
-    } else {
-        iconSvg = `<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
-    }
+    let iconSvg = type === 'success' 
+        ? `<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`
+        : `<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
 
     toast.innerHTML = `${iconSvg} <span>${message}</span>`;
     container.appendChild(toast);
 
-    // Auto remove after 3 seconds
     setTimeout(() => {
         toast.style.animation = 'fadeOutDown 0.3s ease forwards';
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
-
 
 // --- FACULTY AUTOCOMPLETE LOGIC --- //
 async function fetchActiveFaculty() {
@@ -164,15 +155,14 @@ function initFacultyAutocomplete() {
 
     input.addEventListener('input', () => {
         const query = input.value.toLowerCase();
-        suggestionsBox.innerHTML = ''; // Clear old list
-        hiddenIdInput.value = ''; // Reset ID if they start typing again
+        suggestionsBox.innerHTML = ''; 
+        hiddenIdInput.value = ''; 
 
         if (!query) {
             suggestionsBox.classList.remove('active');
             return;
         }
 
-        // Filter faculty
         const filtered = activeFaculty.filter(f => f.full_name.toLowerCase().includes(query));
 
         if (filtered.length === 0) {
@@ -195,7 +185,6 @@ function initFacultyAutocomplete() {
         suggestionsBox.classList.add('active');
     });
 
-    // Hide dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (e.target !== input && e.target !== suggestionsBox) {
             suggestionsBox.classList.remove('active');
@@ -218,7 +207,7 @@ async function fetchAllRemarksFromDB() {
 
     } catch (error) {
         console.error('Error loading remarks:', error);
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red; padding: 2rem;">Failed to load remarks.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red; padding: 2rem;">Failed to load remarks.</td></tr>';
     }
 }
 
@@ -257,7 +246,7 @@ function renderTable(data) {
     tbody.innerHTML = ''; 
 
     if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--text-muted);">No matching remarks found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 3rem; color: var(--text-muted);">No matching remarks found.</td></tr>';
         return;
     }
 
@@ -270,11 +259,54 @@ function renderTable(data) {
             <td>${formatTime(record.start_time)} - ${formatTime(record.end_time)}</td>
             <td>${record.faculty?.full_name || '<span style="color:var(--text-muted)">Unknown</span>'}</td>
             <td>${record.remark}</td>
+            <td style="text-align: center;">
+                <button class="btn-action-icon delete btn-delete-remark" data-id="${record.id}" title="Delete Remark">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                </button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
+
+    // Attach Event Listeners to the new Delete Buttons
+    document.querySelectorAll('.btn-delete-remark').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = e.currentTarget.getAttribute('data-id');
+            // Browser Confirm Dialog
+            if (confirm('Are you sure you want to delete this remark? This action cannot be undone.')) {
+                await deleteRemarkFromDB(id);
+            }
+        });
+    });
 }
 
+// --- DELETE LOGIC --- //
+async function deleteRemarkFromDB(id) {
+    try {
+        const { error } = await supabase
+            .from('faculty_remarks')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        showToast('Remark deleted successfully!', 'success');
+        
+        // Remove locally and re-render so we don't have to fetch the whole table again
+        allRemarks = allRemarks.filter(r => r.id != id);
+        applyFiltersAndSort();
+        
+    } catch (error) {
+        console.error('Error deleting remark:', error);
+        showToast('Failed to delete remark.', 'error');
+    }
+}
+
+// --- EXPORT LOGIC --- //
 function exportToCSV() {
     if (allRemarks.length === 0) {
         showToast("No data available to export.", "warning");
