@@ -320,6 +320,7 @@
           </div></div>
         </div>
 
+       <!-- RC2: Lecture Taken Report (Advanced) -->
         <div class="report-section" id="rc2">
           <div class="report-header">
             <div class="report-title">Lecture Taken Report</div>
@@ -349,6 +350,7 @@
           <div class="result-count" id="rc2Count"></div>
           
           <div id="rc2TablesContainer" style="display:none; flex-direction:column; gap:2rem;">
+            <!-- Full-Time Table -->
             <div id="rc2FtContainer">
               <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem; color: var(--text-primary);">Full-Time Faculty</h3>
               <div class="table-wrap">
@@ -361,6 +363,7 @@
               </div>
             </div>
             
+            <!-- Visiting Table -->
             <div id="rc2VisContainer">
               <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem; color: var(--text-primary);">Visiting Faculty</h3>
               <div class="table-wrap">
@@ -377,7 +380,7 @@
           <div id="rc2EmptyState" style="padding:2rem;text-align:center;color:var(--text-muted)">Set date range and run report.</div>
           
         </div>
-
+        
       </div></div></div>
 </main>
 <div id="toast"></div>
@@ -1449,8 +1452,8 @@
     finally { btn.disabled = false; btn.innerHTML = originalHtml; }
   });
   
-  // ══════════════════════════════════════════════════════════════════
-  // RC2 — Faculty Load Report
+ // ══════════════════════════════════════════════════════════════════
+  // RC2 — Lecture Taken Report (Load, Scheduled, Taken, Extra)
   // ══════════════════════════════════════════════════════════════════
   let rc2Data=[];
 
@@ -1546,11 +1549,11 @@
           const fName = row.assigned_faculty?.full_name ?? '—';
           const key = `${fName}|||${courseKey}|||${subKey}`;
           
-          if (!groupMap[key]) groupMap[key] = { course: courseKey, subject: subKey, faculty: fName, load: 0, taken: 0, late: 0 };
+          if (!groupMap[key]) groupMap[key] = { course: courseKey, subject: subKey, faculty: fName, load: 0, scheduled: 0, taken: 0, late: 0 };
           groupMap[key].load += (dayCounts[row.day_type] || 0);
       });
 
-      // 2. Build TAKEN based strictly on Actual Execution (Reality)
+      // 2. Build SCHEDULED and TAKEN based strictly on Actual Execution (Reality)
       dailyData.forEach(row => {
           const courseKey = getCourseKey(row.course);
           const origFName = row.original_faculty?.full_name ?? '—';
@@ -1560,24 +1563,31 @@
           const exStatus = execMap[row.id];
 
           if (isReplaced) {
-              // Replacement Faculty: Gets +Taken, +Late, but 0 Load
+              // A. Original Absent Faculty gets +1 Scheduled (Allotted), but 0 Taken
+              const origSub = row.subject?.subject_name ?? 'Unknown';
+              const origKey = `${origFName}|||${courseKey}|||${origSub}`;
+              
+              if (!groupMap[origKey]) groupMap[origKey] = { course: courseKey, subject: origSub, faculty: origFName, load: 0, scheduled: 0, taken: 0, late: 0 };
+              groupMap[origKey].scheduled++;
+
+              // B. Replacement Proxy Faculty gets 0 Scheduled, but +1 Taken
               const newSub = row.csf?.subject?.subject_name ?? row.subject?.subject_name;
               const repKey = `${assignFName}|||${courseKey}|||${newSub}`;
               
-              if (!groupMap[repKey]) groupMap[repKey] = { course: courseKey, subject: newSub, faculty: assignFName, load: 0, taken: 0, late: 0 };
+              if (!groupMap[repKey]) groupMap[repKey] = { course: courseKey, subject: newSub, faculty: assignFName, load: 0, scheduled: 0, taken: 0, late: 0 };
               
               if (exStatus === 'on_time' || exStatus === 'late') {
                   groupMap[repKey].taken++;
                   if (exStatus === 'late') groupMap[repKey].late++;
               }
-              // Original faculty gets no 'Taken' credit here
           } else {
-              // Normal Faculty
+              // C. Normal Faculty gets +1 Scheduled AND +1 Taken
               const normSub = row.subject?.subject_name ?? 'Unknown';
               const normKey = `${origFName}|||${courseKey}|||${normSub}`;
               
-              if (!groupMap[normKey]) groupMap[normKey] = { course: courseKey, subject: normSub, faculty: origFName, load: 0, taken: 0, late: 0 };
+              if (!groupMap[normKey]) groupMap[normKey] = { course: courseKey, subject: normSub, faculty: origFName, load: 0, scheduled: 0, taken: 0, late: 0 };
               
+              groupMap[normKey].scheduled++;
               if (exStatus === 'on_time' || exStatus === 'late') {
                   groupMap[normKey].taken++;
                   if (exStatus === 'late') groupMap[normKey].late++;
@@ -1585,7 +1595,7 @@
           }
       });
 
-      // Filter by Type & Multi-Select
+      // Filter by Type & Multi-Select & Calculate Extra
       rc2Data = Object.values(groupMap)
           .map(g => ({ ...g, extra: Math.max(0, g.taken - g.load), facType: facMap[g.faculty] || 'full_time' }))
           .filter(g => {
@@ -1594,6 +1604,8 @@
                   const selNames = selectedFacIds.map(id => facIdToName[id]);
                   if (!selNames.includes(g.faculty)) return false;
               }
+              // Optional: Only show rows that actually have data
+              if (g.load === 0 && g.scheduled === 0 && g.taken === 0) return false;
               return true;
           })
           .sort((a,b) => a.faculty.localeCompare(b.faculty) || a.course.localeCompare(b.course));
@@ -1618,6 +1630,7 @@
               <td>${r.subject}</td>
               <td style="text-align:center;font-weight:600">${r.load}</td>
               <td>${r.faculty}</td>
+              <td style="text-align:center;font-weight:600">${r.scheduled}</td>
               <td style="text-align:center;color:var(--success);font-weight:600">${r.taken}</td>
               <td style="text-align:center;color:${r.late > 0 ? 'var(--warn)' : 'var(--text-muted)'};font-weight:600">${r.late}</td>
               <td style="text-align:center;color:${r.extra > 0 ? 'var(--accent)' : 'var(--text-muted)'};font-weight:600">${r.extra}</td>
@@ -1633,6 +1646,7 @@
               <td>${r.subject}</td>
               <td style="text-align:center;font-weight:600">${r.load}</td>
               <td>${r.faculty}</td>
+              <td style="text-align:center;font-weight:600">${r.scheduled}</td>
               <td style="text-align:center;color:var(--success);font-weight:600">${r.taken}</td>
               <td style="text-align:center;color:${r.late > 0 ? 'var(--warn)' : 'var(--text-muted)'};font-weight:600">${r.late}</td>
               <td style="text-align:center;color:${r.extra > 0 ? 'var(--accent)' : 'var(--text-muted)'};font-weight:600">${r.extra}</td>
@@ -1663,7 +1677,7 @@
     const to = document.getElementById('rc2To').value;
     const subtitle = `Period: ${fmtDate(from)} to ${fmtDate(to)}`;
 
-    const head = [['Class', 'Subject', 'Scheduled', 'Teacher Name', 'Lec Taken', 'Late', 'Extra']];
+    const head = [['Class', 'Subject', 'Load', 'Teacher Name', 'Scheduled', 'Lec Taken', 'Late', 'Extra']];
 
     const ftData = rc2Data.filter(d => d.facType !== 'visiting');
     const visData = rc2Data.filter(d => d.facType === 'visiting');
@@ -1699,13 +1713,22 @@
       currentY += 4;
 
       doc.autoTable({
-        head, body: ftData.map(r => [r.course, r.subject, r.load, r.faculty, r.taken, r.late, r.extra]),
+        head, body: ftData.map(r => [r.course, r.subject, r.load, r.faculty, r.scheduled, r.taken, r.late, r.extra]),
         startY: currentY,
         margin: { top: 52, left: 14, right: 14, bottom: 20 },
         theme: 'grid',
         styles: { fontSize: 7.5, cellPadding: 2, valign: 'middle' },
         headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold' },
-        columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 44 }, 2: { cellWidth: 18, halign: 'center' }, 3: { cellWidth: 'auto' }, 4: { cellWidth: 18, halign: 'center' }, 5: { cellWidth: 12, halign: 'center' }, 6: { cellWidth: 12, halign: 'center' } },
+        columnStyles: { 
+            0: { cellWidth: 26 }, 
+            1: { cellWidth: 38 }, 
+            2: { cellWidth: 12, halign: 'center' }, 
+            3: { cellWidth: 'auto' }, 
+            4: { cellWidth: 18, halign: 'center' }, 
+            5: { cellWidth: 18, halign: 'center' }, 
+            6: { cellWidth: 12, halign: 'center' }, 
+            7: { cellWidth: 12, halign: 'center' } 
+        },
         didDrawPage: drawHeader
       });
       currentY = doc.lastAutoTable.finalY + 15;
@@ -1719,13 +1742,22 @@
       currentY += 4;
 
       doc.autoTable({
-        head, body: visData.map(r => [r.course, r.subject, r.load, r.faculty, r.taken, r.late, r.extra]),
+        head, body: visData.map(r => [r.course, r.subject, r.load, r.faculty, r.scheduled, r.taken, r.late, r.extra]),
         startY: currentY,
         margin: { top: 52, left: 14, right: 14, bottom: 20 },
         theme: 'grid',
         styles: { fontSize: 7.5, cellPadding: 2, valign: 'middle' },
         headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold' },
-        columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 44 }, 2: { cellWidth: 18, halign: 'center' }, 3: { cellWidth: 'auto' }, 4: { cellWidth: 18, halign: 'center' }, 5: { cellWidth: 12, halign: 'center' }, 6: { cellWidth: 12, halign: 'center' } },
+        columnStyles: { 
+            0: { cellWidth: 26 }, 
+            1: { cellWidth: 38 }, 
+            2: { cellWidth: 12, halign: 'center' }, 
+            3: { cellWidth: 'auto' }, 
+            4: { cellWidth: 18, halign: 'center' }, 
+            5: { cellWidth: 18, halign: 'center' }, 
+            6: { cellWidth: 12, halign: 'center' }, 
+            7: { cellWidth: 12, halign: 'center' } 
+        },
         didDrawPage: drawHeader
       });
     }
@@ -1744,13 +1776,12 @@
     exportToExcel(
       excelData,
       [{header:'Faculty Type',key:'type',width:15}, {header:'Class',key:'course',width:20},{header:'Subject',key:'subject',width:35},
-       {header:'Scheduled',key:'load',width:12},{header:'Teacher Name',key:'faculty',width:28},
-       {header:'Lec Taken',key:'taken',width:12},{header:'Late',key:'late',width:8},
+       {header:'Load',key:'load',width:8},{header:'Teacher Name',key:'faculty',width:28},
+       {header:'Scheduled',key:'scheduled',width:12},{header:'Lec Taken',key:'taken',width:12},{header:'Late',key:'late',width:8},
        {header:'Extra',key:'extra',width:8}],
       'Lecture_Taken_Report'
     );
   });
-
 </script>
 </body>
 </html>
