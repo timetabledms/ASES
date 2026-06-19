@@ -7,26 +7,38 @@
     <link rel="stylesheet" href="../css/theme.css">
     
     <style>
-        /* Add some spacing between the cards */
-        .remarks-log-card {
-            margin-top: 2rem;
-        }
+        .remarks-log-card { margin-top: 2rem; }
         
-        /* Ensures the textarea fits the theme */
         textarea {
-            width: 100%;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            font-family: var(--ff-body);
-            color: var(--text-primary);
-            resize: vertical;
+            width: 100%; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 8px; padding: 0.75rem 1rem; font-family: var(--ff-body);
+            color: var(--text-primary); resize: vertical; outline: none; transition: border-color 0.2s;
         }
-        textarea:focus {
-            border-color: var(--accent);
-            outline: none;
+        textarea:focus { border-color: var(--accent); }
+
+        /* UI/UX Enhancements for Table Controls */
+        .table-header-flex {
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;
         }
+        .table-controls {
+            display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+        }
+        .control-input, .control-select {
+            padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--bg-main); color: var(--text-primary);
+            font-family: var(--ff-body); font-size: 0.9rem; outline: none; transition: border-color 0.2s;
+        }
+        .control-input:focus, .control-select:focus { border-color: var(--accent); }
+        .control-input { width: 250px; }
+        
+        .btn-export {
+            display: flex; align-items: center; gap: 0.5rem; background: var(--success, #10b981); 
+            color: white; border: none; padding: 0.6rem 1rem; border-radius: 8px; 
+            font-weight: 600; cursor: pointer; transition: opacity 0.2s; font-size: 0.9rem;
+        }
+        .btn-export:hover { opacity: 0.9; }
+        .btn-export svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     </style>
 </head>
 <body>
@@ -36,26 +48,13 @@
       <nav id="sideNav"></nav>
       <div class="sidebar-footer">
         <div class="theme-row">
-          <span class="theme-label">
-            <span id="themeIcon">
-                <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-            </span>
-            <span id="themeLabel">Light mode</span>
-          </span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="themeToggle"/>
-            <span class="toggle-track"></span>
-          </label>
+          <span class="theme-label"><span id="themeIcon"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span><span id="themeLabel">Light mode</span></span>
+          <label class="toggle-switch"><input type="checkbox" id="themeToggle"/><span class="toggle-track"></span></label>
         </div>
         <div class="user-pill">
           <div class="user-avatar" id="userAvatar">?</div>
-          <div class="user-info">
-            <div class="user-name" id="userName">…</div>
-            <div class="user-role" id="userRole">admin</div>
-          </div>
-          <button class="btn-logout" id="logoutBtn" title="Sign out">
-            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          </button>
+          <div class="user-info"><div class="user-name" id="userName">…</div><div class="user-role" id="userRole">admin</div></div>
+          <button class="btn-logout" id="logoutBtn" title="Sign out"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
         </div>
       </div>
     </aside>
@@ -101,22 +100,40 @@
             </div>
 
             <div class="card remarks-log-card">
-                <h3>Remarks Log</h3>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Faculty</th>
-                            <th>Remark</th>
-                        </tr>
-                    </thead>
-                    <tbody id="remarks-tbody">
-                        <tr>
-                            <td colspan="4" style="text-align: center; padding: 2rem;">Loading remarks...</td>
-                        </tr>
-                    </tbody>
-                </table>
+                
+                <div class="table-header-flex">
+                    <h3>Remarks Log</h3>
+                    <div class="table-controls">
+                        <input type="text" id="search-input" class="control-input" placeholder="Search faculty or keyword...">
+                        <select id="sort-select" class="control-select">
+                            <option value="date-desc">Newest First</option>
+                            <option value="date-asc">Oldest First</option>
+                            <option value="name-asc">Faculty (A-Z)</option>
+                        </select>
+                        <button id="export-btn" class="btn-export">
+                            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Export CSV
+                        </button>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Faculty</th>
+                                <th>Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody id="remarks-tbody">
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 2rem;">Loading remarks...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </main>
