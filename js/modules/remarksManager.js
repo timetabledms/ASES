@@ -26,23 +26,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initSidebar(userSession, 'remarks');
 
-    // ==========================================
-    // NEW: Set default date to today
-    // ==========================================
+    // 2. Set default date to today
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
     document.getElementById('remark-date').value = `${yyyy}-${mm}-${dd}`;
 
-    // 2. Load Initial Data
+    // 3. Load Initial Data
     await fetchActiveFaculty();
     await fetchAllRemarksFromDB();
 
-    // 3. Initialize Autocomplete Component
+    // 4. Initialize Autocomplete Component
     initFacultyAutocomplete();
 
-    // 4. Form Submission Logic
+    // 5. Form Submission Logic
     const form = document.getElementById('remark-form');
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -54,7 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const remarkText = document.getElementById('remark-text').value;
 
         if (!facultyId) {
-            alert('Please select a valid faculty member from the list.');
+            showToast('Please select a valid faculty member from the list.', 'warning');
             return;
         }
 
@@ -71,7 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (error) throw error;
 
-            alert('Remark added successfully!');
+            showToast('Remark added successfully!', 'success');
             form.reset();
             
             // Reset the date back to today after submission
@@ -82,15 +80,66 @@ document.addEventListener('DOMContentLoaded', async () => {
             
         } catch (error) {
             console.error('Error adding remark:', error);
-            alert('Failed to add remark. Please check the console.');
+            showToast('Failed to add remark. Please check the console.', 'error');
         }
     });
 
-    // 5. Table Event Listeners
+    // 6. Table Event Listeners
     document.getElementById('table-search-input').addEventListener('input', applyFiltersAndSort);
     document.getElementById('sort-select').addEventListener('change', applyFiltersAndSort);
     document.getElementById('export-btn').addEventListener('click', exportToCSV);
 });
+
+// --- TOAST NOTIFICATION LOGIC --- //
+function showToast(message, type = 'success') {
+    // Inject styles if they don't exist yet
+    if (!document.getElementById('ases-toast-styles')) {
+        const style = document.createElement('style');
+        style.id = 'ases-toast-styles';
+        style.innerHTML = `
+            .ases-toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
+            .ases-toast { min-width: 250px; padding: 12px 20px; border-radius: 8px; color: white; font-family: var(--ff-body, sans-serif); font-size: 0.95rem; font-weight: 500; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 12px; animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+            .ases-toast.success { background-color: var(--success, #10b981); }
+            .ases-toast.error { background-color: var(--danger, #ef4444); }
+            .ases-toast.warning { background-color: var(--warning, #f59e0b); }
+            .ases-toast svg { width: 20px; height: 20px; flex-shrink: 0; }
+            @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+            @keyframes fadeOutDown { to { transform: translateY(20px); opacity: 0; } }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Create container if missing
+    let container = document.getElementById('ases-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'ases-toast-container';
+        container.className = 'ases-toast-container';
+        document.body.appendChild(container);
+    }
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `ases-toast ${type}`;
+    
+    // Icon SVG based on type
+    let iconSvg = '';
+    if (type === 'success') {
+        iconSvg = `<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+    } else {
+        iconSvg = `<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+    }
+
+    toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+    container.appendChild(toast);
+
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        toast.style.animation = 'fadeOutDown 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
 
 // --- FACULTY AUTOCOMPLETE LOGIC --- //
 async function fetchActiveFaculty() {
@@ -228,7 +277,7 @@ function renderTable(data) {
 
 function exportToCSV() {
     if (allRemarks.length === 0) {
-        alert("No data available to export.");
+        showToast("No data available to export.", "warning");
         return;
     }
 
