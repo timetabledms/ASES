@@ -301,7 +301,7 @@
           <div class="table-wrap"><table id="r9Table"><thead><tr><th>Date</th><th>Time</th><th>Room</th><th>Course</th><th>New Subject</th><th>New Faculty</th></tr></thead><tbody id="r9Body"><tr class="empty-row"><td colspan="6">Set date range and run.</td></tr></tbody></table></div>
         </div>
 
-        <div class="report-section" id="rc1">
+      <div class="report-section" id="rc1">
           <div class="report-header">
             <div class="report-title">Daily Execution Report</div>
             <div class="export-btns">
@@ -315,9 +315,12 @@
           <div id="rc1Stats" style="display:none;margin-bottom:1rem">
             <div class="mini-stats" id="rc1MiniStats"></div>
           </div>
-          <div style="overflow-x:auto"><div id="rc1Grid">
-            <div style="padding:2rem;text-align:center;color:var(--text-muted)">Select a date and run report.</div>
-          </div></div>
+          <div style="overflow-x:auto">
+            <div id="rc1Grid">
+              <div style="padding:2rem;text-align:center;color:var(--text-muted)">Select a date and run report.</div>
+            </div>
+          </div>
+          <div id="rc1Remarks" style="margin-top: 2rem; display:none;"></div>
         </div>
 
        <!-- RC2: Lecture Taken Report (Advanced) -->
@@ -1074,6 +1077,7 @@
   // ══════════════════════════════════════════════════════════════════
   let rc1Date = '';
   let rc1Rooms = [], rc1Slots = [], rc1ScheduleMap = {}, rc1ExecMap = {};
+  let rc1RemarksData = []; // NEW: Global array to hold remarks data
 
   const RC1_STATUS_BG  = {on_time:'#d4f7e7',late:'#fff3cd',not_engaged:'#fde8ea',not_marked:'#f0f0f0'};
   const RC1_STATUS_COL = {on_time:'#1a7a4a',late:'#8a6000',not_engaged:'#a01828',not_marked:'#666'};
@@ -1085,11 +1089,12 @@
     const btn = document.getElementById('rc1Run');
     btn.disabled = true;
     document.getElementById('rc1Grid').innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted)"><span class="spin" style="display:inline-block"></span> Loading…</div>';
+    document.getElementById('rc1Remarks').style.display = 'none'; // Hide old remarks
 
     try {
       const dayType = new Date(rc1Date+'T00:00:00').getDay()===6?'saturday':'weekday';
       
-      const [slotsRes, roomsRes, schedRes, execRes] = await Promise.all([
+      const [slotsRes, roomsRes, schedRes, execRes, remarksRes] = await Promise.all([
         supabase.from('time_slots').select('id,slot_label,start_time,end_time,slot_type,sort_order').eq('day_type',dayType).order('sort_order'),
         supabase.from('rooms').select('id,room_code').eq('is_active',true).order('room_code'),
         supabase.from('daily_schedule').select(`
@@ -1103,14 +1108,19 @@
           csf:course_subject_faculty!csf_id(subject:subjects!subject_id(subject_name))
         `).eq('schedule_date',rc1Date),
         supabase.from('lecture_execution').select('daily_schedule_id,faculty_status').eq('schedule_date',rc1Date),
+        // NEW: Fetch remarks for this date
+        supabase.from('faculty_remarks').select('*, faculty(full_name)').eq('date', rc1Date).order('start_time', { ascending: true })
       ]);
       
       if(slotsRes.error) throw slotsRes.error;
       if(roomsRes.error) throw roomsRes.error;
       if(schedRes.error) throw schedRes.error;
+      if(remarksRes.error) throw remarksRes.error;
 
       rc1Slots = slotsRes.data??[];
       rc1Rooms = roomsRes.data??[];
+      rc1RemarksData = remarksRes.data ?? []; // Assign Remarks
+
       rc1ScheduleMap = {};
       for(const row of(schedRes.data??[])){
         if(!rc1ScheduleMap[row.time_slot_id]) rc1ScheduleMap[row.time_slot_id]={};
@@ -1121,6 +1131,8 @@
 
       renderRc1Grid();
       renderRc1Stats();
+      renderRc1Remarks(); // Render new remarks table
+      
       document.getElementById('rc1Stats').style.display='';
     } catch(e) {
       toast(e.message,'error');
@@ -1218,6 +1230,51 @@
     }
     h+=`</div>`;
     document.getElementById('rc1Grid').innerHTML=h;
+  }
+
+  // NEW: Remarks UI Renderer
+  function renderRc1Remarks() {
+    const container = document.getElementById('rc1Remarks');
+    if (!rc1RemarksData || rc1RemarksData.length === 0) {
+        container.innerHTML = `<div style="font-family: var(--ff-body); font-size: 0.9rem; color: var(--text-muted); font-style: italic;">* No extra faculty remarks or activities recorded for this date.</div>`;
+        container.style.display = 'block';
+        return;
+    }
+
+    const rows = rc1RemarksData.map(record => `
+        <tr>
+            <td style="padding: 10px 12px; border: 1px solid var(--border); font-size: 0.85rem; width: 140px; color: var(--text-primary);">
+                <strong>${fmtTime(record.start_time)} - ${fmtTime(record.end_time)}</strong>
+            </td>
+            <td style="padding: 10px 12px; border: 1px solid var(--border); font-size: 0.88rem; font-weight: 600; width: 220px; color: var(--text-primary);">
+                ${record.faculty?.full_name || 'Unknown'}
+            </td>
+            <td style="padding: 10px 12px; border: 1px solid var(--border); font-size: 0.88rem; color: var(--text-primary);">
+                ${record.remark}
+            </td>
+        </tr>
+    `).join('');
+
+    container.innerHTML = `
+        <div class="remarks-report-section" style="page-break-inside: avoid; background: var(--bg-card); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border);">
+            <h3 style="font-family: var(--ff-display); font-size: 1.15rem; color: var(--text-primary); margin-top: 0; margin-bottom: 12px; border-bottom: 2px solid var(--border); padding-bottom: 8px;">
+                Faculty Remarks & Extra Activities
+            </h3>
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="background-color: rgba(26,34,68,.06);">
+                        <th style="padding: 10px 12px; border: 1px solid var(--border); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Time</th>
+                        <th style="padding: 10px 12px; border: 1px solid var(--border); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Faculty Name</th>
+                        <th style="padding: 10px 12px; border: 1px solid var(--border); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Remark / Activity Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows}
+                </tbody>
+            </table>
+        </div>
+    `;
+    container.style.display = 'block';
   }
 
   document.getElementById('rc1ExportPdf').addEventListener('click', async () => {
@@ -1356,6 +1413,33 @@
           doc.text(`Page ${data.pageNumber}`, pageW / 2, pageH - 20, { align: 'center' });
         }
       });
+
+      // NEW: INJECT REMARKS ON FIRST PAGE BELOW TIMETABLE
+      if (rc1RemarksData && rc1RemarksData.length > 0) {
+        const remarksBody = rc1RemarksData.map(r => [
+            `${r.start_time ? r.start_time.slice(0,5) : ''} - ${r.end_time ? r.end_time.slice(0,5) : ''}`,
+            r.faculty?.full_name || 'Unknown',
+            r.remark
+        ]);
+
+        let remarksStartY = doc.lastAutoTable.finalY + 40;
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(22);
+        doc.setTextColor(26, 34, 68);
+        doc.text('Faculty Remarks & Extra Activities', 50, remarksStartY);
+
+        doc.autoTable({
+            head: [['Time', 'Faculty Name', 'Remark / Activity Details']],
+            body: remarksBody,
+            startY: remarksStartY + 20,
+            theme: 'grid',
+            styles: { fontSize: 16, cellPadding: 12, valign: 'middle', lineColor: [180, 180, 180], lineWidth: 1 },
+            headStyles: { fillColor: [240, 240, 245], textColor: [26, 34, 68], fontStyle: 'bold', fontSize: 18, halign: 'left' },
+            columnStyles: { 0: { cellWidth: 200 }, 1: { cellWidth: 350 }, 2: { cellWidth: 'auto' } },
+            margin: { left: 50, right: 50, bottom: 60 }
+        });
+      }
 
       let ftAllotted = 0, ftTaken = 0, ftLate = 0, ftExtra = 0;
       let visAllotted = 0, visTaken = 0, visLate = 0, visExtra = 0;
