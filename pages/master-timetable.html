@@ -28,7 +28,7 @@
     .btn-export svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
 
     /* Grid container */
-    .grid-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:700px; transition: background .25s, border-color .25s; margin-top: 1rem;}
+    .grid-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:700px; transition: background .25s, border-color .25s; margin-top: 1rem; margin-bottom: 2rem;}
     .grid-header{display:grid;border-bottom:1px solid var(--border);background:rgba(127,127,200,.04); transition: border-color .25s;}
     .gh-cell{padding:.6rem .75rem;font-size:.67rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);border-right:1px solid var(--border); transition: border-color .25s;}
     .gh-cell:last-child{border-right:none}
@@ -60,6 +60,33 @@
     /* Placeholder */
     .grid-placeholder{padding:4rem;text-align:center;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:1rem}
     .grid-placeholder svg{width:36px;height:36px;stroke:var(--border);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+    /* --- NEW: Virtual Flexible Load Section --- */
+    .virtual-section {
+        background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--accent);
+        padding: 1.5rem; margin-bottom: 2rem; position: relative;
+    }
+    .virtual-header {
+        display: flex; justify-content: space-between; align-items: center; 
+        margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;
+    }
+    .virtual-header h3 { margin: 0; color: var(--accent); display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; }
+    
+    .virtual-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;
+    }
+    
+    .virtual-card {
+        background: rgba(79, 106, 245, 0.04); border: 1px solid rgba(79, 106, 245, 0.2); 
+        border-radius: 8px; padding: 0.85rem; position: relative; cursor: pointer;
+        transition: all 0.2s; display: flex; flex-direction: column; gap: 0.3rem;
+    }
+    .virtual-card:hover { background: rgba(79, 106, 245, 0.08); border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .virtual-card .badge { position: absolute; top: 0.5rem; right: 0.5rem; font-size: 0.55rem; background: var(--accent); color: white; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700; letter-spacing: 0.05em; }
+    
+    #modal-context {
+        background: var(--bg-main); padding: 0.75rem; border-radius: 8px; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; display: flex; justify-content: space-between; border: 1px solid var(--border);
+    }
   </style>
 </head>
 <body>
@@ -111,26 +138,54 @@
       </div>
     </div>
   </div>
-  <div class="content">
+  <div class="content" style="overflow-x: auto;">
+    
     <div id="gridContainer">
       <div class="grid-placeholder grid-wrap">
         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <div>Loading timetable…</div>
       </div>
     </div>
+
+    <!-- Virtual / Flexible Load Section -->
+    <div class="virtual-section" style="min-width: 700px;">
+        <div class="virtual-header">
+            <h3>
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                Virtual & Flexible Load
+            </h3>
+            <button id="btn-add-virtual" class="btn btn-primary btn-sm" style="display:flex; align-items:center; gap:0.4rem; padding: 0.5rem 1rem; font-size: 0.85rem;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Add Virtual Lecture
+            </button>
+        </div>
+        
+        <div id="virtual-grid" class="virtual-grid">
+            <div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic; background: var(--bg-main); border-radius: 8px;">
+                <span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading virtual load...
+            </div>
+        </div>
+    </div>
+
   </div>
 </main>
 
+<!-- Unified Modal -->
 <div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
       <div>
         <div class="modal-title" id="modalTitle">Assign Lecture</div>
-        <div class="modal-sub" id="modalSub"></div>
       </div>
       <button class="modal-close" id="modalClose"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
+      
+      <div id="modal-context">
+          <span id="modal-ctx-day" style="font-weight: 700; color: var(--accent); text-transform: uppercase;"></span>
+          <span id="modal-ctx-location" style="font-weight: 500;"></span>
+      </div>
+
       <div class="field">
         <label>Course *</label>
         <select id="modalCourse"><option value="">— select course —</option></select>
@@ -193,8 +248,10 @@
   let courses = [];
   let timeSlots = [], rooms = [], ttMap = {};
   
-  let modalTimeSlotId = null, modalRoomId = null, modalRoomCode = '';
+  let modalTimeSlotId = null, modalRoomId = null;
   let existingEntry = null, tsCourse = null, tsCSF = null, csfOptions = [];
+  let virtualRoomId = null;
+  let isVirtualAssignment = false;
 
   document.querySelectorAll('.day-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -206,23 +263,43 @@
   });
 
   async function loadGrid() {
-    document.getElementById('gridContainer').innerHTML =
-      '<div class="grid-placeholder grid-wrap"><div><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading…</div></div>';
+    document.getElementById('gridContainer').innerHTML = '<div class="grid-placeholder grid-wrap"><div><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading physical grid…</div></div>';
+    document.getElementById('virtual-grid').innerHTML = '<div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic; background: var(--bg-main); border-radius: 8px;"><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading virtual load...</div>';
+    
     try {
-      [courses, timeSlots, rooms, ttMap] = await Promise.all([
+      const allRooms = await getActiveRooms();
+      
+      // Filter out 'VIRTUAL' for the physical grid, keep track of virtualRoomId
+      rooms = allRooms.filter(r => {
+          if(r.room_code === 'VIRTUAL') {
+              virtualRoomId = r.id;
+              return false;
+          }
+          return true;
+      });
+
+      [courses, timeSlots, ttMap] = await Promise.all([
         getAllActiveCourses(),
         getTimeSlots(slotDayType(currentDayType)),
-        getActiveRooms(),
-        getMasterTimetable(currentDayType),
+        getMasterTimetable(currentDayType) // getMasterTimetable returns both physical and virtual (null slot) mapped correctly
       ]);
+
       renderGrid();
+      renderVirtualGrid();
+
     } catch(e) {
       toast(e.message, 'error');
       document.getElementById('gridContainer').innerHTML = '<div class="grid-placeholder grid-wrap"><div>Failed to load timetable.</div></div>';
+      document.getElementById('virtual-grid').innerHTML = '<div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--error); background: var(--bg-main); border-radius: 8px;">Failed to load virtual lectures.</div>';
     }
   }
 
-  // Render Web Grid
+  function getCourseLabel(course) {
+      if(!course) return '—';
+      return course.division ? `${course.year} ${course.program} ${course.division}` : `${course.year} ${course.program}`;
+  }
+
+  // Render Physical Grid
   function renderGrid() {
     const colCount  = 1 + rooms.length;
     const gridStyle = `grid-template-columns: 88px repeat(${rooms.length}, minmax(110px,1fr))`;
@@ -243,11 +320,8 @@
         for (const room of rooms) {
           const entry = ttMap[slot.id]?.[room.id];
           if (entry) {
-            const courseLbl = entry.course
-              ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`)
-              : '—';
             html += `<div class="cell filled" data-ts="${slot.id}" data-room="${room.id}" data-entry="${entry.id}">
-              <div class="cell-course">${courseLbl}</div>
+              <div class="cell-course">${getCourseLabel(entry.course)}</div>
               <div class="cell-subject">${entry.subject?.subject_name ?? '—'}</div>
               <div class="cell-faculty">${entry.faculty?.full_name ?? '—'}</div>
             </div>`;
@@ -264,9 +338,51 @@
     document.getElementById('gridContainer').innerHTML = html;
 
     document.querySelectorAll('.cell[data-ts]').forEach(cell => {
-      cell.addEventListener('click', () => openModal(cell.dataset.ts, cell.dataset.room, cell.dataset.entry));
+      cell.addEventListener('click', () => openModal(cell.dataset.ts, cell.dataset.room, cell.dataset.entry, false));
     });
   }
+
+  // Render Virtual Grid
+  function renderVirtualGrid() {
+      const container = document.getElementById('virtual-grid');
+      
+      if (!virtualRoomId) {
+          container.innerHTML = `<div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic; background: var(--bg-main); border-radius: 8px;">Virtual room not configured in database. Contact administrator.</div>`;
+          return;
+      }
+
+      // Virtual lectures are stored under time_slot_id = null (which maps to string "null" in JS object keys depending on how it's built, but getMasterTimetable puts it in "virtual" key if you update it, or we can just extract it)
+      // Assuming getMasterTimetable puts null time slots into ttMap['null'] or similar. We will extract all entries where time_slot_id is missing.
+      
+      const virtualEntries = ttMap['null'] ? Object.values(ttMap['null']) : [];
+
+      if(virtualEntries.length === 0) {
+          container.innerHTML = `<div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic; background: var(--bg-main); border-radius: 8px;">No virtual lectures scheduled for this day. Click 'Add Virtual Lecture' to assign one.</div>`;
+          return;
+      }
+
+      let html = '';
+      virtualEntries.forEach(entry => {
+          html += `
+          <div class="virtual-card" data-entry="${entry.id}">
+              <span class="badge">VIRTUAL</span>
+              <div class="cell-course" style="font-size: 0.7rem;">${getCourseLabel(entry.course)}</div>
+              <div class="cell-subject" style="font-size: 0.85rem; margin-top: 2px;">${entry.subject?.subject_name ?? '—'}</div>
+              <div class="cell-faculty" style="margin-top: 4px;">${entry.faculty?.full_name ?? '—'}</div>
+          </div>`;
+      });
+
+      container.innerHTML = html;
+
+      document.querySelectorAll('.virtual-card').forEach(card => {
+          card.addEventListener('click', () => openModal(null, virtualRoomId, card.dataset.entry, true));
+      });
+  }
+
+  document.getElementById('btn-add-virtual').addEventListener('click', () => {
+      if (!virtualRoomId) return toast('Virtual room not configured in database.', 'error');
+      openModal(null, virtualRoomId, null, true);
+  });
 
   // ── Exports (PDF & Excel) ──────────────────────────────────────────────
 
@@ -275,14 +391,11 @@
     if (!window.jspdf) { toast('PDF library not loaded.', 'error'); return; }
     
     const { jsPDF } = window.jspdf;
-    
-    // Switch to A0, Landscape, using Points (pt) for massive high-res grid
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a0' });
     const dayCapitalized = currentDayType.charAt(0).toUpperCase() + currentDayType.slice(1);
     const pageW = doc.internal.pageSize.width;
     const pageH = doc.internal.pageSize.height;
 
-    // 1. Build Table Data
     const head = [['Time', ...rooms.map(r => `Room ${r.room_code}`)]];
     const body = [];
 
@@ -299,14 +412,10 @@
         ]);
       } else {
         const rowData = [{ content: timeLabel, styles: { fontStyle: 'bold', valign: 'middle', halign: 'center', fillColor: [240, 240, 245] } }];
-        
         rooms.forEach(room => {
           const entry = ttMap[slot.id]?.[room.id];
           if (entry) {
-            const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '';
-            const s = entry.subject?.subject_name || '';
-            const f = entry.faculty?.full_name || '';
-            rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle' } });
+            rowData.push({ content: `${getCourseLabel(entry.course)}\n${entry.subject?.subject_name || ''}\n${entry.faculty?.full_name || ''}`, styles: { halign: 'center', valign: 'middle' } });
           } else {
             rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
           }
@@ -315,27 +424,10 @@
       }
     });
 
-    // 2. Render Table
     doc.autoTable({
-      head, body,
-      startY: 330, // Starts below the massive header
-      theme: 'grid',
-      styles: { 
-        fontSize: 14, 
-        cellPadding: 16, 
-        valign: 'middle', 
-        halign: 'center', 
-        overflow: 'linebreak',
-        lineColor: [180, 180, 180],
-        lineWidth: 1
-      },
-      headStyles: { 
-        fillColor: [26, 34, 68], 
-        textColor: 255, 
-        fontStyle: 'bold', 
-        fontSize: 16, 
-        halign: 'center' 
-      },
+      head, body, startY: 330, theme: 'grid',
+      styles: { fontSize: 14, cellPadding: 16, valign: 'middle', halign: 'center', overflow: 'linebreak', lineColor: [180, 180, 180], lineWidth: 1 },
+      headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', fontSize: 16, halign: 'center' },
       columnStyles: { 0: { cellWidth: 160, fontStyle: 'bold' } },
       margin: { top: 330, left: 80, right: 80, bottom: 80 },
       tableWidth: 'auto',
@@ -348,31 +440,40 @@
         }
       },
       didDrawPage(data) {
-        // Draw Header on EVERY Page Break
-        if(window._ASES_LOGO_DATA){
-          try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 80, 70, 180, 180); } catch(e){}
-        }
+        if(window._ASES_LOGO_DATA) try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 80, 70, 180, 180); } catch(e){}
         const cx = pageW / 2;
-        
         doc.setFont('times', 'bold'); doc.setFontSize(46); doc.setTextColor(26, 34, 68);
         doc.text('B. K. Birla College, Kalyan', cx, 100, { align: 'center' });
-        
         doc.setFont('times', 'normal'); doc.setFontSize(26); doc.setTextColor(50, 60, 90);
         doc.text('(Empowered Autonomous Status)', cx, 140, { align: 'center' });
-        
         doc.setFont('times', 'bolditalic'); doc.setFontSize(30);
         doc.text('Department of Management Studies', cx, 185, { align: 'center' });
-        
         doc.setFont('helvetica', 'bold'); doc.setFontSize(34); doc.setTextColor(26, 34, 68);
         doc.text(`Master Timetable — ${dayCapitalized}`, cx, 250, { align: 'center' });
-        
-        // Draw Footer
         doc.setFont('helvetica', 'normal'); doc.setFontSize(16); doc.setTextColor(120);
         doc.text(`Report Generated By: ${generatedBy}`, 80, pageH - 40);
         doc.text(`Report Generated On: ${new Date().toLocaleString('en-IN')}`, 80, pageH - 20);
         doc.text(`Page ${data.pageNumber}`, pageW / 2, pageH - 20, { align: 'center' });
       }
     });
+
+    const virtualEntries = ttMap['null'] ? Object.values(ttMap['null']) : [];
+    if (virtualEntries.length > 0) {
+        let remarksStartY = doc.lastAutoTable.finalY + 40;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(26, 34, 68);
+        doc.text('Virtual & Flexible Load', 80, remarksStartY);
+
+        const vBody = virtualEntries.map(e => [getCourseLabel(e.course), e.subject?.subject_name||'-', e.faculty?.full_name||'-']);
+        doc.autoTable({
+            head: [['Course', 'Subject', 'Faculty']],
+            body: vBody,
+            startY: remarksStartY + 20,
+            theme: 'grid',
+            styles: { fontSize: 16, cellPadding: 12, valign: 'middle', lineColor: [180, 180, 180], lineWidth: 1 },
+            headStyles: { fillColor: [240, 240, 245], textColor: [26, 34, 68], fontStyle: 'bold', fontSize: 18, halign: 'left' },
+            margin: { left: 80, right: 80, bottom: 80 }
+        });
+    }
 
     doc.save(`Master_Timetable_${dayCapitalized}.pdf`);
   });
@@ -384,13 +485,11 @@
     const wsData = [];
     const merges = [];
 
-    // Header Row
     const headRow = ["Time"];
     rooms.forEach(r => headRow.push(`Room ${r.room_code}`));
     wsData.push(headRow);
 
     let rowIndex = 1;
-
     timeSlots.forEach(slot => {
        const timeLabel = slot.slot_type === 'lecture'
             ? `${slot.slot_label}\n\n${slot.start_time.slice(0,5)} - ${slot.end_time.slice(0,5)}`
@@ -404,31 +503,30 @@
           merges.push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: rooms.length } });
           rowIndex += 1;
        } else {
-          const row1 = [timeLabel]; // Contains Class
-          const row2 = [""];        // Contains Subject
-          const row3 = [""];        // Contains Teacher
-
+          const row1 = [timeLabel]; const row2 = [""]; const row3 = [""];
           rooms.forEach(room => {
              const entry = ttMap[slot.id]?.[room.id];
              if (entry) {
-                const c = entry.course ? (entry.course.division ? `${entry.course.year} ${entry.course.program} ${entry.course.division}` : `${entry.course.year} ${entry.course.program}`) : '-';
-                const s = entry.subject?.subject_name || '-';
-                const f = entry.faculty?.full_name || '-';
-                row1.push(c);
-                row2.push(s);
-                row3.push(f);
+                row1.push(getCourseLabel(entry.course)); row2.push(entry.subject?.subject_name||'-'); row3.push(entry.faculty?.full_name||'-');
              } else {
-                row1.push("-");
-                row2.push("");
-                row3.push("");
+                row1.push("-"); row2.push(""); row3.push("");
              }
           });
-          
           wsData.push(row1, row2, row3);
           merges.push({ s: { r: rowIndex, c: 0 }, e: { r: rowIndex + 2, c: 0 } });
           rowIndex += 3;
        }
     });
+
+    const virtualEntries = ttMap['null'] ? Object.values(ttMap['null']) : [];
+    if(virtualEntries.length > 0) {
+        wsData.push([]);
+        wsData.push(["Virtual & Flexible Load", "", ""]);
+        wsData.push(["Course", "Subject", "Faculty"]);
+        virtualEntries.forEach(e => {
+            wsData.push([getCourseLabel(e.course), e.subject?.subject_name||'-', e.faculty?.full_name||'-']);
+        });
+    }
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!merges'] = merges;
@@ -442,17 +540,23 @@
   });
 
   // ── Modal Handlers ──────────────────────────────────────────────────
-  async function openModal(timeSlotId, roomId, entryId) {
-    modalTimeSlotId = timeSlotId;
+  async function openModal(timeSlotId, roomId, entryId, isVirtual) {
+    modalTimeSlotId = isVirtual ? null : timeSlotId;
     modalRoomId     = roomId;
     existingEntry   = null;
-
-    const slot = timeSlots.find(s => s.id === timeSlotId);
-    const room = rooms.find(r => r.id === roomId);
-    modalRoomCode = room?.room_code ?? '';
+    isVirtualAssignment = isVirtual;
 
     document.getElementById('modalTitle').textContent = entryId ? 'Edit Lecture' : 'Assign Lecture';
-    document.getElementById('modalSub').textContent   = `${slot?.start_time?.slice(0,5)}–${slot?.end_time?.slice(0,5)} · Room ${room?.room_code}`;
+    document.getElementById('modal-ctx-day').textContent = currentDayType;
+    
+    if (isVirtual) {
+        document.getElementById('modal-ctx-location').textContent = `VIRTUAL | Flexible Load`;
+    } else {
+        const slot = timeSlots.find(s => s.id === timeSlotId);
+        const room = rooms.find(r => r.id === roomId);
+        document.getElementById('modal-ctx-location').textContent = `Room ${room?.room_code} | ${slot?.start_time?.slice(0,5)}–${slot?.end_time?.slice(0,5)}`;
+    }
+
     document.getElementById('clearCellBtn').style.display = entryId ? '' : 'none';
     document.getElementById('modalSave').disabled = true;
     document.getElementById('csfField').style.display = 'none';
@@ -491,7 +595,12 @@
     });
 
     if (entryId) {
-      existingEntry = ttMap[timeSlotId]?.[roomId];
+      // Find existing entry from ttMap
+      if (isVirtual) {
+          existingEntry = ttMap['null']?.[entryId]; // Requires masterTimetable.js to map it to entryId
+      } else {
+          existingEntry = ttMap[timeSlotId]?.[roomId];
+      }
       if (existingEntry?.course_id) tsCourse.setValue(existingEntry.course_id, true);
     }
 
@@ -524,6 +633,7 @@
 
     try {
       await upsertMasterEntry({
+        entryId:     existingEntry?.id || null, // Pass ID for virtual updates
         dayType:     currentDayType,
         timeSlotId:  modalTimeSlotId,
         roomId:      modalRoomId,
@@ -532,7 +642,7 @@
         subjectId:   opt.subjectId,
         facultyId:   opt.facultyId,
       });
-      toast('Timetable cell saved.');
+      toast('Timetable assigned successfully.');
       closeModal();
       await loadGrid();
     } catch(e) {
@@ -549,7 +659,7 @@
     btn.disabled = true;
     try {
       await clearMasterEntry(existingEntry.id);
-      toast('Cell cleared.', 'warn');
+      toast('Lecture removed.', 'warn');
       closeModal();
       await loadGrid();
     } catch(e) {
