@@ -23,28 +23,39 @@
     .btn-icon { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 0.4rem; border-radius: 6px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
     .btn-icon:hover { background: var(--bg-input); color: var(--text-primary); }
     .btn-icon.edit:hover { color: var(--accent); background: rgba(79, 106, 245, 0.1); }
-    .btn-icon.delete:hover { color: var(--error); background: rgba(224, 92, 107, 0.1); }
     .btn-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-    /* Modal */
-    .modal-back { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
+    /* --- ENHANCED MODAL UI --- */
+    .modal-back { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
     .modal-back.open { display: flex; }
-    .modal { background: var(--bg-card); width: 100%; max-width: 450px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .modal { background: #ffffff; width: 100%; max-width: 420px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     
-    .modal-header { padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .modal-title { font-family: var(--ff-display); font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
-    .modal-close { background: none; border: none; cursor: pointer; color: var(--text-muted); transition: color 0.2s; display: flex; }
-    .modal-close:hover { color: var(--text-primary); }
+    .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+    .modal-title { font-family: var(--ff-display); font-size: 1.25rem; font-weight: 800; color: #111827; letter-spacing: -0.01em; }
+    .modal-close { background: none; border: none; cursor: pointer; color: #9ca3af; transition: color 0.2s; display: flex; padding: 0; }
+    .modal-close:hover { color: #374151; }
     .modal-close svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
     
     .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
-    .modal-footer { padding: 1.25rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem; background: var(--bg-main); }
     
-    .field label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    .field input, .field select { width: 100%; padding: 0.65rem 0.8rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input); color: var(--text-primary); font-family: inherit; font-size: 0.9rem; transition: border-color 0.2s; box-sizing: border-box; }
-    .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
+    .field label { display: block; font-size: 0.7rem; font-weight: 700; color: #6b7280; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .field input, .field select { width: 100%; padding: 0.7rem 1rem; border: 1px solid #d1d5db; border-radius: 8px; background: #ffffff; color: #1f2937; font-family: inherit; font-size: 0.95rem; transition: all 0.2s ease; box-sizing: border-box; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+    .field input::placeholder { color: #9ca3af; }
+    .field input:focus, .field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79, 106, 245, 0.15); }
     
+    /* Centered Active Status Toggle */
+    .status-toggle-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.6rem; margin-top: 0.5rem; }
+    .status-toggle-label { font-size: 0.85rem; font-weight: 700; color: #111827; }
+    
+    .modal-footer { padding: 1.25rem 1.5rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.75rem; background: #ffffff; }
+    
+    .btn-modal-cancel { background: #ffffff; border: 1px solid #d1d5db; color: #4b5563; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
+    .btn-modal-cancel:hover { background: #f9fafb; color: #111827; }
+    .btn-modal-save { background: var(--accent); border: 1px solid var(--accent); color: #ffffff; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .btn-modal-save:hover { background: #3f55c5; border-color: #3f55c5; }
+    .btn-modal-save:disabled { opacity: 0.7; cursor: not-allowed; }
+
     .spin { animation: spin 1s linear infinite; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
 
@@ -108,7 +119,6 @@
   </div>
 </main>
 
-<!-- Add / Edit Modal -->
 <div class="modal-back" id="courseModal">
   <div class="modal">
     <div class="modal-header">
@@ -128,11 +138,11 @@
           <label>Year *</label>
           <select id="courseYear" required>
             <option value="">— Select —</option>
-            <option value="FY">FY (First Year)</option>
-            <option value="SY">SY (Second Year)</option>
-            <option value="TY">TY (Third Year)</option>
-            <option value="Part-1">Part-1 (PG)</option>
-            <option value="Part-2">Part-2 (PG)</option>
+            <option value="FY">FY</option>
+            <option value="SY">SY</option>
+            <option value="TY">TY</option>
+            <option value="Part-1">Part-1</option>
+            <option value="Part-2">Part-2</option>
           </select>
         </div>
         <div class="field" style="flex:1;">
@@ -146,17 +156,17 @@
         <input type="text" id="courseProgram" placeholder="e.g., BMS, BAF, BBI" required>
       </div>
 
-      <div class="field" style="display:flex;align-items:center;gap:0.75rem;margin-top:0.5rem;">
+      <div class="status-toggle-wrapper">
         <label class="toggle-switch">
           <input type="checkbox" id="courseStatus" checked>
           <span class="toggle-track"></span>
         </label>
-        <span style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">Active Status</span>
+        <span class="status-toggle-label">Active Status</span>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" id="modalCancel">Cancel</button>
-      <button class="btn btn-primary" id="btnSaveCourse">Save Course</button>
+      <button class="btn-modal-cancel" id="modalCancel">Cancel</button>
+      <button class="btn-modal-save" id="btnSaveCourse">Save Course</button>
     </div>
   </div>
 </div>
@@ -205,6 +215,7 @@
       return;
     }
 
+    // Notice: Delete button has been entirely removed from the action-btns
     tbody.innerHTML = allCourses.map(c => `
       <tr>
         <td style="font-weight: 700; color: var(--accent);">${c.course_code || '—'}</td>
@@ -216,9 +227,6 @@
           <div class="action-btns">
             <button class="btn-icon edit" onclick="editCourse('${c.id}')" title="Edit Course">
               <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-            </button>
-            <button class="btn-icon delete" onclick="deleteCourse('${c.id}')" title="Delete Course">
-              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             </button>
           </div>
         </td>
@@ -271,19 +279,6 @@
     document.getElementById('courseStatus').checked = c.is_active;
     
     openModal(true);
-  };
-
-  window.deleteCourse = async function(id) {
-    if (!confirm('Are you sure you want to delete this course? This action cannot be undone.')) return;
-    
-    try {
-      const { error } = await supabase.from('courses').delete().eq('id', id);
-      if (error) throw error;
-      toast('Course deleted successfully.');
-      loadCourses();
-    } catch(e) {
-      toast(e.message, 'error');
-    }
   };
 
   // --- Save Logic ---
