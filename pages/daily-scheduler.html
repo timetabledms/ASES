@@ -26,7 +26,7 @@
     .leg-item{display:flex;align-items:center;gap:.35rem}
     .leg-sw{width:12px;height:12px;border-radius:3px;border:2px solid}
     
-    .tt-grid{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:700px;transition:background .25s,border-color .25s}
+    .tt-grid{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:700px;transition:background .25s,border-color .25s; margin-bottom: 2rem;}
     .tt-head{display:grid;border-bottom:1px solid var(--border);background:rgba(127,127,200,.04)}
     .th-cell{padding:.6rem .7rem;font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);border-right:1px solid var(--border)}
     .th-cell:last-child{border-right:none}
@@ -66,6 +66,25 @@
     .grid-placeholder{padding:3.5rem;text-align:center;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:.75rem}
     .grid-placeholder svg{width:36px;height:36px;stroke:var(--border);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
     
+    /* --- NEW: Virtual Section UI --- */
+    .virtual-section { background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--accent); padding: 1.5rem; margin-bottom: 2rem; display: none; }
+    .virtual-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; }
+    .virtual-header h3 { margin: 0; color: var(--accent); display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; }
+    .virtual-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.8rem; }
+    .virtual-cell { min-height: 75px; padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-main); cursor: pointer; display: flex; flex-direction: column; justify-content: center; gap: 0.1rem; transition: all 0.2s; position: relative; }
+    .virtual-cell:hover { background: var(--bg-hover); border-color: var(--accent); }
+    .virtual-cell.filled { background: rgba(79, 106, 245, 0.04); }
+    .virtual-cell.empty { border: 1px dashed var(--border); align-items: center; text-align: center; color: var(--text-muted); }
+    .virtual-cell.empty:hover { border-color: var(--accent); color: var(--accent); background: rgba(79, 106, 245, 0.03); }
+    .virtual-cell .lc-add { height: auto; font-size: 0.8rem; font-weight: 600; margin-top: auto; margin-bottom: auto; }
+    .virtual-cell .lc-add svg { margin-right: 4px; }
+    
+    /* Reuse Daily Scheduler Specific Status styling for virtual cells */
+    .virtual-cell.s-absent{background:rgba(224,92,107,.05)!important;border-left:3px solid var(--error)!important}
+    .virtual-cell.s-resolved{background:rgba(62,207,142,.08)!important;border-left:3px solid var(--success)!important}
+    .virtual-cell.s-cancelled{background:rgba(107,112,137,.08)!important;border-left:3px solid var(--text-muted)!important;opacity:.6}
+    .virtual-cell.s-warn{background:rgba(245,166,35,.1)!important;border-left:3px solid var(--warn)!important}
+
     .danger-bar{background:rgba(224,92,107,.07);border:1px solid rgba(224,92,107,.2);border-radius:10px;padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem;font-size:.83rem;color:var(--error);flex-wrap:wrap}
     
     .modal-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(7px);z-index:200;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto}
@@ -174,12 +193,26 @@
       <div class="leg-item"><div class="leg-sw" style="background:var(--bg-card);border-color:var(--border)"></div>Normal</div>
     </div>
 
-    <div style="overflow-x:auto"><div id="gridContainer">
-      <div class="tt-grid"><div class="grid-placeholder">
-        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <div>Pick a date and click <strong>Create Schedule</strong></div>
-      </div></div>
-    </div></div>
+    <div style="overflow-x:auto">
+        <div id="gridContainer">
+            <div class="tt-grid"><div class="grid-placeholder">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <div>Pick a date and click <strong>Create Schedule</strong></div>
+            </div></div>
+        </div>
+    </div>
+
+    <!-- Virtual / Flexible Load Section (Daily) -->
+    <div class="virtual-section" id="virtualSection" style="min-width: 700px;">
+        <div class="virtual-header">
+            <h3>
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                Virtual lecture
+            </h3>
+        </div>
+        <div id="virtualGrid" class="virtual-grid"></div>
+    </div>
+
   </div>
 </main>
 
@@ -281,8 +314,9 @@ function localDateStr(d) {
   return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
 }
 let selectedDate=localDateStr();
-let timeSlots=[],rooms=[],scheduleMap={},absentIds=new Set();
-let activeCell=null,selectedOpt=null;
+let timeSlots=[], rooms=[], scheduleMap={}, absentIds=new Set();
+let virtualRoomId = null;
+let activeCell=null, selectedOpt=null;
 
 flatpickr('#datePicker',{dateFormat:'Y-m-d',defaultDate:new Date(),disableMobile:true,
   onChange([d]){
@@ -296,16 +330,12 @@ async function autoLoadIfExists(date){
   const checkDate = date ?? selectedDate;
   const dayType=getDayType(checkDate);
   if(dayType==='sunday'){
-    document.getElementById('dangerBar').style.display='none';
-    document.getElementById('statChips').style.display='none';
-    document.getElementById('legendRow').style.display='none';
+    hideAllUI();
     gridEmpty('No schedule on Sundays.');return;
   }
   const{data:hol}=await supabase.from('holidays').select('name').eq('holiday_date',checkDate).maybeSingle();
   if(hol){
-    document.getElementById('dangerBar').style.display='none';
-    document.getElementById('statChips').style.display='none';
-    document.getElementById('legendRow').style.display='none';
+    hideAllUI();
     gridEmpty(`🎉 Holiday: ${hol.name}. No schedule for this day.`);return;
   }
   const{data}=await supabase.from('daily_schedule').select('id').eq('schedule_date',checkDate).limit(1);
@@ -314,11 +344,16 @@ async function autoLoadIfExists(date){
     document.getElementById('reloadBtn').style.display='';
     await loadSchedule();
   } else {
+    hideAllUI();
+    gridEmpty('No schedule for this date. Click <strong>Create Schedule</strong> to generate.');
+  }
+}
+
+function hideAllUI() {
     document.getElementById('dangerBar').style.display='none';
     document.getElementById('statChips').style.display='none';
     document.getElementById('legendRow').style.display='none';
-    gridEmpty('No schedule for this date. Click <strong>Create Schedule</strong> to generate.');
-  }
+    document.getElementById('virtualSection').style.display='none';
 }
 
 const DAY_MAP=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
@@ -409,37 +444,46 @@ async function loadSchedule(){
     const[sR,rR,scR,lR]=await Promise.all([
       supabase.from('time_slots').select('id,slot_label,start_time,end_time,slot_type,sort_order').eq('day_type',slotDayType(dayType)).order('sort_order'),
       supabase.from('rooms').select('id,room_code').eq('is_active',true).order('room_code'),
-      // Fetch Original, Replacement, AND the CSF (to get Replacement Subject)
       supabase.from('daily_schedule').select(`
         id,is_cancelled,cancel_reason,is_rescheduled,original_faculty_id,
         time_slot_id,room_id,course_id,
-        time_slot:time_slots!time_slot_id(id,slot_label,start_time,end_time,slot_type,sort_order),
-        room:rooms!room_id(id,room_code),
-        course:courses!course_id(id,course_code,year,program,division),
-        subject:subjects!subject_id(id,subject_name),
+        time_slot:time_slots (id,slot_label,start_time,end_time,slot_type,sort_order),
+        room:rooms (id,room_code),
+        course:courses (id,course_code,year,program,division),
+        subject:subjects (id,subject_name),
         assigned_faculty:faculty!assigned_faculty_id(id,full_name),
         original_faculty:faculty!original_faculty_id(id,full_name),
-        csf:course_subject_faculty!csf_id(
-          subject:subjects!subject_id(subject_name)
-        )
+        csf:course_subject_faculty!csf_id(subject:subjects(subject_name))
       `).eq('schedule_date',selectedDate),
       supabase.from('faculty_leaves').select('faculty_id').eq('leave_date',selectedDate).eq('status','approved'),
     ]);
     if(sR.error)throw sR.error;if(rR.error)throw rR.error;if(scR.error)throw scR.error;
     
     timeSlots=sR.data??[];
-    rooms=rR.data??[];
     absentIds=new Set((lR.data??[]).map(l=>l.faculty_id));
-    scheduleMap={};
     
-    for(const row of(scR.data??[])){
-      const t=row.time_slot_id, r=row.room_id;
-      if(!scheduleMap[t])scheduleMap[t]={};
-      scheduleMap[t][r]=row;
+    rooms = (rR.data??[]).filter(r => {
+        if(r.room_code === 'VIRTUAL') { virtualRoomId = r.id; return false; }
+        return true;
+    });
+
+    scheduleMap={};
+    for(const row of (scR.data??[])) {
+      const t = row.time_slot_id, r = row.room_id;
+      if (!t) {
+          if (!scheduleMap['null']) scheduleMap['null'] = {};
+          scheduleMap['null'][row.id] = row;
+      } else {
+          if (!scheduleMap[t]) scheduleMap[t] = {};
+          scheduleMap[t][r] = row;
+      }
     }
     
-    renderGrid();updateStats();
-    ['statChips','legendRow'].forEach(id=>document.getElementById(id).style.display='');
+    renderGrid();
+    renderVirtualGrid();
+    updateStats();
+
+    ['statChips','legendRow','virtualSection'].forEach(id=>document.getElementById(id).style.display='');
     document.getElementById('reloadBtn').style.display='';
   }catch(e){toast(e.message,'error');gridEmpty('Failed to load.');}
 }
@@ -454,10 +498,97 @@ function isDoublebooked(fId,tsId,excludeId){
   }return false;
 }
 
+function getRowState(row, slotId) {
+    if(row.is_cancelled) return 'cancelled';
+    const origFId = row.original_faculty?.id;
+    const currFId = row.assigned_faculty?.id;
+    const isReplaced = row.is_rescheduled && origFId !== currFId;
+    
+    if(isReplaced) return 'resolved';
+    if(origFId && absentIds.has(origFId)) return 'absent';
+    // Only check double booking if it has a physical slot
+    if(currFId && slotId && isDoublebooked(currFId, slotId, row.id)) return 'warn';
+    return 'normal';
+}
+
+function buildCellHtml(row, slot, room, isVirtual=false) {
+    const state = row ? getRowState(row, slot?.id) : 'empty';
+    
+    if(isVirtual) {
+        if(!row) {
+            return `<div class="virtual-cell empty btn-add-virtual">
+                <div class="lc-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add more Lecture</div>
+            </div>`;
+        }
+        
+        const origFId = row.original_faculty?.id;
+        const currFId = row.assigned_faculty?.id;
+        const isReplaced = row.is_rescheduled && origFId !== currFId;
+
+        if (isReplaced) {
+            const origSub = row.subject?.subject_name ?? '—';
+            const origFac = row.original_faculty?.full_name ?? '—';
+            const newSub = row.csf?.subject?.subject_name ?? '—';
+            const newFac = row.assigned_faculty?.full_name ?? '—';
+            return `
+            <div class="virtual-cell filled s-resolved" data-id="${row.id}" data-course="${row.course_id??''}" data-state="resolved" data-slot="null" data-room="${room.id}">
+                <div class="lc-course">${courseName(row.course)}</div>
+                <div style="border-bottom: 1px dashed rgba(62,207,142,.4); padding-bottom: 3px; margin-bottom: 3px;">
+                    <div class="lc-subject" style="font-size:.65rem; color:var(--error); text-decoration:line-through">${origSub}</div>
+                    <div class="lc-faculty" style="font-size:.6rem; color:var(--error); text-decoration:line-through">Prof. ${origFac}</div>
+                </div>
+                <div class="lc-subject">${newSub}</div>
+                <div class="lc-faculty" style="color:var(--success); font-weight:600">Prof. ${newFac}</div>
+                <span class="lc-badge resolved">✓ REPLACED</span>
+            </div>`;
+        }
+
+        const badge={absent:'<span class="lc-badge absent">⚠ ABSENT</span>',warn:'<span class="lc-badge warn">⚠ DOUBLE</span>',cancelled:'<span class="lc-badge cancelled">CANCELLED</span>',normal:''}[state]??'';
+        return `
+        <div class="virtual-cell filled s-${state}" data-id="${row.id}" data-course="${row.course_id??''}" data-state="${state}" data-slot="null" data-room="${room.id}">
+            <div class="lc-course">${courseName(row.course)}</div>
+            <div class="lc-subject">${row.subject?.subject_name??'—'}</div>
+            <div class="lc-faculty">Prof. ${row.original_faculty?.full_name??'—'}</div>
+            ${badge}
+        </div>`;
+    }
+
+    // Physical Grid Building
+    const base=`data-slot="${slot.id}" data-room="${room.id}" data-time="${slot.start_time.slice(0,5)}–${slot.end_time.slice(0,5)}" data-rcode="${room.room_code}"`;
+    if(!row) {
+        return`<div class="lc s-empty" ${base}><div class="lc-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>`;
+    }
+
+    if (state === 'resolved') {
+        const origSub = row.subject?.subject_name ?? '—';
+        const origFac = row.original_faculty?.full_name ?? '—';
+        const newSub = row.csf?.subject?.subject_name ?? '—';
+        const newFac = row.assigned_faculty?.full_name ?? '—';
+        return `<div class="lc s-resolved" data-id="${row.id}" data-course="${row.course_id??''}" data-state="resolved" ${base}>
+          <div class="lc-course">${courseName(row.course)}</div>
+          <div style="border-bottom: 1px dashed rgba(62,207,142,.4); padding-bottom: 3px; margin-bottom: 3px;">
+            <div class="lc-subject" style="font-size:.65rem; color:var(--error); text-decoration:line-through">${origSub}</div>
+            <div class="lc-faculty" style="font-size:.6rem; color:var(--error); text-decoration:line-through">Prof. ${origFac}</div>
+          </div>
+          <div class="lc-subject">${newSub}</div>
+          <div class="lc-faculty" style="color:var(--success); font-weight:600">Prof. ${newFac}</div>
+          <span class="lc-badge resolved">✓ REPLACED</span>
+        </div>`;
+    }
+
+    const badge={absent:'<span class="lc-badge absent">⚠ ABSENT</span>',warn:'<span class="lc-badge warn">⚠ DOUBLE</span>',cancelled:'<span class="lc-badge cancelled">CANCELLED</span>',normal:''}[state]??'';
+    return`<div class="lc s-${state}" data-id="${row.id}" data-course="${row.course_id??''}" data-state="${state}" ${base}>
+        <div class="lc-course">${courseName(row.course)}</div>
+        <div class="lc-subject">${row.subject?.subject_name??'—'}</div>
+        <div class="lc-faculty">Prof. ${row.original_faculty?.full_name??'—'}</div>
+        ${badge}
+    </div>`;
+}
+
 function renderGrid(){
   if(!timeSlots.length||!rooms.length){gridEmpty('No data.');return;}
   const cols=`grid-template-columns:86px repeat(${rooms.length},minmax(108px,1fr))`;
-  let h=`<div class="tt-grid">`;
+  let h=`<div class="tt-grid" style="margin-bottom: 0;">`;
   h+=`<div class="tt-head" style="${cols}"><div class="th-cell">Time</div>${rooms.map(r=>`<div class="th-cell">Room ${r.room_code}</div>`).join('')}</div>`;
   for(const slot of timeSlots){
     const isB=slot.slot_type!=='lecture';
@@ -469,7 +600,7 @@ function renderGrid(){
     }else{
       for(const room of rooms){
         const row=scheduleMap[slot.id]?.[room.id];
-        h+=renderCell(row,slot,room);
+        h+=buildCellHtml(row, slot, room, false);
       }
     }
     h+=`</div>`;
@@ -481,66 +612,39 @@ function renderGrid(){
   });
 }
 
-function renderCell(row,slot,room){
-  const base=`data-slot="${slot.id}" data-room="${room.id}" data-time="${slot.start_time.slice(0,5)}–${slot.end_time.slice(0,5)}" data-rcode="${room.room_code}"`;
-  if(!row){
-    return`<div class="lc s-empty" ${base}><div class="lc-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>`;
-  }
-  
-  let state='normal';
-  const origFId = row.original_faculty?.id;
-  const currFId = row.assigned_faculty?.id;
-  const isReplaced = row.is_rescheduled && origFId !== currFId;
-  
-  if(row.is_cancelled) state='cancelled';
-  else if(isReplaced) state='resolved';
-  else if(origFId && absentIds.has(origFId)) state='absent';
-  else if(currFId && isDoublebooked(currFId,slot.id,row.id)) state='warn';
-  
-  if (isReplaced) {
-    // DUAL RENDER: Shows both original absent lecture & replacement
-    const origSub = row.subject?.subject_name ?? '—';
-    const origFac = row.original_faculty?.full_name ?? '—';
-    const newSub = row.csf?.subject?.subject_name ?? '—';
-    const newFac = row.assigned_faculty?.full_name ?? '—';
-    
-    return `<div class="lc s-resolved" data-id="${row.id}" data-course="${row.course_id??''}" data-state="resolved" ${base}>
-      <div class="lc-course">${courseName(row.course)}</div>
-      
-      <div style="border-bottom: 1px dashed rgba(62,207,142,.4); padding-bottom: 3px; margin-bottom: 3px;">
-        <div class="lc-subject" style="font-size:.65rem; color:var(--error); text-decoration:line-through">${origSub}</div>
-        <div class="lc-faculty" style="font-size:.6rem; color:var(--error); text-decoration:line-through">Prof. ${origFac}</div>
-      </div>
-      
-      <div class="lc-subject">${newSub}</div>
-      <div class="lc-faculty" style="color:var(--success); font-weight:600">Prof. ${newFac}</div>
-      <span class="lc-badge resolved">✓ REPLACED</span>
-    </div>`;
-  }
+function renderVirtualGrid() {
+    const container = document.getElementById('virtualGrid');
+    if (!virtualRoomId) {
+        container.innerHTML = `<div style="width: 100%; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic;">Virtual room not configured.</div>`;
+        return;
+    }
+    const virtualEntries = scheduleMap['null'] ? Object.values(scheduleMap['null']) : [];
+    let html = '';
+    const totalCells = Math.max(14, virtualEntries.length + 1);
 
-  // Normal Render
-  const badge={absent:'<span class="lc-badge absent">⚠ ABSENT</span>',warn:'<span class="lc-badge warn">⚠ DOUBLE</span>',cancelled:'<span class="lc-badge cancelled">CANCELLED</span>',normal:''}[state]??'';
-  
-  return`<div class="lc s-${state}" data-id="${row.id}" data-course="${row.course_id??''}" data-state="${state}" ${base}>
-    <div class="lc-course">${courseName(row.course)}</div>
-    <div class="lc-subject">${row.subject?.subject_name??'—'}</div>
-    <div class="lc-faculty">Prof. ${row.original_faculty?.full_name??'—'}</div>
-    ${badge}
-  </div>`;
+    for (let i = 0; i < totalCells; i++) {
+        const row = virtualEntries[i];
+        html += buildCellHtml(row, null, {id: virtualRoomId}, true);
+    }
+    container.innerHTML = html;
+
+    document.querySelectorAll('.virtual-cell.filled, .virtual-cell.empty').forEach(cell => {
+        cell.addEventListener('click', () => openModal(cell));
+    });
 }
 
 function updateStats(){
   let absent=0,warn=0,resolved=0,cancelled=0,total=0;
   for(const[tsId,rm]of Object.entries(scheduleMap)){
-    const slot=timeSlots.find(s=>s.id===tsId);
-    if(slot?.slot_type!=='lecture')continue;
+    const slot = timeSlots.find(s=>s.id===tsId);
+    if(tsId !== 'null' && slot?.slot_type!=='lecture') continue;
     for(const[,row]of Object.entries(rm)){
       total++;
       if(row.is_cancelled){cancelled++;continue;}
       if(row.is_rescheduled){resolved++;continue;}
       const fId=row.original_faculty?.id;
       if(fId&&absentIds.has(fId))absent++;
-      else if(fId&&isDoublebooked(fId,tsId,row.id))warn++;
+      else if(tsId !== 'null' && fId&&isDoublebooked(fId,tsId,row.id))warn++;
     }
   }
   document.getElementById('cntAbsent').textContent=absent;
@@ -577,28 +681,25 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
       ]);
     } else {
       const rowData = [{ content: timeLabel, styles: { fontStyle: 'bold', valign: 'middle', halign: 'center', fillColor: [240, 240, 245] } }];
-      
       rooms.forEach(room => {
         const row = scheduleMap[slot.id]?.[room.id];
         if (row) {
-          const isReplaced = row.is_rescheduled && row.original_faculty?.id !== row.assigned_faculty?.id;
-          const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
-          
-          if (isReplaced) {
-             const origS = row.subject?.subject_name || '';
-             const origF = row.original_faculty?.full_name || '';
-             const newS = row.csf?.subject?.subject_name || '';
-             const newF = row.assigned_faculty?.full_name || '';
-             
-             rowData.push({ content: `${c}\n\n[Original/Absent]\n${origS}\n${origF}\n\n[Replaced By]\n${newS}\n${newF}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40], fontSize: 10 } });
+          if(row.is_cancelled) {
+             rowData.push({ content: `CANCELLED\n${row.cancel_reason||''}`, styles: { halign: 'center', valign: 'middle', textColor: [150, 150, 150] } });
           } else {
-             const s = row.subject?.subject_name || '';
-             const f = row.original_faculty?.full_name || '';
-             rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
+             const isReplaced = row.is_rescheduled && row.original_faculty?.id !== row.assigned_faculty?.id;
+             const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
+             if (isReplaced) {
+                const origS = row.subject?.subject_name || ''; const origF = row.original_faculty?.full_name || '';
+                const newS = row.csf?.subject?.subject_name || ''; const newF = row.assigned_faculty?.full_name || '';
+                rowData.push({ content: `${c}\n\n[Original/Absent]\n${origS}\n${origF}\n\n[Replaced By]\n${newS}\n${newF}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40], fontSize: 10 } });
+             } else {
+                const s = row.subject?.subject_name || ''; let f = row.original_faculty?.full_name || '';
+                if(absentIds.has(row.original_faculty?.id)) f += '\n(ABSENT)';
+                rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
+             }
           }
-        } else {
-          rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
-        }
+        } else { rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } }); }
       });
       body.push(rowData);
     }
@@ -626,6 +727,36 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
       doc.text(`Date: ${dtStr}`, cx, 290, { align: 'center' });
     }
   });
+
+  const virtualEntries = scheduleMap['null'] ? Object.values(scheduleMap['null']) : [];
+  if (virtualEntries.length > 0) {
+      let vStartY = doc.lastAutoTable.finalY + 40;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(26, 34, 68);
+      doc.text('Virtual lecture', 80, vStartY);
+
+      const vBody = virtualEntries.map(row => {
+          const c = courseName(row.course);
+          if (row.is_cancelled) return [c, 'CANCELLED', row.cancel_reason||'-'];
+          const isReplaced = row.is_rescheduled && row.original_faculty?.id !== row.assigned_faculty?.id;
+          if (isReplaced) {
+              return [c, `[${row.subject?.subject_name||''}] -> ${row.csf?.subject?.subject_name||''}`, `[${row.original_faculty?.full_name||''} Absent] -> ${row.assigned_faculty?.full_name||''}`];
+          }
+          let f = row.original_faculty?.full_name || '';
+          if(absentIds.has(row.original_faculty?.id)) f += ' (ABSENT)';
+          return [c, row.subject?.subject_name||'-', f];
+      });
+
+      doc.autoTable({
+          head: [['Course', 'Subject', 'Faculty']],
+          body: vBody,
+          startY: vStartY + 20,
+          theme: 'grid',
+          styles: { fontSize: 16, cellPadding: 12, valign: 'middle', lineColor: [180, 180, 180], lineWidth: 1 },
+          headStyles: { fillColor: [240, 240, 245], textColor: [26, 34, 68], fontStyle: 'bold', fontSize: 18, halign: 'left' },
+          margin: { left: 80, right: 80, bottom: 80 }
+      });
+  }
+
   doc.save(`Daily_Schedule_${selectedDate}.pdf`);
 });
         
@@ -667,10 +798,7 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
                     const origF = row.original_faculty?.full_name || '-';
                     const newS = row.csf?.subject?.subject_name || '-';
                     const newF = row.assigned_faculty?.full_name || '-';
-                    
-                    row1.push(c);
-                    row2.push(`[${origS}] -> ${newS}`);
-                    row3.push(`[${origF} Absent] -> ${newF}`);
+                    row1.push(c); row2.push(`[${origS}] -> ${newS}`); row3.push(`[${origF} Absent] -> ${newF}`);
                  } else {
                     const s = row.subject?.subject_name || '-';
                     let f = row.original_faculty?.full_name || '-';
@@ -680,12 +808,28 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
               }
            } else { row1.push("-"); row2.push(""); row3.push(""); }
         });
-        
         wsData.push(row1, row2, row3);
         merges.push({ s: { r: rowIndex, c: 0 }, e: { r: rowIndex + 2, c: 0 } });
         rowIndex += 3;
      }
   });
+
+  const virtualEntries = scheduleMap['null'] ? Object.values(scheduleMap['null']) : [];
+  if (virtualEntries.length > 0) {
+      wsData.push([]); wsData.push(["Virtual lecture", "", ""]); wsData.push(["Course", "Subject", "Faculty"]);
+      virtualEntries.forEach(row => {
+          const c = courseName(row.course);
+          if (row.is_cancelled) { wsData.push([c, 'CANCELLED', row.cancel_reason||'-']); return; }
+          const isReplaced = row.is_rescheduled && row.original_faculty?.id !== row.assigned_faculty?.id;
+          if (isReplaced) {
+              wsData.push([c, `[${row.subject?.subject_name||''}] -> ${row.csf?.subject?.subject_name||''}`, `[${row.original_faculty?.full_name||''} Absent] -> ${row.assigned_faculty?.full_name||''}`]);
+          } else {
+              let f = row.original_faculty?.full_name || '';
+              if(absentIds.has(row.original_faculty?.id)) f += ' (ABSENT)';
+              wsData.push([c, row.subject?.subject_name||'-', f]);
+          }
+      });
+  }
 
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!merges'] = merges;
@@ -699,16 +843,22 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
 async function openModal(cell){
   selectedOpt=null;
   const scheduleId=cell.dataset.id;
-  const tsId=cell.dataset.slot;
+  const tsId=cell.dataset.slot === "null" ? null : cell.dataset.slot;
   const roomId=cell.dataset.room;
   const state=cell.dataset.state??'empty';
   const time=cell.dataset.time??'';
   const rcode=cell.dataset.rcode??'';
   const courseId=cell.dataset.course??'';
-  const row=scheduleId?scheduleMap[tsId]?.[roomId]:null;
+  const isVirtual = tsId === null;
+  const row=scheduleId ? (isVirtual ? scheduleMap['null']?.[scheduleId] : scheduleMap[tsId]?.[roomId]) : null;
   activeCell={scheduleId,tsId,roomId,courseId:row?.course_id??courseId,row};
 
-  document.getElementById('modalSub').textContent=`${time}  ·  Room ${rcode}`;
+  if(isVirtual) {
+      document.getElementById('modalSub').textContent=`VIRTUAL LECTURE`;
+  } else {
+      document.getElementById('modalSub').textContent=`${time}  ·  Room ${rcode}`;
+  }
+
   document.getElementById('saveBtn').style.display='none';
   document.getElementById('leftActs').innerHTML='';
   document.getElementById('replSection').style.display='none';
@@ -789,13 +939,19 @@ async function fillOptions(courseId,tsId){
       .eq('course_id',courseId).eq('is_active',true);
     if(error)throw error;
     if(!csf?.length){list.innerHTML=`<div style="color:var(--text-muted);text-align:center;padding:1rem;font-size:.83rem">No CSF mappings for this course.</div>`;return;}
-    const[lR,bR]=await Promise.all([
-      supabase.from('faculty_leaves').select('faculty_id').eq('leave_date',selectedDate).eq('status','approved'),
-      supabase.from('daily_schedule').select('assigned_faculty_id').eq('schedule_date',selectedDate).eq('time_slot_id',tsId).eq('is_cancelled',false),
-    ]);
+    
+    // Virtual lectures don't have physical conflicts on time slots
+    const isVirtual = tsId === null;
+    let bR = { data: [] };
+    if (!isVirtual) {
+        bR = await supabase.from('daily_schedule').select('assigned_faculty_id').eq('schedule_date',selectedDate).eq('time_slot_id',tsId).eq('is_cancelled',false);
+    }
+    const lR = await supabase.from('faculty_leaves').select('faculty_id').eq('leave_date',selectedDate).eq('status','approved');
+    
     const abS=new Set((lR.data??[]).map(l=>l.faculty_id));
     const buS=new Set((bR.data??[]).map(s=>s.assigned_faculty_id));
     const opts=csf.map(r=>({csfId:r.id,subjectId:r.subject_id,subjectName:r.subject.subject_name,facultyId:r.faculty_id,facultyName:r.faculty.full_name,warnAbsent:abS.has(r.faculty_id),warnBusy:buS.has(r.faculty_id)}));
+    
     list.innerHTML=opts.map((o,i)=>`
       <div class="opt-item" data-idx="${i}">
         <div class="opt-radio"><div class="opt-dot"></div></div>
@@ -820,9 +976,6 @@ document.getElementById('saveBtn').addEventListener('click',async()=>{
   const btn=document.getElementById('saveBtn');btn.disabled=true;
   try{
     if(activeCell.scheduleId){
-      
-      // CRITICAL LOGIC: Keep original course_id and subject_id untouched!
-      // ONLY update the csf_id and assigned_faculty_id so we have both the plan and the reality.
       const{error}=await supabase.from('daily_schedule').update({
         csf_id:selectedOpt.csfId,
         assigned_faculty_id:selectedOpt.facultyId,
@@ -847,11 +1000,19 @@ document.getElementById('saveBtn').addEventListener('click',async()=>{
       if (execErr) throw execErr;
 
     }else{
+      // Support for VIRTUAL ad-hoc (tsId will be null)
       const{error}=await supabase.from('daily_schedule').insert({
-        schedule_date:selectedDate,time_slot_id:activeCell.tsId,room_id:activeCell.roomId,
-        course_id:activeCell.courseId,subject_id:selectedOpt.subjectId,csf_id:selectedOpt.csfId,
-        assigned_faculty_id:selectedOpt.facultyId,original_faculty_id:selectedOpt.facultyId,
-        is_rescheduled:false,is_cancelled:false,generated_by:session.user.id
+        schedule_date:selectedDate,
+        time_slot_id:activeCell.tsId || null,
+        room_id:activeCell.roomId,
+        course_id:activeCell.courseId,
+        subject_id:selectedOpt.subjectId,
+        csf_id:selectedOpt.csfId,
+        assigned_faculty_id:selectedOpt.facultyId,
+        original_faculty_id:selectedOpt.facultyId,
+        is_rescheduled:false,
+        is_cancelled:false,
+        generated_by:session.user.id
       });
       if(error)throw error;
     }
