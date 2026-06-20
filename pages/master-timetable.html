@@ -72,13 +72,13 @@
     }
     .virtual-header h3 { margin: 0; color: var(--accent); display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; }
     
-    /* Makes the virtual cells look like normal grid cells */
+    /* Virtual Grid responds automatically but we guarantee 14 cells */
     .virtual-grid {
-        display: flex; flex-wrap: wrap; gap: 0.75rem;
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.8rem;
     }
     
     .virtual-cell {
-        width: 150px; min-height: 70px; padding: 0.5rem 0.6rem;
+        min-height: 75px; padding: 0.5rem 0.6rem;
         border: 1px solid var(--border); border-radius: 8px;
         background: var(--bg-main); cursor: pointer;
         display: flex; flex-direction: column; justify-content: center;
@@ -86,7 +86,7 @@
     }
     .virtual-cell:hover { background: var(--bg-hover); border-color: var(--accent); }
     .virtual-cell.filled { background: rgba(79, 106, 245, 0.06); border-left: 3px solid var(--accent); }
-    .virtual-cell.filled:hover { background: rgba(79, 106, 245, 0.12); }
+    .virtual-cell.filled:hover { background: rgba(79, 106, 245, 0.12); transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
     .virtual-cell.empty { border: 1px dashed var(--border); align-items: center; text-align: center; color: var(--text-muted); }
     .virtual-cell.empty:hover { border-color: var(--accent); color: var(--accent); background: rgba(79, 106, 245, 0.03); }
     
@@ -153,6 +153,7 @@
       </div>
     </div>
 
+    <!-- Virtual / Flexible Load Section -->
     <div class="virtual-section" style="min-width: 700px;">
         <div class="virtual-header">
             <h3>
@@ -162,7 +163,7 @@
         </div>
         
         <div id="virtual-grid" class="virtual-grid">
-            <div style="width: 100%; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic;">
+            <div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic;">
                 <span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading virtual load...
             </div>
         </div>
@@ -171,6 +172,7 @@
   </div>
 </main>
 
+<!-- Unified Modal -->
 <div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
@@ -264,7 +266,7 @@
 
   async function loadGrid() {
     document.getElementById('gridContainer').innerHTML = '<div class="grid-placeholder grid-wrap"><div><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading physical grid…</div></div>';
-    document.getElementById('virtual-grid').innerHTML = '<div style="width: 100%; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic;"><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading virtual load...</div>';
+    document.getElementById('virtual-grid').innerHTML = '<div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic;"><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading virtual load...</div>';
     
     try {
       const allRooms = await getActiveRooms();
@@ -289,7 +291,7 @@
     } catch(e) {
       toast(e.message, 'error');
       document.getElementById('gridContainer').innerHTML = '<div class="grid-placeholder grid-wrap"><div>Failed to load timetable.</div></div>';
-      document.getElementById('virtual-grid').innerHTML = '<div style="width: 100%; padding: 2rem; text-align: center; color: var(--error);">Failed to load virtual lectures.</div>';
+      document.getElementById('virtual-grid').innerHTML = '<div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--error);">Failed to load virtual lectures.</div>';
     }
   }
 
@@ -346,36 +348,46 @@
       const container = document.getElementById('virtual-grid');
       
       if (!virtualRoomId) {
-          container.innerHTML = `<div style="width: 100%; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic;">Virtual room not configured in database. Contact administrator.</div>`;
+          container.innerHTML = `<div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic;">Virtual room not configured in database. Contact administrator.</div>`;
           return;
       }
 
       const virtualEntries = ttMap['null'] ? Object.values(ttMap['null']) : [];
-
       let html = '';
-      virtualEntries.forEach(entry => {
-          html += `
-          <div class="virtual-cell filled" data-entry="${entry.id}">
-              <div class="cell-course">${getCourseLabel(entry.course)}</div>
-              <div class="cell-subject">${entry.subject?.subject_name ?? '—'}</div>
-              <div class="cell-faculty">${entry.faculty?.full_name ?? '—'}</div>
-          </div>`;
-      });
+      
+      // Calculate how many cells to render to ensure we show EXACTLY 14 cells minimum
+      const totalCells = Math.max(14, virtualEntries.length + 1);
 
-      // The new empty cell format
-      html += `
-      <div class="virtual-cell empty" id="btn-add-virtual">
-          <div class="cell-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add more Lecture</div>
-      </div>`;
+      for (let i = 0; i < totalCells; i++) {
+          const entry = virtualEntries[i];
+
+          if (entry) {
+              html += `
+              <div class="virtual-cell filled" data-entry="${entry.id}">
+                  <div class="cell-course">${getCourseLabel(entry.course)}</div>
+                  <div class="cell-subject">${entry.subject?.subject_name ?? '—'}</div>
+                  <div class="cell-faculty">${entry.faculty?.full_name ?? '—'}</div>
+              </div>`;
+          } else {
+              html += `
+              <div class="virtual-cell empty btn-add-virtual">
+                  <div class="cell-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add</div>
+              </div>`;
+          }
+      }
 
       container.innerHTML = html;
 
+      // Event listeners for filled cells
       document.querySelectorAll('.virtual-cell.filled').forEach(card => {
           card.addEventListener('click', () => openModal(null, virtualRoomId, card.dataset.entry, true));
       });
 
-      document.getElementById('btn-add-virtual').addEventListener('click', () => {
-          openModal(null, virtualRoomId, null, true);
+      // Event listeners for ALL empty cells
+      document.querySelectorAll('.btn-add-virtual').forEach(btn => {
+          btn.addEventListener('click', () => {
+              openModal(null, virtualRoomId, null, true);
+          });
       });
   }
 
