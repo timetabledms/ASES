@@ -19,7 +19,7 @@
     .btn-export:hover { background: var(--bg-hover); }
     .btn-export svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
 
-    /* --- FORTIFIED STATS & LEGEND CSS (Fixes the stacking issue) --- */
+    /* --- FORTIFIED STATS & LEGEND CSS (Fixes the vertical stacking) --- */
     .stat-chips { 
         display: flex !important; flex-direction: row !important; gap: 0.65rem !important; 
         flex-wrap: wrap !important; margin-bottom: 1.1rem !important; align-items: center !important;
@@ -29,14 +29,13 @@
         border-radius: 10px !important; padding: 0.5rem 0.9rem !important; 
         display: flex !important; flex-direction: row !important; align-items: center !important; 
         justify-content: flex-start !important; gap: 0.5rem !important; font-size: 0.82rem !important; 
-        transition: background .25s,border-color .25s !important;
         width: max-content !important; flex: 0 0 auto !important; white-space: nowrap !important;
+        transition: background .25s, border-color .25s !important;
     }
     .chip-dot { 
         width: 8px !important; height: 8px !important; border-radius: 50% !important; 
         flex-shrink: 0 !important; display: block !important; 
     }
-    
     .legend { 
         display: flex !important; flex-direction: row !important; gap: 1.1rem !important; 
         flex-wrap: wrap !important; margin-bottom: 1rem !important; font-size: 0.75rem !important; 
@@ -47,7 +46,7 @@
         gap: 0.35rem !important; width: max-content !important; white-space: nowrap !important;
     }
     .leg-sw { width: 12px !important; height: 12px !important; border-radius: 3px !important; border: 2px solid !important; }
-    
+
     .danger-bar{
         background:rgba(224,92,107,.07) !important; border:1px solid rgba(224,92,107,.2) !important;
         border-radius:10px !important; padding:.7rem 1rem !important; display:flex !important;
@@ -55,8 +54,7 @@
         gap:1rem !important; margin-bottom:1rem !important; font-size:.83rem !important;
         color:var(--error) !important; flex-wrap:wrap !important;
     }
-    /* ---------------------------------------------------------------- */
-
+    
     /* Physical Timetable Grid */
     .tt-grid{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:700px;transition:background .25s,border-color .25s; margin-bottom: 2rem;}
     .tt-head{display:grid;border-bottom:1px solid var(--border);background:rgba(127,127,200,.04)}
@@ -99,20 +97,49 @@
     .grid-placeholder{padding:3.5rem;text-align:center;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:.75rem}
     .grid-placeholder svg{width:36px;height:36px;stroke:var(--border);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
     
-    /* Virtual Section UI */
-    .virtual-section { background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--accent); padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: none; min-width: 700px; }
-    .virtual-header { display: flex; align-items: center; gap: 0.5rem; color: var(--accent); font-size: 1.1rem; font-weight: 600; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
-    .virtual-grid { display: flex; flex-wrap: wrap; gap: 1rem; align-items: stretch; }
-    .virtual-cell { width: 175px; min-height: 75px; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-main); cursor: pointer; display: flex; flex-direction: column; justify-content: center; gap: 0.15rem; transition: all 0.2s; position: relative; }
-    .virtual-cell.filled { background: rgba(79, 106, 245, 0.05); border-color: rgba(79, 106, 245, 0.2); }
-    .virtual-cell.filled:hover { border-color: var(--accent); background: rgba(79, 106, 245, 0.08); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transform: translateY(-1px); }
+    /* --- NEW: Virtual Section UI (Matches Image) --- */
+    .virtual-section { 
+        background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--accent); 
+        padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: none; min-width: 700px;
+    }
+    .virtual-header { 
+        display: flex; align-items: center; gap: 0.5rem; color: var(--accent); 
+        font-size: 1.1rem; font-weight: 600; padding-bottom: 0.75rem; 
+        border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; 
+    }
+    .virtual-grid { 
+        display: flex; flex-wrap: wrap; gap: 1rem; align-items: stretch;
+    }
+    .virtual-cell { 
+        width: 175px; min-height: 75px; padding: 0.75rem; border-radius: 8px; 
+        border: 1px solid var(--border); background: var(--bg-main); cursor: pointer; 
+        display: flex; flex-direction: column; justify-content: center; gap: 0.15rem; 
+        transition: all 0.2s; position: relative;
+    }
+    /* Filled Virtual Card */
+    .virtual-cell.filled { 
+        background: rgba(79, 106, 245, 0.05); border-color: rgba(79, 106, 245, 0.2); 
+    }
+    .virtual-cell.filled:hover { 
+        border-color: var(--accent); background: rgba(79, 106, 245, 0.08); 
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transform: translateY(-1px);
+    }
     .virtual-cell .lc-course { font-size: 0.65rem; font-weight: 800; color: var(--text-muted); }
-    .virtual-cell .lc-subject { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
-    .virtual-cell .lc-faculty { font-size: 0.7rem; color: var(--text-muted); }
-    .virtual-cell.empty { border: 1px dashed #cbd5e1; background: transparent; flex-direction: row; align-items: center; justify-content: center; gap: 0.5rem; color: #94a3b8; }
-    .virtual-cell.empty:hover { border-color: var(--accent); color: var(--accent); background: rgba(79, 106, 245, 0.03); }
+    .virtual-cell .lc-subject { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;}
+    .virtual-cell .lc-faculty { font-size: 0.7rem; color: var(--text-muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;}
+
+    /* Empty Virtual Card (+ Add more Lecture) */
+    .virtual-cell.empty { 
+        border: 1px dashed #cbd5e1; background: transparent; 
+        flex-direction: row; align-items: center; justify-content: center; 
+        gap: 0.5rem; color: #94a3b8; 
+    }
+    .virtual-cell.empty:hover { 
+        border-color: var(--accent); color: var(--accent); background: rgba(79, 106, 245, 0.03); 
+    }
     .virtual-cell.empty svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
-    
+
+    /* Reuse Daily Scheduler Specific Status styling for virtual cells */
     .virtual-cell.s-absent{background:rgba(224,92,107,.05)!important;border-left:3px solid var(--error)!important}
     .virtual-cell.s-resolved{background:rgba(62,207,142,.08)!important;border-left:3px solid var(--success)!important}
     .virtual-cell.s-cancelled{background:rgba(107,112,137,.08)!important;border-left:3px solid var(--text-muted)!important;opacity:.6}
@@ -234,6 +261,7 @@
         </div>
     </div>
 
+    <!-- Virtual Section (Matches Image Layout Exactly) -->
     <div class="virtual-section" id="virtualSection">
         <div class="virtual-header">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
@@ -498,11 +526,11 @@ async function loadSchedule(){
 
     scheduleMap={};
     for(const row of (scR.data??[])) {
-      // Must explicitly use row.time_slot_id just like the Master Timetable fix
-      const t = row.time_slot_id; 
+      const t = row.time_slot_id;
       const r = row.room_id;
       if (!t) {
           if (!scheduleMap['null']) scheduleMap['null'] = {};
+          // Use row.id as mapping key to prevent virtual overwrite 
           scheduleMap['null'][row.id] = row;
       } else {
           if (!scheduleMap[t]) scheduleMap[t] = {};
@@ -543,12 +571,13 @@ function getRowState(row, slotId) {
 
 function buildCellHtml(row, slot, room, isVirtual=false) {
     const state = row ? getRowState(row, slot?.id) : 'empty';
+    const base = `data-slot="${slot ? slot.id : 'null'}" data-room="${room.id}" data-time="${slot ? slot.start_time.slice(0,5)+'–'+slot.end_time.slice(0,5) : 'VIRTUAL LECTURE'}" data-rcode="${room.room_code}"`;
     
     if(isVirtual) {
         if(!row) {
-            return `<div class="virtual-cell empty btn-add-virtual">
+            return `<div class="virtual-cell empty btn-add-virtual" ${base} data-state="empty">
                 <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                <div style="font-size: 0.75rem; font-weight: 600; line-height: 1.2;">Add more<br>Lecture</div>
+                <div style="font-size: 0.8rem; font-weight: 600; line-height: 1.2;">Add more<br>Lecture</div>
             </div>`;
         }
         
@@ -562,7 +591,7 @@ function buildCellHtml(row, slot, room, isVirtual=false) {
             const newSub = row.csf?.subject?.subject_name ?? '—';
             const newFac = row.assigned_faculty?.full_name ?? '—';
             return `
-            <div class="virtual-cell filled s-resolved" data-id="${row.id}" data-course="${row.course_id??''}" data-state="resolved" data-slot="null" data-room="${room.id}">
+            <div class="virtual-cell filled s-resolved" data-id="${row.id}" data-course="${row.course_id??''}" data-state="resolved" ${base}>
                 <div class="lc-course">${courseName(row.course)}</div>
                 <div style="border-bottom: 1px dashed rgba(62,207,142,.4); padding-bottom: 3px; margin-bottom: 3px;">
                     <div class="lc-subject" style="font-size:.65rem; color:var(--error); text-decoration:line-through">${origSub}</div>
@@ -576,7 +605,7 @@ function buildCellHtml(row, slot, room, isVirtual=false) {
 
         const badge={absent:'<span class="lc-badge absent" style="position: absolute; top: 0.5rem; right: 0.5rem;">⚠ ABSENT</span>',warn:'<span class="lc-badge warn" style="position: absolute; top: 0.5rem; right: 0.5rem;">⚠ DOUBLE</span>',cancelled:'<span class="lc-badge cancelled" style="position: absolute; top: 0.5rem; right: 0.5rem;">CANCELLED</span>',normal:''}[state]??'';
         return `
-        <div class="virtual-cell filled s-${state}" data-id="${row.id}" data-course="${row.course_id??''}" data-state="${state}" data-slot="null" data-room="${room.id}">
+        <div class="virtual-cell filled s-${state}" data-id="${row.id}" data-course="${row.course_id??''}" data-state="${state}" ${base}>
             <div class="lc-course">${courseName(row.course)}</div>
             <div class="lc-subject">${row.subject?.subject_name??'—'}</div>
             <div class="lc-faculty">Prof. ${row.original_faculty?.full_name??'—'}</div>
@@ -585,7 +614,6 @@ function buildCellHtml(row, slot, room, isVirtual=false) {
     }
 
     // Physical Grid Building
-    const base=`data-slot="${slot.id}" data-room="${room.id}" data-time="${slot.start_time.slice(0,5)}–${slot.end_time.slice(0,5)}" data-rcode="${room.room_code}"`;
     if(!row) {
         return`<div class="lc s-empty" ${base}><div class="lc-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>`;
     }
@@ -654,10 +682,10 @@ function renderVirtualGrid() {
     let html = '';
 
     virtualEntries.forEach(row => {
-        html += buildCellHtml(row, null, {id: virtualRoomId}, true);
+        html += buildCellHtml(row, null, {id: virtualRoomId, room_code: 'VIRTUAL'}, true);
     });
 
-    html += buildCellHtml(null, null, {id: virtualRoomId}, true); // The one Add button
+    html += buildCellHtml(null, null, {id: virtualRoomId, room_code: 'VIRTUAL'}, true); // The one Add button
 
     container.innerHTML = html;
 
@@ -1016,6 +1044,7 @@ document.getElementById('saveBtn').addEventListener('click',async()=>{
   const btn=document.getElementById('saveBtn');btn.disabled=true;
   try{
     if(activeCell.scheduleId){
+      
       const{error}=await supabase.from('daily_schedule').update({
         csf_id:selectedOpt.csfId,
         assigned_faculty_id:selectedOpt.facultyId,
