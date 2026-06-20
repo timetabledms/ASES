@@ -19,14 +19,44 @@
     .btn-export:hover { background: var(--bg-hover); }
     .btn-export svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
 
-    /* Stats & Legend */
-    .stat-chips{display:flex;gap:.65rem;flex-wrap:wrap;margin-bottom:1.1rem}
-    .stat-chip{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:.5rem .9rem;display:flex;align-items:center;gap:.5rem;font-size:.82rem;transition:background .25s,border-color .25s}
-    .chip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-    .legend{display:flex;gap:1.1rem;flex-wrap:wrap;margin-bottom:1rem;font-size:.75rem;color:var(--text-muted)}
-    .leg-item{display:flex;align-items:center;gap:.35rem}
-    .leg-sw{width:12px;height:12px;border-radius:3px;border:2px solid}
+    /* --- FORTIFIED STATS & LEGEND CSS (Fixes the stacking issue) --- */
+    .stat-chips { 
+        display: flex !important; flex-direction: row !important; gap: 0.65rem !important; 
+        flex-wrap: wrap !important; margin-bottom: 1.1rem !important; align-items: center !important;
+    }
+    .stat-chip { 
+        background: var(--bg-card) !important; border: 1px solid var(--border) !important; 
+        border-radius: 10px !important; padding: 0.5rem 0.9rem !important; 
+        display: flex !important; flex-direction: row !important; align-items: center !important; 
+        justify-content: flex-start !important; gap: 0.5rem !important; font-size: 0.82rem !important; 
+        transition: background .25s,border-color .25s !important;
+        width: max-content !important; flex: 0 0 auto !important; white-space: nowrap !important;
+    }
+    .chip-dot { 
+        width: 8px !important; height: 8px !important; border-radius: 50% !important; 
+        flex-shrink: 0 !important; display: block !important; 
+    }
     
+    .legend { 
+        display: flex !important; flex-direction: row !important; gap: 1.1rem !important; 
+        flex-wrap: wrap !important; margin-bottom: 1rem !important; font-size: 0.75rem !important; 
+        color: var(--text-muted) !important; align-items: center !important;
+    }
+    .leg-item { 
+        display: flex !important; flex-direction: row !important; align-items: center !important; 
+        gap: 0.35rem !important; width: max-content !important; white-space: nowrap !important;
+    }
+    .leg-sw { width: 12px !important; height: 12px !important; border-radius: 3px !important; border: 2px solid !important; }
+    
+    .danger-bar{
+        background:rgba(224,92,107,.07) !important; border:1px solid rgba(224,92,107,.2) !important;
+        border-radius:10px !important; padding:.7rem 1rem !important; display:flex !important;
+        flex-direction: row !important; align-items:center !important; justify-content:space-between !important;
+        gap:1rem !important; margin-bottom:1rem !important; font-size:.83rem !important;
+        color:var(--error) !important; flex-wrap:wrap !important;
+    }
+    /* ---------------------------------------------------------------- */
+
     /* Physical Timetable Grid */
     .tt-grid{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:700px;transition:background .25s,border-color .25s; margin-bottom: 2rem;}
     .tt-head{display:grid;border-bottom:1px solid var(--border);background:rgba(127,127,200,.04)}
@@ -48,6 +78,7 @@
     .lc:last-child{border-right:none}
     .lc:hover{background:var(--bg-hover)}
     .lc.s-absent{background:rgba(224,92,107,.05)!important;border-left:3px solid var(--error)!important}
+    .lc.s-absent:hover{background:rgba(224,92,107,.1)!important}
     .lc.s-resolved{background:rgba(62,207,142,.08)!important;border-left:3px solid var(--success)!important}
     .lc.s-cancelled{background:rgba(107,112,137,.08)!important;border-left:3px solid var(--text-muted)!important;opacity:.6}
     .lc.s-warn{background:rgba(245,166,35,.1)!important;border-left:3px solid var(--warn)!important}
@@ -68,51 +99,25 @@
     .grid-placeholder{padding:3.5rem;text-align:center;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:.75rem}
     .grid-placeholder svg{width:36px;height:36px;stroke:var(--border);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
     
-    /* --- NEW: Virtual Section UI (Matches Image Exactly) --- */
-    .virtual-section { 
-        background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--accent); 
-        padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: none; min-width: 700px;
-    }
-    .virtual-header { 
-        display: flex; align-items: center; gap: 0.5rem; color: var(--accent); 
-        font-size: 1.1rem; font-weight: 600; padding-bottom: 0.75rem; 
-        border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; 
-    }
-    .virtual-grid { 
-        display: flex; flex-wrap: wrap; gap: 1rem; align-items: stretch;
-    }
-    .virtual-cell { 
-        width: 175px; min-height: 75px; padding: 0.75rem; border-radius: 8px; 
-        border: 1px solid var(--border); background: var(--bg-main); cursor: pointer; 
-        display: flex; flex-direction: column; justify-content: center; gap: 0.15rem; 
-        transition: all 0.2s; position: relative;
-    }
-    /* Filled Virtual Card */
-    .virtual-cell.filled { 
-        background: rgba(79, 106, 245, 0.05); border-color: rgba(79, 106, 245, 0.2); 
-    }
-    .virtual-cell.filled:hover { 
-        border-color: var(--accent); background: rgba(79, 106, 245, 0.08); 
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transform: translateY(-1px);
-    }
+    /* Virtual Section UI */
+    .virtual-section { background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--accent); padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: none; min-width: 700px; }
+    .virtual-header { display: flex; align-items: center; gap: 0.5rem; color: var(--accent); font-size: 1.1rem; font-weight: 600; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+    .virtual-grid { display: flex; flex-wrap: wrap; gap: 1rem; align-items: stretch; }
+    .virtual-cell { width: 175px; min-height: 75px; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-main); cursor: pointer; display: flex; flex-direction: column; justify-content: center; gap: 0.15rem; transition: all 0.2s; position: relative; }
+    .virtual-cell.filled { background: rgba(79, 106, 245, 0.05); border-color: rgba(79, 106, 245, 0.2); }
+    .virtual-cell.filled:hover { border-color: var(--accent); background: rgba(79, 106, 245, 0.08); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transform: translateY(-1px); }
     .virtual-cell .lc-course { font-size: 0.65rem; font-weight: 800; color: var(--text-muted); }
     .virtual-cell .lc-subject { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
     .virtual-cell .lc-faculty { font-size: 0.7rem; color: var(--text-muted); }
-
-    /* Empty Virtual Card (+ Add more Lecture) */
-    .virtual-cell.empty { 
-        border: 1px dashed #cbd5e1; background: transparent; 
-        flex-direction: row; align-items: center; justify-content: center; 
-        gap: 0.5rem; color: #94a3b8; 
-    }
-    .virtual-cell.empty:hover { 
-        border-color: var(--accent); color: var(--accent); background: rgba(79, 106, 245, 0.03); 
-    }
+    .virtual-cell.empty { border: 1px dashed #cbd5e1; background: transparent; flex-direction: row; align-items: center; justify-content: center; gap: 0.5rem; color: #94a3b8; }
+    .virtual-cell.empty:hover { border-color: var(--accent); color: var(--accent); background: rgba(79, 106, 245, 0.03); }
     .virtual-cell.empty svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
-
-    /* Warning/Danger Bars */
-    .danger-bar{background:rgba(224,92,107,.07);border:1px solid rgba(224,92,107,.2);border-radius:10px;padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem;font-size:.83rem;color:var(--error);flex-wrap:wrap}
     
+    .virtual-cell.s-absent{background:rgba(224,92,107,.05)!important;border-left:3px solid var(--error)!important}
+    .virtual-cell.s-resolved{background:rgba(62,207,142,.08)!important;border-left:3px solid var(--success)!important}
+    .virtual-cell.s-cancelled{background:rgba(107,112,137,.08)!important;border-left:3px solid var(--text-muted)!important;opacity:.6}
+    .virtual-cell.s-warn{background:rgba(245,166,35,.1)!important;border-left:3px solid var(--warn)!important}
+
     /* Modals */
     .modal-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(7px);z-index:200;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto}
     .modal-back.open{display:flex}
@@ -229,7 +234,6 @@
         </div>
     </div>
 
-    <!-- Virtual / Flexible Load Section (Matches Image Layout) -->
     <div class="virtual-section" id="virtualSection">
         <div class="virtual-header">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
@@ -241,7 +245,6 @@
   </div>
 </main>
 
-<!-- Modals -->
 <div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
@@ -366,8 +369,8 @@ async function autoLoadIfExists(date){
   }
   const{data}=await supabase.from('daily_schedule').select('id').eq('schedule_date',checkDate).limit(1);
   if(data&&data.length>0){
-    document.getElementById('dangerBar').style.display='';
-    document.getElementById('reloadBtn').style.display='';
+    document.getElementById('dangerBar').style.display='flex';
+    document.getElementById('reloadBtn').style.display='inline-flex';
     await loadSchedule();
   } else {
     hideAllUI();
@@ -424,7 +427,7 @@ async function generateOrLoad(force=false, mode='master'){
   try{
     const{data:existing}=await supabase.from('daily_schedule').select('id').eq('schedule_date',selectedDate).limit(1);
     const exists=existing&&existing.length>0;
-    if(exists&&!force){await loadSchedule();document.getElementById('dangerBar').style.display='';toast('Schedule loaded.','info');return;}
+    if(exists&&!force){await loadSchedule();document.getElementById('dangerBar').style.display='flex';toast('Schedule loaded.','info');return;}
     if(force&&exists){
       const{error:de}=await supabase.from('daily_schedule').delete().eq('schedule_date',selectedDate);
       if(de)throw de;
@@ -454,12 +457,12 @@ async function generateOrLoad(force=false, mode='master'){
       toast('Blank schedule created.','success');
     }
     await loadSchedule();
-    document.getElementById('dangerBar').style.display='';
+    document.getElementById('dangerBar').style.display='flex';
   }catch(e){toast(e.message,'error');gridEmpty('Failed: '+e.message);}
   finally{
     btn.disabled=false;
     btn.innerHTML='<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-.08-6.07"/></svg> Create Schedule';
-    document.getElementById('reloadBtn').style.display='';
+    document.getElementById('reloadBtn').style.display='inline-flex';
   }
 }
 
@@ -488,7 +491,6 @@ async function loadSchedule(){
     timeSlots=sR.data??[];
     absentIds=new Set((lR.data??[]).map(l=>l.faculty_id));
     
-    // Extract VIRTUAL room id and filter it from the physical rooms
     rooms = (rR.data??[]).filter(r => {
         if(r.room_code?.toUpperCase() === 'VIRTUAL') { virtualRoomId = r.id; return false; }
         return true;
@@ -496,8 +498,9 @@ async function loadSchedule(){
 
     scheduleMap={};
     for(const row of (scR.data??[])) {
-      const t = row.time_slot_id, r = row.room_id;
-      // Note: time_slot_id will literally be `null` for flexible virtual lectures
+      // Must explicitly use row.time_slot_id just like the Master Timetable fix
+      const t = row.time_slot_id; 
+      const r = row.room_id;
       if (!t) {
           if (!scheduleMap['null']) scheduleMap['null'] = {};
           scheduleMap['null'][row.id] = row;
@@ -511,8 +514,8 @@ async function loadSchedule(){
     renderVirtualGrid();
     updateStats();
 
-    ['statChips','legendRow','virtualSection'].forEach(id=>document.getElementById(id).style.display='block');
-    document.getElementById('reloadBtn').style.display='';
+    ['statChips','legendRow','virtualSection'].forEach(id=>document.getElementById(id).style.display='flex');
+    document.getElementById('reloadBtn').style.display='inline-flex';
   }catch(e){toast(e.message,'error');gridEmpty('Failed to load.');}
 }
 
@@ -534,15 +537,89 @@ function getRowState(row, slotId) {
     
     if(isReplaced) return 'resolved';
     if(origFId && absentIds.has(origFId)) return 'absent';
-    // Only check double booking if it has a physical slot
     if(currFId && slotId && isDoublebooked(currFId, slotId, row.id)) return 'warn';
     return 'normal';
+}
+
+function buildCellHtml(row, slot, room, isVirtual=false) {
+    const state = row ? getRowState(row, slot?.id) : 'empty';
+    
+    if(isVirtual) {
+        if(!row) {
+            return `<div class="virtual-cell empty btn-add-virtual">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <div style="font-size: 0.75rem; font-weight: 600; line-height: 1.2;">Add more<br>Lecture</div>
+            </div>`;
+        }
+        
+        const origFId = row.original_faculty?.id;
+        const currFId = row.assigned_faculty?.id;
+        const isReplaced = row.is_rescheduled && origFId !== currFId;
+
+        if (isReplaced) {
+            const origSub = row.subject?.subject_name ?? '—';
+            const origFac = row.original_faculty?.full_name ?? '—';
+            const newSub = row.csf?.subject?.subject_name ?? '—';
+            const newFac = row.assigned_faculty?.full_name ?? '—';
+            return `
+            <div class="virtual-cell filled s-resolved" data-id="${row.id}" data-course="${row.course_id??''}" data-state="resolved" data-slot="null" data-room="${room.id}">
+                <div class="lc-course">${courseName(row.course)}</div>
+                <div style="border-bottom: 1px dashed rgba(62,207,142,.4); padding-bottom: 3px; margin-bottom: 3px;">
+                    <div class="lc-subject" style="font-size:.65rem; color:var(--error); text-decoration:line-through">${origSub}</div>
+                    <div class="lc-faculty" style="font-size:.6rem; color:var(--error); text-decoration:line-through">Prof. ${origFac}</div>
+                </div>
+                <div class="lc-subject">${newSub}</div>
+                <div class="lc-faculty" style="color:var(--success); font-weight:600">Prof. ${newFac}</div>
+                <span class="lc-badge resolved" style="position: absolute; top: 0.5rem; right: 0.5rem;">✓ REPLACED</span>
+            </div>`;
+        }
+
+        const badge={absent:'<span class="lc-badge absent" style="position: absolute; top: 0.5rem; right: 0.5rem;">⚠ ABSENT</span>',warn:'<span class="lc-badge warn" style="position: absolute; top: 0.5rem; right: 0.5rem;">⚠ DOUBLE</span>',cancelled:'<span class="lc-badge cancelled" style="position: absolute; top: 0.5rem; right: 0.5rem;">CANCELLED</span>',normal:''}[state]??'';
+        return `
+        <div class="virtual-cell filled s-${state}" data-id="${row.id}" data-course="${row.course_id??''}" data-state="${state}" data-slot="null" data-room="${room.id}">
+            <div class="lc-course">${courseName(row.course)}</div>
+            <div class="lc-subject">${row.subject?.subject_name??'—'}</div>
+            <div class="lc-faculty">Prof. ${row.original_faculty?.full_name??'—'}</div>
+            ${badge}
+        </div>`;
+    }
+
+    // Physical Grid Building
+    const base=`data-slot="${slot.id}" data-room="${room.id}" data-time="${slot.start_time.slice(0,5)}–${slot.end_time.slice(0,5)}" data-rcode="${room.room_code}"`;
+    if(!row) {
+        return`<div class="lc s-empty" ${base}><div class="lc-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>`;
+    }
+
+    if (state === 'resolved') {
+        const origSub = row.subject?.subject_name ?? '—';
+        const origFac = row.original_faculty?.full_name ?? '—';
+        const newSub = row.csf?.subject?.subject_name ?? '—';
+        const newFac = row.assigned_faculty?.full_name ?? '—';
+        return `<div class="lc s-resolved" data-id="${row.id}" data-course="${row.course_id??''}" data-state="resolved" ${base}>
+          <div class="lc-course">${courseName(row.course)}</div>
+          <div style="border-bottom: 1px dashed rgba(62,207,142,.4); padding-bottom: 3px; margin-bottom: 3px;">
+            <div class="lc-subject" style="font-size:.65rem; color:var(--error); text-decoration:line-through">${origSub}</div>
+            <div class="lc-faculty" style="font-size:.6rem; color:var(--error); text-decoration:line-through">Prof. ${origFac}</div>
+          </div>
+          <div class="lc-subject">${newSub}</div>
+          <div class="lc-faculty" style="color:var(--success); font-weight:600">Prof. ${newFac}</div>
+          <span class="lc-badge resolved">✓ REPLACED</span>
+        </div>`;
+    }
+
+    const badge={absent:'<span class="lc-badge absent">⚠ ABSENT</span>',warn:'<span class="lc-badge warn">⚠ DOUBLE</span>',cancelled:'<span class="lc-badge cancelled">CANCELLED</span>',normal:''}[state]??'';
+    return`<div class="lc s-${state}" data-id="${row.id}" data-course="${row.course_id??''}" data-state="${state}" ${base}>
+        <div class="lc-course">${courseName(row.course)}</div>
+        <div class="lc-subject">${row.subject?.subject_name??'—'}</div>
+        <div class="lc-faculty">Prof. ${row.original_faculty?.full_name??'—'}</div>
+        ${badge}
+    </div>`;
 }
 
 function renderGrid(){
   if(!timeSlots.length||!rooms.length){gridEmpty('No data.');return;}
   const cols=`grid-template-columns:86px repeat(${rooms.length},minmax(108px,1fr))`;
-  let h=`<div class="tt-grid">`;
+  let h=`<div class="tt-grid" style="margin-bottom: 0;">`;
   h+=`<div class="tt-head" style="${cols}"><div class="th-cell">Time</div>${rooms.map(r=>`<div class="th-cell">Room ${r.room_code}</div>`).join('')}</div>`;
   for(const slot of timeSlots){
     const isB=slot.slot_type!=='lecture';
@@ -554,35 +631,7 @@ function renderGrid(){
     }else{
       for(const room of rooms){
         const row=scheduleMap[slot.id]?.[room.id];
-        const state = row ? getRowState(row, slot.id) : 'empty';
-        const base=`data-slot="${slot.id}" data-room="${room.id}" data-time="${slot.start_time.slice(0,5)}–${slot.end_time.slice(0,5)}" data-rcode="${room.room_code}"`;
-        
-        if(!row) {
-            h+=`<div class="lc s-empty" ${base}><div class="lc-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>`;
-        } else if (state === 'resolved') {
-            const origSub = row.subject?.subject_name ?? '—';
-            const origFac = row.original_faculty?.full_name ?? '—';
-            const newSub = row.csf?.subject?.subject_name ?? '—';
-            const newFac = row.assigned_faculty?.full_name ?? '—';
-            h+= `<div class="lc s-resolved" data-id="${row.id}" data-course="${row.course_id??''}" data-state="resolved" ${base}>
-              <div class="lc-course">${courseName(row.course)}</div>
-              <div style="border-bottom: 1px dashed rgba(62,207,142,.4); padding-bottom: 3px; margin-bottom: 3px;">
-                <div class="lc-subject" style="font-size:.65rem; color:var(--error); text-decoration:line-through">${origSub}</div>
-                <div class="lc-faculty" style="font-size:.6rem; color:var(--error); text-decoration:line-through">Prof. ${origFac}</div>
-              </div>
-              <div class="lc-subject">${newSub}</div>
-              <div class="lc-faculty" style="color:var(--success); font-weight:600">Prof. ${newFac}</div>
-              <span class="lc-badge resolved">✓ REPLACED</span>
-            </div>`;
-        } else {
-            const badge={absent:'<span class="lc-badge absent">⚠ ABSENT</span>',warn:'<span class="lc-badge warn">⚠ DOUBLE</span>',cancelled:'<span class="lc-badge cancelled">CANCELLED</span>',normal:''}[state]??'';
-            h+=`<div class="lc s-${state}" data-id="${row.id}" data-course="${row.course_id??''}" data-state="${state}" ${base}>
-                <div class="lc-course">${courseName(row.course)}</div>
-                <div class="lc-subject">${row.subject?.subject_name??'—'}</div>
-                <div class="lc-faculty">Prof. ${row.original_faculty?.full_name??'—'}</div>
-                ${badge}
-            </div>`;
-        }
+        h+=buildCellHtml(row, slot, room, false);
       }
     }
     h+=`</div>`;
@@ -604,43 +653,11 @@ function renderVirtualGrid() {
     const virtualEntries = scheduleMap['null'] ? Object.values(scheduleMap['null']) : [];
     let html = '';
 
-    // Render Filled Cards
     virtualEntries.forEach(row => {
-        const state = getRowState(row, null);
-        
-        if (state === 'resolved') {
-            const origSub = row.subject?.subject_name ?? '—';
-            const origFac = row.original_faculty?.full_name ?? '—';
-            const newSub = row.csf?.subject?.subject_name ?? '—';
-            const newFac = row.assigned_faculty?.full_name ?? '—';
-            html += `
-            <div class="virtual-cell filled s-resolved" data-id="${row.id}" data-course="${row.course_id??''}" data-state="resolved" data-slot="null" data-room="${virtualRoomId}">
-                <div class="lc-course">${courseName(row.course)}</div>
-                <div style="border-bottom: 1px dashed rgba(62,207,142,.4); padding-bottom: 3px; margin-bottom: 3px;">
-                    <div class="lc-subject" style="font-size:.65rem; color:var(--error); text-decoration:line-through">${origSub}</div>
-                    <div class="lc-faculty" style="font-size:.6rem; color:var(--error); text-decoration:line-through">Prof. ${origFac}</div>
-                </div>
-                <div class="lc-subject">${newSub}</div>
-                <div class="lc-faculty" style="color:var(--success); font-weight:600">Prof. ${newFac}</div>
-            </div>`;
-        } else {
-            const badge={absent:'<span class="lc-badge absent" style="position:static; margin-top:2px;">⚠ ABSENT</span>',warn:'',cancelled:'<span class="lc-badge cancelled" style="position:static; margin-top:2px;">CANCELLED</span>',normal:''}[state]??'';
-            html += `
-            <div class="virtual-cell filled s-${state}" data-id="${row.id}" data-course="${row.course_id??''}" data-state="${state}" data-slot="null" data-room="${virtualRoomId}">
-                <div class="lc-course">${courseName(row.course)}</div>
-                <div class="lc-subject">${row.subject?.subject_name??'—'}</div>
-                <div class="lc-faculty">Prof. ${row.original_faculty?.full_name??'—'}</div>
-                ${badge}
-            </div>`;
-        }
+        html += buildCellHtml(row, null, {id: virtualRoomId}, true);
     });
 
-    // Exactly ONE Add Button matching the Flex layout
-    html += `
-    <div class="virtual-cell empty" data-slot="null" data-room="${virtualRoomId}" data-state="empty">
-        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <div style="font-size: 0.8rem; font-weight: 600; line-height: 1.2;">Add more<br>Lecture</div>
-    </div>`;
+    html += buildCellHtml(null, null, {id: virtualRoomId}, true); // The one Add button
 
     container.innerHTML = html;
 
@@ -701,20 +718,24 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
       rooms.forEach(room => {
         const row = scheduleMap[slot.id]?.[room.id];
         if (row) {
-          const isReplaced = row.is_rescheduled && row.original_faculty?.id !== row.assigned_faculty?.id;
-          const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
-          
-          if (isReplaced) {
-             const origS = row.subject?.subject_name || '';
-             const origF = row.original_faculty?.full_name || '';
-             const newS = row.csf?.subject?.subject_name || '';
-             const newF = row.assigned_faculty?.full_name || '';
-             
-             rowData.push({ content: `${c}\n\n[Original/Absent]\n${origS}\n${origF}\n\n[Replaced By]\n${newS}\n${newF}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40], fontSize: 10 } });
+          if(row.is_cancelled) {
+             rowData.push({ content: `CANCELLED\n${row.cancel_reason||''}`, styles: { halign: 'center', valign: 'middle', textColor: [150, 150, 150] } });
           } else {
-             const s = row.subject?.subject_name || '';
-             const f = row.original_faculty?.full_name || '';
-             rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
+             const isReplaced = row.is_rescheduled && row.original_faculty?.id !== row.assigned_faculty?.id;
+             const c = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
+             
+             if (isReplaced) {
+                const origS = row.subject?.subject_name || '';
+                const origF = row.original_faculty?.full_name || '';
+                const newS = row.csf?.subject?.subject_name || '';
+                const newF = row.assigned_faculty?.full_name || '';
+                
+                rowData.push({ content: `${c}\n\n[Original/Absent]\n${origS}\n${origF}\n\n[Replaced By]\n${newS}\n${newF}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40], fontSize: 10 } });
+             } else {
+                const s = row.subject?.subject_name || '';
+                const f = row.original_faculty?.full_name || '';
+                rowData.push({ content: `${c}\n${s}\n${f}`, styles: { halign: 'center', valign: 'middle', textColor: [40, 40, 40] } });
+             }
           }
         } else {
           rowData.push({ content: '-', styles: { halign: 'center', valign: 'middle', textColor: [200, 200, 200] } });
