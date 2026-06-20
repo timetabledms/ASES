@@ -1,7 +1,5 @@
 /**
  * ASES — Master Timetable Manager
- * ─────────────────────────────────
- * Manages the fixed weekly timetable for weekdays and Saturdays.
  */
 
 import { supabase } from '../config/supabase.js';
@@ -38,11 +36,13 @@ export async function getMasterTimetable(dayType) {
       id,
       day_type,
       is_active,
-      time_slot:time_slots!time_slot_id (id, slot_label, start_time, end_time, slot_type, sort_order),
-      room:rooms!room_id (id, room_code),
-      course:courses!course_id (id, course_code, year, program, division),
-      subject:subjects!subject_id (id, subject_name),
-      faculty:faculty!faculty_id (id, full_name),
+      time_slot_id, 
+      room_id,
+      time_slot:time_slots (id, slot_label, start_time, end_time, slot_type, sort_order),
+      room:rooms (id, room_code),
+      course:courses (id, course_code, year, program, division),
+      subject:subjects (id, subject_name),
+      faculty:faculty (id, full_name),
       csf_id,
       course_id,
       subject_id,
@@ -56,16 +56,17 @@ export async function getMasterTimetable(dayType) {
   // Build lookup map
   const map = {};
   for (const row of (data ?? [])) {
-    const rId = row.room?.id;
+    // We MUST use the raw room_id and time_slot_id fetched directly
+    const rId = row.room_id; 
     if (!rId) continue;
 
-    // FIX: If it's a virtual lecture (no time slot), store it by its row ID
-    if (!row.time_slot) {
+    if (!row.time_slot_id) {
+      // It's a Virtual Lecture
       if (!map['null']) map['null'] = {};
       map['null'][row.id] = row;
     } else {
       // Standard physical lectures
-      const tsId = row.time_slot.id;
+      const tsId = row.time_slot_id;
       if (!map[tsId]) map[tsId] = {};
       map[tsId][rId] = row;
     }
@@ -88,7 +89,6 @@ export async function upsertMasterEntry({ entryId, dayType, timeSlotId, roomId, 
 
   let result;
 
-  // FIX: If we are updating an existing entry, strictly use UPDATE
   if (entryId) {
     result = await supabase.from('master_timetable').update(payload).eq('id', entryId).select().single();
   } else {
