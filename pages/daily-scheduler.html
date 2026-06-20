@@ -20,40 +20,14 @@
     .btn-export svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
 
     /* Stats & Legend */
-    .stat-chips { 
-        display: flex !important; flex-direction: row !important; gap: 0.65rem !important; 
-        flex-wrap: wrap !important; margin-bottom: 1.1rem !important; align-items: center !important;
-    }
-    .stat-chip { 
-        background: var(--bg-card) !important; border: 1px solid var(--border) !important; 
-        border-radius: 10px !important; padding: 0.5rem 0.9rem !important; 
-        display: flex !important; flex-direction: row !important; align-items: center !important; 
-        justify-content: flex-start !important; gap: 0.5rem !important; font-size: 0.82rem !important; 
-        width: max-content !important; flex: 0 0 auto !important; white-space: nowrap !important;
-        transition: background .25s, border-color .25s !important;
-    }
-    .chip-dot { 
-        width: 8px !important; height: 8px !important; border-radius: 50% !important; 
-        flex-shrink: 0 !important; display: block !important; 
-    }
-    .legend { 
-        display: flex !important; flex-direction: row !important; gap: 1.1rem !important; 
-        flex-wrap: wrap !important; margin-bottom: 1rem !important; font-size: 0.75rem !important; 
-        color: var(--text-muted) !important; align-items: center !important;
-    }
-    .leg-item { 
-        display: flex !important; flex-direction: row !important; align-items: center !important; 
-        gap: 0.35rem !important; width: max-content !important; white-space: nowrap !important;
-    }
+    .stat-chips { display: flex !important; flex-direction: row !important; gap: 0.65rem !important; flex-wrap: wrap !important; margin-bottom: 1.1rem !important; align-items: center !important; }
+    .stat-chip { background: var(--bg-card) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; padding: 0.5rem 0.9rem !important; display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; gap: 0.5rem !important; font-size: 0.82rem !important; width: max-content !important; flex: 0 0 auto !important; white-space: nowrap !important; transition: background .25s, border-color .25s !important; }
+    .chip-dot { width: 8px !important; height: 8px !important; border-radius: 50% !important; flex-shrink: 0 !important; display: block !important; }
+    .legend { display: flex !important; flex-direction: row !important; gap: 1.1rem !important; flex-wrap: wrap !important; margin-bottom: 1rem !important; font-size: 0.75rem !important; color: var(--text-muted) !important; align-items: center !important; }
+    .leg-item { display: flex !important; flex-direction: row !important; align-items: center !important; gap: 0.35rem !important; width: max-content !important; white-space: nowrap !important; }
     .leg-sw { width: 12px !important; height: 12px !important; border-radius: 3px !important; border: 2px solid !important; }
 
-    .danger-bar{
-        background:rgba(224,92,107,.07) !important; border:1px solid rgba(224,92,107,.2) !important;
-        border-radius:10px !important; padding:.7rem 1rem !important; display:flex !important;
-        flex-direction: row !important; align-items:center !important; justify-content:space-between !important;
-        gap:1rem !important; margin-bottom:1rem !important; font-size:.83rem !important;
-        color:var(--error) !important; flex-wrap:wrap !important;
-    }
+    .danger-bar{ background:rgba(224,92,107,.07) !important; border:1px solid rgba(224,92,107,.2) !important; border-radius:10px !important; padding:.7rem 1rem !important; display:flex !important; flex-direction: row !important; align-items:center !important; justify-content:space-between !important; gap:1rem !important; margin-bottom:1rem !important; font-size:.83rem !important; color:var(--error) !important; flex-wrap:wrap !important; }
     
     /* Physical Timetable Grid */
     .tt-grid{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:700px;transition:background .25s,border-color .25s; margin-bottom: 2rem;}
@@ -76,7 +50,6 @@
     .lc:last-child{border-right:none}
     .lc:hover{background:var(--bg-hover)}
     .lc.s-absent{background:rgba(224,92,107,.05)!important;border-left:3px solid var(--error)!important}
-    .lc.s-absent:hover{background:rgba(224,92,107,.1)!important}
     .lc.s-resolved{background:rgba(62,207,142,.08)!important;border-left:3px solid var(--success)!important}
     .lc.s-cancelled{background:rgba(107,112,137,.08)!important;border-left:3px solid var(--text-muted)!important;opacity:.6}
     .lc.s-warn{background:rgba(245,166,35,.1)!important;border-left:3px solid var(--warn)!important}
@@ -97,53 +70,37 @@
     .grid-placeholder{padding:3.5rem;text-align:center;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:.75rem}
     .grid-placeholder svg{width:36px;height:36px;stroke:var(--border);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
     
-    /* --- VIRTUAL SECTION UI --- */
-    .virtual-section { 
-        background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--accent); 
-        padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: none; min-width: 700px;
-    }
-    .virtual-header { 
-        display: flex; align-items: center; gap: 0.5rem; color: var(--accent); 
-        font-size: 1.1rem; font-weight: 600; padding-bottom: 0.75rem; 
-        border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; 
-    }
-    .virtual-grid { 
-        display: flex; flex-wrap: wrap; gap: 1rem; align-items: stretch;
-    }
-    .virtual-cell { 
-        width: 175px; min-height: 75px; padding: 0.75rem; border-radius: 8px; 
-        border: 1px solid var(--border); background: var(--bg-main); cursor: pointer; 
-        display: flex; flex-direction: column; justify-content: center; gap: 0.15rem; 
-        transition: all 0.2s; position: relative;
-    }
-    /* Filled Virtual Card */
-    .virtual-cell.filled { 
-        background: rgba(79, 106, 245, 0.05); border-color: rgba(79, 106, 245, 0.2); 
-    }
-    .virtual-cell.filled:hover { 
-        border-color: var(--accent); background: rgba(79, 106, 245, 0.08); 
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transform: translateY(-1px);
-    }
+    /* VIRTUAL SECTION UI */
+    .virtual-section { background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--accent); padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: none; min-width: 700px; }
+    .virtual-header { display: flex; align-items: center; gap: 0.5rem; color: var(--accent); font-size: 1.1rem; font-weight: 600; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+    .virtual-grid { display: flex; flex-wrap: wrap; gap: 1rem; align-items: stretch; }
+    .virtual-cell { width: 175px; min-height: 75px; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-main); cursor: pointer; display: flex; flex-direction: column; justify-content: center; gap: 0.15rem; transition: all 0.2s; position: relative; }
+    .virtual-cell.filled { background: rgba(79, 106, 245, 0.05); border-color: rgba(79, 106, 245, 0.2); }
+    .virtual-cell.filled:hover { border-color: var(--accent); background: rgba(79, 106, 245, 0.08); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transform: translateY(-1px); }
     .virtual-cell .lc-course { font-size: 0.65rem; font-weight: 800; color: var(--text-muted); }
     .virtual-cell .lc-subject { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;}
     .virtual-cell .lc-faculty { font-size: 0.7rem; color: var(--text-muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;}
-
-    /* Empty Virtual Card (+ Add more Lecture) */
-    .virtual-cell.empty { 
-        border: 1px dashed #cbd5e1; background: transparent; 
-        flex-direction: row; align-items: center; justify-content: center; 
-        gap: 0.5rem; color: #94a3b8; 
-    }
-    .virtual-cell.empty:hover { 
-        border-color: var(--accent); color: var(--accent); background: rgba(79, 106, 245, 0.03); 
-    }
+    .virtual-cell.empty { border: 1px dashed #cbd5e1; background: transparent; flex-direction: row; align-items: center; justify-content: center; gap: 0.5rem; color: #94a3b8; }
+    .virtual-cell.empty:hover { border-color: var(--accent); color: var(--accent); background: rgba(79, 106, 245, 0.03); }
     .virtual-cell.empty svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
-
-    /* Reuse Daily Scheduler Specific Status styling for virtual cells */
+    
     .virtual-cell.s-absent{background:rgba(224,92,107,.05)!important;border-left:3px solid var(--error)!important}
     .virtual-cell.s-resolved{background:rgba(62,207,142,.08)!important;border-left:3px solid var(--success)!important}
     .virtual-cell.s-cancelled{background:rgba(107,112,137,.08)!important;border-left:3px solid var(--text-muted)!important;opacity:.6}
     .virtual-cell.s-warn{background:rgba(245,166,35,.1)!important;border-left:3px solid var(--warn)!important}
+
+    /* --- REMARKS SECTION UI --- */
+    .remarks-section { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border); padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: none; min-width: 700px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+    .remarks-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; color: var(--text-primary); font-size: 1.1rem; font-weight: 600; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+    .remarks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .remark-card { padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-main); display: flex; flex-direction: column; gap: 0.4rem; position: relative; transition: all 0.2s; }
+    .remark-card:hover { border-color: var(--text-muted); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transform: translateY(-1px); }
+    .remark-card .rm-fac { font-weight: 700; color: var(--text-primary); font-size: 0.9rem; margin-right: 20px;}
+    .remark-card .rm-time { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; gap:4px; }
+    .remark-card .rm-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; background: rgba(0,0,0,0.02); padding: 0.6rem; border-radius: 6px; border: 1px solid rgba(0,0,0,0.04); margin-top: 0.25rem; }
+    .btn-delete-remark { position: absolute; top: 0.75rem; right: 0.75rem; color: var(--error); cursor: pointer; background: rgba(224,92,107,.1); border: none; padding: 4px; border-radius: 4px; opacity: 0; transition: all 0.2s; display:flex; align-items:center; justify-content:center; }
+    .remark-card:hover .btn-delete-remark { opacity: 1; }
+    .btn-delete-remark:hover { background: rgba(224,92,107,.2); }
 
     /* Modals */
     .modal-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(7px);z-index:200;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto}
@@ -260,7 +217,7 @@
             </div></div>
         </div>
     </div>
-<br>
+
     <!-- Virtual Section -->
     <div class="virtual-section" id="virtualSection">
         <div class="virtual-header">
@@ -270,9 +227,24 @@
         <div id="virtualGrid" class="virtual-grid"></div>
     </div>
 
+    <!-- Remarks Section -->
+    <div class="remarks-section" id="remarksSection">
+        <div class="remarks-header">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                Faculty Remarks & Extra Activities
+            </div>
+            <button class="btn btn-primary btn-sm" id="btnAddRemark" style="height: 32px; font-size: 0.75rem;">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2;margin-right:4px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Remark
+            </button>
+        </div>
+        <div id="remarksGrid" class="remarks-grid"></div>
+    </div>
+
   </div>
 </main>
 
+<!-- Cell Modal -->
 <div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
@@ -302,6 +274,40 @@
           <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><polyline points="20,6 9,17 4,12"/></svg>Confirm
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Remark Modal -->
+<div class="modal-back" id="remarkModal">
+  <div class="modal" style="max-width:450px;">
+    <div class="modal-header">
+      <div><div class="modal-title">Add Faculty Remark</div></div>
+      <button class="modal-xbtn" id="remarkModalX"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" style="display:flex; flex-direction:column; gap:1.25rem;">
+      <div class="field">
+        <label style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Faculty *</label>
+        <select id="remarkFaculty"><option value="">— select faculty —</option></select>
+      </div>
+      <div style="display:flex; gap:1rem;">
+        <div class="field" style="flex:1;">
+          <label style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Start Time *</label>
+          <input type="time" id="remarkStartTime" style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-input); font-family:inherit;" />
+        </div>
+        <div class="field" style="flex:1;">
+          <label style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">End Time *</label>
+          <input type="time" id="remarkEndTime" style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-input); font-family:inherit;" />
+        </div>
+      </div>
+      <div class="field">
+        <label style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Remark / Activity Details *</label>
+        <textarea id="remarkText" rows="3" placeholder="e.g. Exam Duty, Meeting, Guest Lecture..." style="width:100%; padding:0.6rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-input); font-family:inherit; resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" id="remarkCancelBtn">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="remarkSaveBtn">Save Remark</button>
     </div>
   </div>
 </div>
@@ -372,6 +378,7 @@ function localDateStr(d) {
 }
 let selectedDate=localDateStr();
 let timeSlots=[], rooms=[], scheduleMap={}, absentIds=new Set();
+let remarksData=[], allFaculty=[];
 let virtualRoomId = null;
 let activeCell=null, selectedOpt=null;
 
@@ -411,6 +418,7 @@ function hideAllUI() {
     document.getElementById('statChips').style.display='none';
     document.getElementById('legendRow').style.display='none';
     document.getElementById('virtualSection').style.display='none';
+    document.getElementById('remarksSection').style.display='none';
 }
 
 const DAY_MAP=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
@@ -498,7 +506,7 @@ async function loadSchedule(){
   gridLoading();
   try{
     const dayType=getDayType(selectedDate);
-    const[sR,rR,scR,lR]=await Promise.all([
+    const[sR, rR, scR, lR, remR, facR]=await Promise.all([
       supabase.from('time_slots').select('id,slot_label,start_time,end_time,slot_type,sort_order').eq('day_type',slotDayType(dayType)).order('sort_order'),
       supabase.from('rooms').select('id,room_code').eq('is_active',true).order('room_code'),
       supabase.from('daily_schedule').select(`
@@ -513,11 +521,15 @@ async function loadSchedule(){
         csf:course_subject_faculty!csf_id(subject:subjects(subject_name))
       `).eq('schedule_date',selectedDate),
       supabase.from('faculty_leaves').select('faculty_id').eq('leave_date',selectedDate).eq('status','approved'),
+      supabase.from('faculty_remarks').select('id, start_time, end_time, remark, faculty:faculty!faculty_id(id, full_name)').eq('date', selectedDate).order('start_time', { ascending: true }),
+      supabase.from('faculty').select('id, full_name').eq('is_active', true).order('full_name')
     ]);
     if(sR.error)throw sR.error;if(rR.error)throw rR.error;if(scR.error)throw scR.error;
     
     timeSlots=sR.data??[];
     absentIds=new Set((lR.data??[]).map(l=>l.faculty_id));
+    remarksData=remR.data??[];
+    allFaculty=facR.data??[];
     
     rooms = (rR.data??[]).filter(r => {
         if(r.room_code?.toUpperCase() === 'VIRTUAL') { virtualRoomId = r.id; return false; }
@@ -539,11 +551,12 @@ async function loadSchedule(){
     
     renderGrid();
     renderVirtualGrid();
+    renderRemarks();
     updateStats();
 
-    // IMPORTANT LAYOUT FIX: Ensures Virtual Section doesn't get flexed out of proportion
     ['statChips','legendRow'].forEach(id=>document.getElementById(id).style.display='flex');
     document.getElementById('virtualSection').style.display='block';
+    document.getElementById('remarksSection').style.display='block';
     
     document.getElementById('reloadBtn').style.display='inline-flex';
   }catch(e){toast(e.message,'error');gridEmpty('Failed to load.');}
@@ -676,7 +689,7 @@ function renderGrid(){
 function renderVirtualGrid() {
     const container = document.getElementById('virtualGrid');
     if (!virtualRoomId) {
-        container.innerHTML = `<div style="padding: 1rem; color: var(--text-muted);">Virtual room not configured in database. Contact administrator.</div>`;
+        container.innerHTML = `<div style="padding: 1rem; color: var(--text-muted); font-style: italic;">Virtual room not configured in database. Contact administrator.</div>`;
         return;
     }
 
@@ -693,6 +706,44 @@ function renderVirtualGrid() {
 
     document.querySelectorAll('.virtual-cell').forEach(cell => {
         cell.addEventListener('click', () => openModal(cell));
+    });
+}
+
+function renderRemarks() {
+    const container = document.getElementById('remarksGrid');
+    if (!remarksData || remarksData.length === 0) {
+        container.innerHTML = `<div style="grid-column: 1 / -1; padding: 1.5rem; text-align: center; color: var(--text-muted); font-style: italic; background: var(--bg-main); border-radius: 8px;">No remarks or extra activities logged for this date.</div>`;
+        return;
+    }
+    
+    container.innerHTML = remarksData.map(r => `
+        <div class="remark-card">
+            <button class="btn-delete-remark" data-id="${r.id}" title="Delete Remark">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+            <div class="rm-fac">${r.faculty?.full_name || 'Unknown Faculty'}</div>
+            <div class="rm-time">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                ${r.start_time ? r.start_time.slice(0,5) : '--:--'} - ${r.end_time ? r.end_time.slice(0,5) : '--:--'}
+            </div>
+            <div class="rm-text">${r.remark}</div>
+        </div>
+    `).join('');
+
+    container.querySelectorAll('.btn-delete-remark').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = e.currentTarget.dataset.id;
+            if(confirm('Are you sure you want to delete this remark?')) {
+                try {
+                    const {error} = await supabase.from('faculty_remarks').delete().eq('id', id);
+                    if(error) throw error;
+                    toast('Remark deleted successfully', 'success');
+                    loadSchedule();
+                } catch(err) {
+                    toast(err.message, 'error');
+                }
+            }
+        });
     });
 }
 
@@ -716,6 +767,50 @@ function updateStats(){
   document.getElementById('cntCancelled').textContent=cancelled;
   document.getElementById('cntTotal').textContent=total;
 }
+
+// ── Remark Logic ────────────────────────────────────────────────────────────
+document.getElementById('btnAddRemark').addEventListener('click', () => {
+    const facSel = document.getElementById('remarkFaculty');
+    if (facSel.options.length <= 1) {
+        facSel.innerHTML = '<option value="">— select faculty —</option>' + allFaculty.map(f => `<option value="${f.id}">${f.full_name}</option>`).join('');
+    }
+    document.getElementById('remarkStartTime').value = '';
+    document.getElementById('remarkEndTime').value = '';
+    document.getElementById('remarkText').value = '';
+    document.getElementById('remarkModal').classList.add('open');
+});
+
+document.getElementById('remarkModalX').addEventListener('click', () => document.getElementById('remarkModal').classList.remove('open'));
+document.getElementById('remarkCancelBtn').addEventListener('click', () => document.getElementById('remarkModal').classList.remove('open'));
+
+document.getElementById('remarkSaveBtn').addEventListener('click', async () => {
+    const fId = document.getElementById('remarkFaculty').value;
+    const st = document.getElementById('remarkStartTime').value;
+    const et = document.getElementById('remarkEndTime').value;
+    const txt = document.getElementById('remarkText').value.trim();
+    
+    if(!fId || !st || !et || !txt) { toast('Please fill all fields', 'warn'); return; }
+
+    const btn = document.getElementById('remarkSaveBtn');
+    btn.disabled = true;
+    try {
+        const {error} = await supabase.from('faculty_remarks').insert({
+            date: selectedDate,
+            faculty_id: fId,
+            start_time: st,
+            end_time: et,
+            remark: txt
+        });
+        if(error) throw error;
+        toast('Remark added successfully', 'success');
+        document.getElementById('remarkModal').classList.remove('open');
+        loadSchedule();
+    } catch(e) {
+        toast(e.message, 'error');
+    } finally {
+        btn.disabled = false;
+    }
+});
 
 // ── Export Logic ──────────────────────────────────────────────────────────────
 document.getElementById('exportPdfBtn').addEventListener('click', () => {
@@ -798,11 +893,13 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
     }
   });
 
+  let currentY = doc.lastAutoTable.finalY + 40;
+
   const virtualEntries = scheduleMap['null'] ? Object.values(scheduleMap['null']) : [];
   if (virtualEntries.length > 0) {
-      let vStartY = doc.lastAutoTable.finalY + 40;
+      if (currentY > pageH - 200) { doc.addPage(); currentY = 80; }
       doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(26, 34, 68);
-      doc.text('Virtual lecture', 80, vStartY);
+      doc.text('Virtual lecture', 80, currentY);
 
       const vBody = virtualEntries.map(row => {
           const c = courseName(row.course);
@@ -819,10 +916,34 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
       doc.autoTable({
           head: [['Course', 'Subject', 'Faculty']],
           body: vBody,
-          startY: vStartY + 20,
+          startY: currentY + 20,
           theme: 'grid',
           styles: { fontSize: 16, cellPadding: 12, valign: 'middle', lineColor: [180, 180, 180], lineWidth: 1 },
           headStyles: { fillColor: [240, 240, 245], textColor: [26, 34, 68], fontStyle: 'bold', fontSize: 18, halign: 'left' },
+          margin: { left: 80, right: 80, bottom: 80 }
+      });
+      currentY = doc.lastAutoTable.finalY + 40;
+  }
+
+  if (remarksData && remarksData.length > 0) {
+      if (currentY > pageH - 200) { doc.addPage(); currentY = 80; }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(26, 34, 68);
+      doc.text('Faculty Remarks & Extra Activities', 80, currentY);
+
+      const remBody = remarksData.map(r => [
+          `${r.start_time ? r.start_time.slice(0,5) : ''} - ${r.end_time ? r.end_time.slice(0,5) : ''}`,
+          r.faculty?.full_name || 'Unknown',
+          r.remark
+      ]);
+
+      doc.autoTable({
+          head: [['Time', 'Faculty Name', 'Remark / Activity Details']],
+          body: remBody,
+          startY: currentY + 20,
+          theme: 'grid',
+          styles: { fontSize: 16, cellPadding: 12, valign: 'middle', lineColor: [180, 180, 180], lineWidth: 1 },
+          headStyles: { fillColor: [240, 240, 245], textColor: [26, 34, 68], fontStyle: 'bold', fontSize: 18, halign: 'left' },
+          columnStyles: { 0: { cellWidth: 200 }, 1: { cellWidth: 350 }, 2: { cellWidth: 'auto' } },
           margin: { left: 80, right: 80, bottom: 80 }
       });
   }
@@ -901,6 +1022,17 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
       });
   }
 
+  if (remarksData && remarksData.length > 0) {
+      wsData.push([]); wsData.push(["Remarks & Extra Activities", "", ""]); wsData.push(["Time", "Faculty Name", "Remark / Activity Details"]);
+      remarksData.forEach(r => {
+          wsData.push([
+              `${r.start_time ? r.start_time.slice(0,5) : ''} - ${r.end_time ? r.end_time.slice(0,5) : ''}`,
+              r.faculty?.full_name || 'Unknown',
+              r.remark
+          ]);
+      });
+  }
+
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!merges'] = merges;
   const cols = [{ wch: 18 }]; rooms.forEach(() => cols.push({ wch: 30 })); ws['!cols'] = cols;
@@ -909,7 +1041,7 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
   XLSX.writeFile(wb, `Daily_Schedule_${selectedDate}.xlsx`);
 });
 
-// ── Modal ──────────────────────────────────────────────────────────
+// ── Cell Modal Logic ────────────────────────────────────────────────────────
 async function openModal(cell){
   selectedOpt=null;
   const scheduleId=cell.dataset.id;
