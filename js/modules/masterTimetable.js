@@ -7,9 +7,6 @@
 import { supabase } from '../config/supabase.js';
 
 // ── getTimeSlots ──────────────────────────────────────────────────────────────
-/**
- * All time slots for a given day_type, sorted by sort_order.
- */
 export async function getTimeSlots(dayType) {
   const { data, error } = await supabase
     .from('time_slots')
@@ -34,10 +31,6 @@ export async function getActiveRooms() {
 }
 
 // ── getMasterTimetable ────────────────────────────────────────────────────────
-/**
- * All active master timetable entries for a day_type, fully joined.
- * Returns a map: { [timeSlotId]: { [roomId]: row } } for O(1) cell lookup.
- */
 export async function getMasterTimetable(dayType) {
   const { data, error } = await supabase
     .from('master_timetable')
@@ -63,47 +56,56 @@ export async function getMasterTimetable(dayType) {
   // Build lookup map
   const map = {};
   for (const row of (data ?? [])) {
-    const tsId = row.time_slot?.id;
-    const rId  = row.room?.id;
-    if (!tsId || !rId) continue;
-    if (!map[tsId]) map[tsId] = {};
-    map[tsId][rId] = row;
+    const rId = row.room?.id;
+    if (!rId) continue;
+
+    // FIX: If it's a virtual lecture (no time slot), store it by its row ID
+    if (!row.time_slot) {
+      if (!map['null']) map['null'] = {};
+      map['null'][row.id] = row;
+    } else {
+      // Standard physical lectures
+      const tsId = row.time_slot.id;
+      if (!map[tsId]) map[tsId] = {};
+      map[tsId][rId] = row;
+    }
   }
   return map;
 }
 
 // ── upsertMasterEntry ─────────────────────────────────────────────────────────
-/**
- * Assign or update a cell in the master timetable.
- * Upserts on (day_type, time_slot_id, room_id).
- */
-export async function upsertMasterEntry({ dayType, timeSlotId, roomId, csfId, courseId, subjectId, facultyId }) {
-  const { data, error } = await supabase
-    .from('master_timetable')
-    .upsert(
-      {
-        day_type:     dayType,
-        time_slot_id: timeSlotId,
-        room_id:      roomId,
-        csf_id:       csfId,
-        course_id:    courseId,
-        subject_id:   subjectId,
-        faculty_id:   facultyId,
-        is_active:    true,
-      },
-      { onConflict: 'day_type,time_slot_id,room_id', returning: 'representation' }
-    )
-    .select()
-    .single();
+export async function upsertMasterEntry({ entryId, dayType, timeSlotId, roomId, csfId, courseId, subjectId, facultyId }) {
+  const payload = {
+    day_type:     dayType,
+    time_slot_id: timeSlotId || null,
+    room_id:      roomId,
+    csf_id:       csfId,
+    course_id:    courseId,
+    subject_id:   subjectId,
+    faculty_id:   facultyId,
+    is_active:    true,
+  };
 
-  if (error) throw error;
-  return data;
+  let result;
+
+  // FIX: If we are updating an existing entry, strictly use UPDATE
+  if (entryId) {
+    result = await supabase.from('master_timetable').update(payload).eq('id', entryId).select().single();
+  } else {
+    // If it's a new entry AND has a time slot, UPSERT securely
+    if (timeSlotId) {
+      result = await supabase.from('master_timetable').upsert(payload, { onConflict: 'day_type,time_slot_id,room_id' }).select().single();
+    } else {
+      // If it has NO time slot (Virtual), forcefully INSERT so we can have infinite rows
+      result = await supabase.from('master_timetable').insert([payload]).select().single();
+    }
+  }
+
+  if (result.error) throw result.error;
+  return result.data;
 }
 
 // ── clearMasterEntry ──────────────────────────────────────────────────────────
-/**
- * Soft-clear a cell (sets is_active = false).
- */
 export async function clearMasterEntry(entryId) {
   const { error } = await supabase
     .from('master_timetable')
@@ -114,10 +116,6 @@ export async function clearMasterEntry(entryId) {
 }
 
 // ── getCSFForCourse ───────────────────────────────────────────────────────────
-/**
- * Returns active CSF rows for a course, formatted for the timetable cell modal.
- * Each option: { csfId, subjectId, subjectName, facultyId, facultyName, label }
- */
 export async function getCSFForCourse(courseId) {
   const { data, error } = await supabase
     .from('course_subject_faculty')
