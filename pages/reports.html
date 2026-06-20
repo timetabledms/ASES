@@ -320,6 +320,7 @@
               <div style="padding:2rem;text-align:center;color:var(--text-muted)">Select a date and run report.</div>
             </div>
           </div>
+          <div id="rc1Virtual" style="margin-top: 2rem; display:none;"></div>
           <div id="rc1Remarks" style="margin-top: 2rem; display:none;"></div>
         </div>
 
@@ -1072,12 +1073,12 @@
     else exportToExcel(flat,cols,'Rescheduled_Slots');
   }));
 
-  // ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
   // RC1 — Daily Execution Report
   // ══════════════════════════════════════════════════════════════════
   let rc1Date = '';
-  let rc1Rooms = [], rc1Slots = [], rc1ScheduleMap = {}, rc1ExecMap = {};
-  let rc1RemarksData = []; // NEW: Global array to hold remarks data
+  let rc1Rooms = [], rc1Slots = [], rc1ScheduleMap = {}, rc1VirtualEntries = [], rc1ExecMap = {};
+  let rc1RemarksData = [];
 
   const RC1_STATUS_BG  = {on_time:'#d4f7e7',late:'#fff3cd',not_engaged:'#fde8ea',not_marked:'#f0f0f0'};
   const RC1_STATUS_COL = {on_time:'#1a7a4a',late:'#8a6000',not_engaged:'#a01828',not_marked:'#666'};
@@ -1089,7 +1090,8 @@
     const btn = document.getElementById('rc1Run');
     btn.disabled = true;
     document.getElementById('rc1Grid').innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted)"><span class="spin" style="display:inline-block"></span> Loading…</div>';
-    document.getElementById('rc1Remarks').style.display = 'none'; // Hide old remarks
+    document.getElementById('rc1Virtual').style.display = 'none';
+    document.getElementById('rc1Remarks').style.display = 'none';
 
     try {
       const dayType = new Date(rc1Date+'T00:00:00').getDay()===6?'saturday':'weekday';
@@ -1099,16 +1101,15 @@
         supabase.from('rooms').select('id,room_code').eq('is_active',true).order('room_code'),
         supabase.from('daily_schedule').select(`
           id,is_cancelled,is_rescheduled,time_slot_id,room_id,
-          time_slot:time_slots!time_slot_id(id,slot_label,start_time,end_time,slot_type,sort_order),
-          room:rooms!room_id(id,room_code),
-          course:courses!course_id(year,program,division),
-          subject:subjects!subject_id(subject_name),
+          time_slot:time_slots (id,slot_label,start_time,end_time,slot_type,sort_order),
+          room:rooms (id,room_code),
+          course:courses (year,program,division),
+          subject:subjects (subject_name),
           assigned_faculty:faculty!assigned_faculty_id(id,full_name),
           original_faculty:faculty!original_faculty_id(id,full_name),
-          csf:course_subject_faculty!csf_id(subject:subjects!subject_id(subject_name))
+          csf:course_subject_faculty!csf_id(subject:subjects(subject_name))
         `).eq('schedule_date',rc1Date),
         supabase.from('lecture_execution').select('daily_schedule_id,faculty_status').eq('schedule_date',rc1Date),
-        // NEW: Fetch remarks for this date
         supabase.from('faculty_remarks').select('*, faculty(full_name)').eq('date', rc1Date).order('start_time', { ascending: true })
       ]);
       
@@ -1118,20 +1119,30 @@
       if(remarksRes.error) throw remarksRes.error;
 
       rc1Slots = slotsRes.data??[];
-      rc1Rooms = roomsRes.data??[];
-      rc1RemarksData = remarksRes.data ?? []; // Assign Remarks
+      rc1RemarksData = remarksRes.data ?? [];
+      
+      // Filter out Virtual Room from X-Axis physical rooms
+      rc1Rooms = (roomsRes.data??[]).filter(r => r.room_code.toUpperCase() !== 'VIRTUAL');
 
       rc1ScheduleMap = {};
+      rc1VirtualEntries = [];
+      
       for(const row of(schedRes.data??[])){
-        if(!rc1ScheduleMap[row.time_slot_id]) rc1ScheduleMap[row.time_slot_id]={};
-        rc1ScheduleMap[row.time_slot_id][row.room_id]=row;
+        if(!row.time_slot_id) {
+            rc1VirtualEntries.push(row);
+        } else {
+            if(!rc1ScheduleMap[row.time_slot_id]) rc1ScheduleMap[row.time_slot_id]={};
+            rc1ScheduleMap[row.time_slot_id][row.room_id]=row;
+        }
       }
+      
       rc1ExecMap={};
       for(const ex of(execRes.data??[])) rc1ExecMap[ex.daily_schedule_id]=ex.faculty_status;
 
       renderRc1Grid();
+      renderRc1Virtual();
       renderRc1Stats();
-      renderRc1Remarks(); // Render new remarks table
+      renderRc1Remarks();
       
       document.getElementById('rc1Stats').style.display='';
     } catch(e) {
@@ -1142,15 +1153,24 @@
 
   function renderRc1Stats() {
     let onTime=0,late=0,notEngaged=0,notMarked=0,cancelled=0;
-    for(const tsMap of Object.values(rc1ScheduleMap)){
-      for(const row of Object.values(tsMap)){
-        if(row.time_slot?.slot_type!=='lecture') continue;
-        if(row.is_cancelled){cancelled++;continue;}
+    
+    const countStatus = (row) => {
+        if(row.is_cancelled){cancelled++; return;}
         const s=rc1ExecMap[row.id]??'not_marked';
         if(s==='on_time')onTime++; else if(s==='late')late++;
         else if(s==='not_engaged')notEngaged++; else notMarked++;
+    };
+
+    // Count physical
+    for(const tsMap of Object.values(rc1ScheduleMap)){
+      for(const row of Object.values(tsMap)){
+        if(row.time_slot?.slot_type!=='lecture') continue;
+        countStatus(row);
       }
     }
+    // Count virtual
+    rc1VirtualEntries.forEach(countStatus);
+
     document.getElementById('rc1MiniStats').innerHTML=[
       ['On Time',onTime,'var(--success)'],['Late',late,'var(--warn)'],
       ['Not Engaged',notEngaged,'var(--error)'],['Not Marked',notMarked,'var(--text-muted)'],
@@ -1232,12 +1252,72 @@
     document.getElementById('rc1Grid').innerHTML=h;
   }
 
-  // NEW: Remarks UI Renderer
+  function renderRc1Virtual() {
+    const container = document.getElementById('rc1Virtual');
+    if (!rc1VirtualEntries || rc1VirtualEntries.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    const rows = rc1VirtualEntries.map(row => {
+        const s = row.is_cancelled ? 'cancelled' : (rc1ExecMap[row.id] ?? 'not_marked');
+        const bg = row.is_cancelled ? '#f0f0f0' : (RC1_STATUS_BG[s] ?? '#f8f8f8');
+        const col = row.is_cancelled ? '#999' : (RC1_STATUS_COL[s] ?? '#444');
+        const lbl = row.is_cancelled ? 'CANCELLED' : (RC1_STATUS_LBL[s] ?? 'Not Marked');
+        const cname = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
+        
+        const origFId = row.original_faculty?.id;
+        const assignFId = row.assigned_faculty?.id;
+        const isReplaced = row.is_rescheduled && origFId && assignFId && (origFId !== assignFId);
+
+        let contentHtml = '';
+        if (isReplaced) {
+            const origS = row.subject?.subject_name ?? '—';
+            const origF = row.original_faculty?.full_name ?? '—';
+            const newS = row.csf?.subject?.subject_name ?? origS;
+            const newF = row.assigned_faculty?.full_name ?? '—';
+            contentHtml = `
+                <div style="font-size:.65rem;color:var(--error);text-decoration:line-through;">${origS} (Prof. ${origF})</div>
+                <div style="font-size:.75rem;font-weight:600;color:var(--success);margin-top:2px;">${newS}</div>
+                <div style="font-size:.7rem;color:var(--success);">Prof. ${newF}</div>
+            `;
+        } else {
+            const sub = row.subject?.subject_name ?? '—';
+            const fac = row.original_faculty?.full_name || row.assigned_faculty?.full_name || '—';
+            contentHtml = `
+                <div style="font-size:.75rem;font-weight:600;color:${col};">${sub}</div>
+                <div style="font-size:.7rem;color:${col};opacity:.8;">Prof. ${fac}</div>
+            `;
+        }
+
+        return `
+        <div style="background:${bg}; border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.2rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:.65rem;font-weight:800;text-transform:uppercase;color:${col};opacity:.75">${cname}</div>
+                <div style="font-size:.6rem;font-weight:700;color:${col};background:rgba(0,0,0,0.05);padding:2px 6px;border-radius:4px;">${lbl}</div>
+            </div>
+            ${contentHtml}
+        </div>`;
+    }).join('');
+
+    container.innerHTML = `
+        <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 12px; border: 1px dashed var(--accent);">
+            <h3 style="font-family: var(--ff-display); font-size: 1.15rem; color: var(--accent); margin-top: 0; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                Virtual Lectures
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                ${rows}
+            </div>
+        </div>
+    `;
+    container.style.display = 'block';
+  }
+
   function renderRc1Remarks() {
     const container = document.getElementById('rc1Remarks');
     if (!rc1RemarksData || rc1RemarksData.length === 0) {
-        container.innerHTML = `<div style="font-family: var(--ff-body); font-size: 0.9rem; color: var(--text-muted); font-style: italic;">* No extra faculty remarks recorded for this date.</div>`;
-        container.style.display = 'block';
+        container.style.display = 'none';
         return;
     }
 
@@ -1258,14 +1338,14 @@
     container.innerHTML = `
         <div class="remarks-report-section" style="page-break-inside: avoid; background: var(--bg-card); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border);">
             <h3 style="font-family: var(--ff-display); font-size: 1.15rem; color: var(--text-primary); margin-top: 0; margin-bottom: 12px; border-bottom: 2px solid var(--border); padding-bottom: 8px;">
-                Faculty Remarks
+                Faculty Remarks & Extra Activities
             </h3>
             <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
                     <tr style="background-color: rgba(26,34,68,.06);">
                         <th style="padding: 10px 12px; border: 1px solid var(--border); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Time</th>
                         <th style="padding: 10px 12px; border: 1px solid var(--border); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Faculty Name</th>
-                        <th style="padding: 10px 12px; border: 1px solid var(--border); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Remark </th>
+                        <th style="padding: 10px 12px; border: 1px solid var(--border); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Remark / Activity Details</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1414,7 +1494,83 @@
         }
       });
 
-      // NEW: INJECT REMARKS ON FIRST PAGE BELOW TIMETABLE
+      let currentY = doc.lastAutoTable.finalY + 40;
+
+      // Virtual Lectures PDF Section
+      if (rc1VirtualEntries && rc1VirtualEntries.length > 0) {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(26, 34, 68);
+        doc.text('Virtual Lectures', 50, currentY);
+
+        const vBody = rc1VirtualEntries.map(row => {
+            const s = row.is_cancelled ? 'cancelled' : (rc1ExecMap[row.id] ?? 'not_marked');
+            const lbl = row.is_cancelled ? 'CANCELLED' : (RC1_STATUS_LBL[s] ?? 'Not Marked');
+            const cname = row.course ? (row.course.division ? `${row.course.year} ${row.course.program} ${row.course.division}` : `${row.course.year} ${row.course.program}`) : '';
+            
+            const origFId = row.original_faculty?.id;
+            const assignFId = row.assigned_faculty?.id;
+            const isReplaced = row.is_rescheduled && origFId && assignFId && (origFId !== assignFId);
+
+            // Record stats for virtual load exactly as we do for physical
+            if (!row.is_cancelled) {
+              if (isReplaced) {
+                if (facStats[origFId]) facStats[origFId].allotted++;
+                if (facStats[assignFId]) {
+                  if (s === 'on_time' || s === 'late') {
+                    facStats[assignFId].taken++;
+                    if (s === 'late') facStats[assignFId].late++;
+                  }
+                }
+              } else {
+                const fId = assignFId || origFId;
+                if (fId && facStats[fId]) {
+                  facStats[fId].allotted++;
+                  if (s === 'on_time' || s === 'late') {
+                    facStats[fId].taken++;
+                    if (s === 'late') facStats[fId].late++;
+                  }
+                }
+              }
+            }
+
+            if (isReplaced) {
+                const origS = row.subject?.subject_name ?? '—';
+                const origF = row.original_faculty?.full_name ?? '—';
+                const newS = row.csf?.subject?.subject_name ?? origS; 
+                const newF = row.assigned_faculty?.full_name ?? '—';
+                return [cname, `[Replaced]\nOriginal: ${origS}\nReplaced by: ${newS}`, `Original: ${origF}\nAssigned: ${newF}`, `[${lbl}]`];
+            } else {
+                const sub = row.subject?.subject_name ?? '';
+                const fac = row.original_faculty?.full_name || row.assigned_faculty?.full_name || '';
+                return [cname, sub, fac, `[${lbl}]`];
+            }
+        });
+
+        doc.autoTable({
+            head: [['Course', 'Subject', 'Faculty Name', 'Status']],
+            body: vBody,
+            startY: currentY + 20,
+            theme: 'grid',
+            styles: { fontSize: 16, cellPadding: 12, valign: 'middle', lineColor: [180, 180, 180], lineWidth: 1 },
+            headStyles: { fillColor: [240, 240, 245], textColor: [26, 34, 68], fontStyle: 'bold', fontSize: 18, halign: 'left' },
+            columnStyles: { 0: { cellWidth: 150 }, 1: { cellWidth: 250 }, 2: { cellWidth: 250 }, 3: { cellWidth: 'auto', halign: 'center', fontStyle: 'bold' } },
+            margin: { left: 50, right: 50, bottom: 60 },
+            didParseCell(data) {
+                if (data.section === 'body' && data.column.index === 3 && data.cell.raw) {
+                    const text = String(data.cell.raw);
+                    let fill = [255, 255, 255];
+                    if (text.includes('[On Time]')) fill = statusFill.on_time;
+                    else if (text.includes('[Late]')) fill = statusFill.late;
+                    else if (text.includes('[Not Engaged]')) fill = statusFill.not_engaged;
+                    else if (text.includes('[Not Marked]')) fill = statusFill.not_marked;
+                    else if (text.includes('[CANCELLED]')) fill = statusFill.cancelled;
+                    data.cell.styles.fillColor = fill;
+                }
+            }
+        });
+        currentY = doc.lastAutoTable.finalY + 40;
+      }
+
+      // Remarks PDF Section
       if (rc1RemarksData && rc1RemarksData.length > 0) {
         const remarksBody = rc1RemarksData.map(r => [
             `${r.start_time ? r.start_time.slice(0,5) : ''} - ${r.end_time ? r.end_time.slice(0,5) : ''}`,
@@ -1422,17 +1578,17 @@
             r.remark
         ]);
 
-        let remarksStartY = doc.lastAutoTable.finalY + 40;
+        if (currentY > pageH - 200) { doc.addPage(); currentY = 50; }
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(22);
         doc.setTextColor(26, 34, 68);
-        doc.text('Faculty Remarks', 50, remarksStartY);
+        doc.text('Faculty Remarks & Extra Activities', 50, currentY);
 
         doc.autoTable({
             head: [['Time', 'Faculty Name', 'Remark / Activity Details']],
             body: remarksBody,
-            startY: remarksStartY + 20,
+            startY: currentY + 20,
             theme: 'grid',
             styles: { fontSize: 16, cellPadding: 12, valign: 'middle', lineColor: [180, 180, 180], lineWidth: 1 },
             headStyles: { fillColor: [240, 240, 245], textColor: [26, 34, 68], fontStyle: 'bold', fontSize: 18, halign: 'left' },
@@ -1441,6 +1597,7 @@
         });
       }
 
+      // Second Page: Faculty Lecture Taken Stats
       let ftAllotted = 0, ftTaken = 0, ftLate = 0, ftExtra = 0;
       let visAllotted = 0, visTaken = 0, visLate = 0, visExtra = 0;
       const ftBody = [], visBody = [];
