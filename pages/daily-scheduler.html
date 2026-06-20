@@ -19,7 +19,7 @@
     .btn-export:hover { background: var(--bg-hover); }
     .btn-export svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
 
-    /* --- FORTIFIED STATS & LEGEND CSS (Fixes the vertical stacking) --- */
+    /* Stats & Legend */
     .stat-chips { 
         display: flex !important; flex-direction: row !important; gap: 0.65rem !important; 
         flex-wrap: wrap !important; margin-bottom: 1.1rem !important; align-items: center !important;
@@ -97,7 +97,7 @@
     .grid-placeholder{padding:3.5rem;text-align:center;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:.75rem}
     .grid-placeholder svg{width:36px;height:36px;stroke:var(--border);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
     
-    /* --- NEW: Virtual Section UI (Matches Image) --- */
+    /* --- VIRTUAL SECTION UI --- */
     .virtual-section { 
         background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--accent); 
         padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: none; min-width: 700px;
@@ -261,7 +261,7 @@
         </div>
     </div>
 
-    <!-- Virtual Section (Matches Image Layout Exactly) -->
+    <!-- Virtual Section -->
     <div class="virtual-section" id="virtualSection">
         <div class="virtual-header">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
@@ -530,7 +530,6 @@ async function loadSchedule(){
       const r = row.room_id;
       if (!t) {
           if (!scheduleMap['null']) scheduleMap['null'] = {};
-          // Use row.id as mapping key to prevent virtual overwrite 
           scheduleMap['null'][row.id] = row;
       } else {
           if (!scheduleMap[t]) scheduleMap[t] = {};
@@ -542,7 +541,10 @@ async function loadSchedule(){
     renderVirtualGrid();
     updateStats();
 
-    ['statChips','legendRow','virtualSection'].forEach(id=>document.getElementById(id).style.display='flex');
+    // IMPORTANT LAYOUT FIX: Ensures Virtual Section doesn't get flexed out of proportion
+    ['statChips','legendRow'].forEach(id=>document.getElementById(id).style.display='flex');
+    document.getElementById('virtualSection').style.display='block';
+    
     document.getElementById('reloadBtn').style.display='inline-flex';
   }catch(e){toast(e.message,'error');gridEmpty('Failed to load.');}
 }
@@ -685,7 +687,7 @@ function renderVirtualGrid() {
         html += buildCellHtml(row, null, {id: virtualRoomId, room_code: 'VIRTUAL'}, true);
     });
 
-    html += buildCellHtml(null, null, {id: virtualRoomId, room_code: 'VIRTUAL'}, true); // The one Add button
+    html += buildCellHtml(null, null, {id: virtualRoomId, room_code: 'VIRTUAL'}, true); 
 
     container.innerHTML = html;
 
