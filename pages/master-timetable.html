@@ -53,9 +53,9 @@
     .cell-course{font-size:.65rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)}
     .cell-subject{font-size:.78rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; transition: color .25s;}
     .cell-faculty{font-size:.7rem;color:var(--text-muted)}
-    .cell-add{display:flex;align-items:center;justify-content:center;height:100%;color:var(--border);transition:color .15s}
+    .cell-add{display:flex;align-items:center;justify-content:center;height:100%;color:var(--border);transition:color .15s;font-size: 0.8rem; font-weight: 600;}
     .cell:hover .cell-add{color:var(--accent)}
-    .cell-add svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .cell-add svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round; margin-right: 4px;}
     
     /* Placeholder */
     .grid-placeholder{padding:4rem;text-align:center;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:1rem}
@@ -64,7 +64,7 @@
     /* --- NEW: Virtual Flexible Load Section --- */
     .virtual-section {
         background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--accent);
-        padding: 1.5rem; margin-bottom: 2rem; position: relative;
+        padding: 1.5rem; margin-bottom: 2rem;
     }
     .virtual-header {
         display: flex; justify-content: space-between; align-items: center; 
@@ -72,17 +72,23 @@
     }
     .virtual-header h3 { margin: 0; color: var(--accent); display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; }
     
+    /* Makes the virtual cells look like normal grid cells */
     .virtual-grid {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;
+        display: flex; flex-wrap: wrap; gap: 0.75rem;
     }
     
-    .virtual-card {
-        background: rgba(79, 106, 245, 0.04); border: 1px solid rgba(79, 106, 245, 0.2); 
-        border-radius: 8px; padding: 0.85rem; position: relative; cursor: pointer;
-        transition: all 0.2s; display: flex; flex-direction: column; gap: 0.3rem;
+    .virtual-cell {
+        width: 150px; min-height: 70px; padding: 0.5rem 0.6rem;
+        border: 1px solid var(--border); border-radius: 8px;
+        background: var(--bg-main); cursor: pointer;
+        display: flex; flex-direction: column; justify-content: center;
+        transition: all 0.2s; position: relative;
     }
-    .virtual-card:hover { background: rgba(79, 106, 245, 0.08); border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-    .virtual-card .badge { position: absolute; top: 0.5rem; right: 0.5rem; font-size: 0.55rem; background: var(--accent); color: white; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700; letter-spacing: 0.05em; }
+    .virtual-cell:hover { background: var(--bg-hover); border-color: var(--accent); }
+    .virtual-cell.filled { background: rgba(79, 106, 245, 0.06); border-left: 3px solid var(--accent); }
+    .virtual-cell.filled:hover { background: rgba(79, 106, 245, 0.12); }
+    .virtual-cell.empty { border: 1px dashed var(--border); align-items: center; text-align: center; color: var(--text-muted); }
+    .virtual-cell.empty:hover { border-color: var(--accent); color: var(--accent); background: rgba(79, 106, 245, 0.03); }
     
     #modal-context {
         background: var(--bg-main); padding: 0.75rem; border-radius: 8px; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; display: flex; justify-content: space-between; border: 1px solid var(--border);
@@ -147,21 +153,16 @@
       </div>
     </div>
 
-    <!-- Virtual / Flexible Load Section -->
     <div class="virtual-section" style="min-width: 700px;">
         <div class="virtual-header">
             <h3>
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                Virtual & Flexible Load
+                Virtual lecture
             </h3>
-            <button id="btn-add-virtual" class="btn btn-primary btn-sm" style="display:flex; align-items:center; gap:0.4rem; padding: 0.5rem 1rem; font-size: 0.85rem;">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Add Virtual Lecture
-            </button>
         </div>
         
         <div id="virtual-grid" class="virtual-grid">
-            <div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic; background: var(--bg-main); border-radius: 8px;">
+            <div style="width: 100%; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic;">
                 <span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading virtual load...
             </div>
         </div>
@@ -170,7 +171,6 @@
   </div>
 </main>
 
-<!-- Unified Modal -->
 <div class="modal-back" id="cellModal">
   <div class="modal">
     <div class="modal-header">
@@ -264,12 +264,11 @@
 
   async function loadGrid() {
     document.getElementById('gridContainer').innerHTML = '<div class="grid-placeholder grid-wrap"><div><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading physical grid…</div></div>';
-    document.getElementById('virtual-grid').innerHTML = '<div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic; background: var(--bg-main); border-radius: 8px;"><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading virtual load...</div>';
+    document.getElementById('virtual-grid').innerHTML = '<div style="width: 100%; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic;"><span class="spin" style="display:inline-block; border-color:var(--text-muted); border-top-color:transparent;"></span> Loading virtual load...</div>';
     
     try {
       const allRooms = await getActiveRooms();
       
-      // Filter out 'VIRTUAL' for the physical grid, keep track of virtualRoomId
       rooms = allRooms.filter(r => {
           if(r.room_code === 'VIRTUAL') {
               virtualRoomId = r.id;
@@ -281,7 +280,7 @@
       [courses, timeSlots, ttMap] = await Promise.all([
         getAllActiveCourses(),
         getTimeSlots(slotDayType(currentDayType)),
-        getMasterTimetable(currentDayType) // getMasterTimetable returns both physical and virtual (null slot) mapped correctly
+        getMasterTimetable(currentDayType) 
       ]);
 
       renderGrid();
@@ -290,7 +289,7 @@
     } catch(e) {
       toast(e.message, 'error');
       document.getElementById('gridContainer').innerHTML = '<div class="grid-placeholder grid-wrap"><div>Failed to load timetable.</div></div>';
-      document.getElementById('virtual-grid').innerHTML = '<div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--error); background: var(--bg-main); border-radius: 8px;">Failed to load virtual lectures.</div>';
+      document.getElementById('virtual-grid').innerHTML = '<div style="width: 100%; padding: 2rem; text-align: center; color: var(--error);">Failed to load virtual lectures.</div>';
     }
   }
 
@@ -327,7 +326,7 @@
             </div>`;
           } else {
             html += `<div class="cell" data-ts="${slot.id}" data-room="${room.id}">
-              <div class="cell-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+              <div class="cell-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add</div>
             </div>`;
           }
         }
@@ -347,42 +346,38 @@
       const container = document.getElementById('virtual-grid');
       
       if (!virtualRoomId) {
-          container.innerHTML = `<div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic; background: var(--bg-main); border-radius: 8px;">Virtual room not configured in database. Contact administrator.</div>`;
+          container.innerHTML = `<div style="width: 100%; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic;">Virtual room not configured in database. Contact administrator.</div>`;
           return;
       }
 
-      // Virtual lectures are stored under time_slot_id = null (which maps to string "null" in JS object keys depending on how it's built, but getMasterTimetable puts it in "virtual" key if you update it, or we can just extract it)
-      // Assuming getMasterTimetable puts null time slots into ttMap['null'] or similar. We will extract all entries where time_slot_id is missing.
-      
       const virtualEntries = ttMap['null'] ? Object.values(ttMap['null']) : [];
-
-      if(virtualEntries.length === 0) {
-          container.innerHTML = `<div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic; background: var(--bg-main); border-radius: 8px;">No virtual lectures scheduled for this day. Click 'Add Virtual Lecture' to assign one.</div>`;
-          return;
-      }
 
       let html = '';
       virtualEntries.forEach(entry => {
           html += `
-          <div class="virtual-card" data-entry="${entry.id}">
-              <span class="badge">VIRTUAL</span>
-              <div class="cell-course" style="font-size: 0.7rem;">${getCourseLabel(entry.course)}</div>
-              <div class="cell-subject" style="font-size: 0.85rem; margin-top: 2px;">${entry.subject?.subject_name ?? '—'}</div>
-              <div class="cell-faculty" style="margin-top: 4px;">${entry.faculty?.full_name ?? '—'}</div>
+          <div class="virtual-cell filled" data-entry="${entry.id}">
+              <div class="cell-course">${getCourseLabel(entry.course)}</div>
+              <div class="cell-subject">${entry.subject?.subject_name ?? '—'}</div>
+              <div class="cell-faculty">${entry.faculty?.full_name ?? '—'}</div>
           </div>`;
       });
 
+      // The new empty cell format
+      html += `
+      <div class="virtual-cell empty" id="btn-add-virtual">
+          <div class="cell-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add more Lecture</div>
+      </div>`;
+
       container.innerHTML = html;
 
-      document.querySelectorAll('.virtual-card').forEach(card => {
+      document.querySelectorAll('.virtual-cell.filled').forEach(card => {
           card.addEventListener('click', () => openModal(null, virtualRoomId, card.dataset.entry, true));
       });
-  }
 
-  document.getElementById('btn-add-virtual').addEventListener('click', () => {
-      if (!virtualRoomId) return toast('Virtual room not configured in database.', 'error');
-      openModal(null, virtualRoomId, null, true);
-  });
+      document.getElementById('btn-add-virtual').addEventListener('click', () => {
+          openModal(null, virtualRoomId, null, true);
+      });
+  }
 
   // ── Exports (PDF & Excel) ──────────────────────────────────────────────
 
@@ -461,7 +456,7 @@
     if (virtualEntries.length > 0) {
         let remarksStartY = doc.lastAutoTable.finalY + 40;
         doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(26, 34, 68);
-        doc.text('Virtual & Flexible Load', 80, remarksStartY);
+        doc.text('Virtual lecture', 80, remarksStartY);
 
         const vBody = virtualEntries.map(e => [getCourseLabel(e.course), e.subject?.subject_name||'-', e.faculty?.full_name||'-']);
         doc.autoTable({
@@ -521,7 +516,7 @@
     const virtualEntries = ttMap['null'] ? Object.values(ttMap['null']) : [];
     if(virtualEntries.length > 0) {
         wsData.push([]);
-        wsData.push(["Virtual & Flexible Load", "", ""]);
+        wsData.push(["Virtual lecture", "", ""]);
         wsData.push(["Course", "Subject", "Faculty"]);
         virtualEntries.forEach(e => {
             wsData.push([getCourseLabel(e.course), e.subject?.subject_name||'-', e.faculty?.full_name||'-']);
@@ -550,7 +545,7 @@
     document.getElementById('modal-ctx-day').textContent = currentDayType;
     
     if (isVirtual) {
-        document.getElementById('modal-ctx-location').textContent = `VIRTUAL | Flexible Load`;
+        document.getElementById('modal-ctx-location').textContent = `VIRTUAL LECTURE`;
     } else {
         const slot = timeSlots.find(s => s.id === timeSlotId);
         const room = rooms.find(r => r.id === roomId);
@@ -595,9 +590,8 @@
     });
 
     if (entryId) {
-      // Find existing entry from ttMap
       if (isVirtual) {
-          existingEntry = ttMap['null']?.[entryId]; // Requires masterTimetable.js to map it to entryId
+          existingEntry = ttMap['null']?.[entryId]; 
       } else {
           existingEntry = ttMap[timeSlotId]?.[roomId];
       }
@@ -633,7 +627,7 @@
 
     try {
       await upsertMasterEntry({
-        entryId:     existingEntry?.id || null, // Pass ID for virtual updates
+        entryId:     existingEntry?.id || null, 
         dayType:     currentDayType,
         timeSlotId:  modalTimeSlotId,
         roomId:      modalRoomId,
