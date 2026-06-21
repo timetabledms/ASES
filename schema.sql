@@ -1,6 +1,6 @@
 -- ============================================================
 -- ASES: Academic Schedule Management System
--- Comprehensive Database Schema
+-- Comprehensive Database Schema (Updated for Virtual Lectures)
 -- Target Database: PostgreSQL (Supabase)
 -- ============================================================
 
@@ -54,16 +54,17 @@ CREATE TABLE public.rooms (
     CONSTRAINT rooms_room_code_key UNIQUE (room_code)
 );
 
--- Academic Courses / Classes[cite: 5]
+-- Academic Courses / Classes
 CREATE TABLE public.courses (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     course_code TEXT NOT NULL,
-    year TEXT NOT NULL CHECK (year = ANY (ARRAY['FY'::text, 'SY'::text, 'TY'::text])),
-    program TEXT NOT NULL CHECK (program IN ('BAF', 'BFM', 'BMS', 'BBI', 'BCMS', 'BCMS RM', 'BMED', 'FMTO', 'BRM', 'BFT', 'BCFT')),
-    division TEXT CHECK ((division = ANY (ARRAY['A'::text, 'B'::text, 'C'::text])) OR division IS NULL),
+    year TEXT NOT NULL CHECK (year = ANY (ARRAY['FY'::text, 'SY'::text, 'TY'::text, 'Part-1'::text, 'Part-2'::text])),
+    program TEXT NOT NULL,
+    division TEXT,
     is_active BOOLEAN DEFAULT true,
     CONSTRAINT courses_pkey PRIMARY KEY (id),
-    CONSTRAINT courses_course_code_key UNIQUE (course_code)
+    CONSTRAINT courses_course_code_key UNIQUE (course_code),
+    CONSTRAINT courses_uniq_prog_div UNIQUE NULLS NOT DISTINCT (year, program, division)
 );
 
 -- Academic Subjects
@@ -76,7 +77,7 @@ CREATE TABLE public.subjects (
     CONSTRAINT subjects_subject_code_key UNIQUE (subject_code)
 );
 
--- Faculty Profiles[cite: 6]
+-- Faculty Profiles
 CREATE TABLE public.faculty (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     supabase_uid UUID,
@@ -108,7 +109,7 @@ CREATE TABLE public.course_subject_faculty (
     CONSTRAINT course_subject_faculty_uniq UNIQUE (course_id, subject_id, faculty_id)
 );
 
--- Universal Time Slots (Uniform across Weekday and Saturday structures)[cite: 3]
+-- Universal Time Slots (Uniform across Weekday and Saturday structures)
 CREATE TABLE public.time_slots (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     slot_label TEXT NOT NULL,
@@ -124,11 +125,11 @@ CREATE TABLE public.time_slots (
 
 -- 🗓️ STEP 4: Timetable and Scheduling Core Engine
 
--- Day-Wise Master Allocation Matrix[cite: 4]
+-- Day-Wise Master Allocation Matrix
 CREATE TABLE public.master_timetable (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     day_type TEXT NOT NULL CHECK (day_type IN ('monday','tuesday','wednesday','thursday','friday','saturday')),
-    time_slot_id UUID NOT NULL,
+    time_slot_id UUID, -- NULLABLE: Allows for slotless "Virtual/Flexible" lectures
     room_id UUID NOT NULL,
     csf_id UUID NOT NULL,
     course_id UUID NOT NULL,
@@ -141,9 +142,12 @@ CREATE TABLE public.master_timetable (
     CONSTRAINT master_timetable_csf_id_fkey FOREIGN KEY (csf_id) REFERENCES public.course_subject_faculty(id),
     CONSTRAINT master_timetable_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE,
     CONSTRAINT master_timetable_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.subjects(id) ON DELETE CASCADE,
-    CONSTRAINT master_timetable_faculty_id_fkey FOREIGN KEY (faculty_id) REFERENCES public.faculty(id) ON DELETE CASCADE,
-    CONSTRAINT master_timetable_slot_room_day_uniq UNIQUE (day_type, time_slot_id, room_id)
+    CONSTRAINT master_timetable_faculty_id_fkey FOREIGN KEY (faculty_id) REFERENCES public.faculty(id) ON DELETE CASCADE
 );
+
+-- PARTIAL UNIQUE INDEX: Protects physical rooms from double-booking, but allows infinite Virtual (null slot) lectures
+CREATE UNIQUE INDEX idx_master_unique_slot ON public.master_timetable (day_type, time_slot_id, room_id) WHERE time_slot_id IS NOT NULL;
+
 
 -- Faculty Absence Tracking System
 CREATE TABLE public.faculty_leaves (
@@ -166,7 +170,7 @@ CREATE TABLE public.daily_schedule (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     schedule_date DATE NOT NULL,
     master_entry_id UUID,
-    time_slot_id UUID NOT NULL,
+    time_slot_id UUID, -- NULLABLE: Allows for slotless "Virtual/Flexible" lectures
     room_id UUID NOT NULL,
     csf_id UUID,
     course_id UUID NOT NULL,
@@ -187,9 +191,12 @@ CREATE TABLE public.daily_schedule (
     CONSTRAINT daily_schedule_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.subjects(id) ON DELETE CASCADE,
     CONSTRAINT daily_schedule_assigned_faculty_id_fkey FOREIGN KEY (assigned_faculty_id) REFERENCES public.faculty(id) ON DELETE CASCADE,
     CONSTRAINT daily_schedule_original_faculty_id_fkey FOREIGN KEY (original_faculty_id) REFERENCES public.faculty(id) ON DELETE SET NULL,
-    CONSTRAINT daily_schedule_generated_by_fkey FOREIGN KEY (generated_by) REFERENCES public.admin_users(id) ON DELETE SET NULL,
-    CONSTRAINT daily_schedule_date_slot_room_uniq UNIQUE (schedule_date, time_slot_id, room_id)
+    CONSTRAINT daily_schedule_generated_by_fkey FOREIGN KEY (generated_by) REFERENCES public.admin_users(id) ON DELETE SET NULL
 );
+
+-- PARTIAL UNIQUE INDEX: Protects physical daily schedules from double-booking, but allows infinite Virtual (null slot) lectures
+CREATE UNIQUE INDEX idx_daily_unique_slot ON public.daily_schedule (schedule_date, time_slot_id, room_id) WHERE time_slot_id IS NOT NULL;
+
 
 -- Lecture Tracking & Compliance Auditing Log
 CREATE TABLE public.lecture_execution (
@@ -222,7 +229,7 @@ CREATE TABLE public.lecture_execution (
     CONSTRAINT lecture_execution_marked_by_fkey FOREIGN KEY (marked_by) REFERENCES public.admin_users(id) ON DELETE SET NULL
 );
 
--- Institutional Holidays Declaration Register[cite: 4]
+-- Institutional Holidays Declaration Register
 CREATE TABLE public.holidays (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     holiday_date DATE NOT NULL,
@@ -232,6 +239,19 @@ CREATE TABLE public.holidays (
     CONSTRAINT holidays_pkey PRIMARY KEY (id),
     CONSTRAINT holidays_holiday_date_key UNIQUE (holiday_date),
     CONSTRAINT holidays_declared_by_fkey FOREIGN KEY (declared_by) REFERENCES public.admin_users(id) ON DELETE SET NULL
+);
+
+-- Faculty Remarks Feature (Extra Duties / Meetings)
+CREATE TABLE IF NOT EXISTS public.faculty_remarks (
+    id UUID NOT NULL DEFAULT gen_random_uuid(),
+    date DATE NOT NULL,
+    start_time TIME WITHOUT TIME ZONE NOT NULL,
+    end_time TIME WITHOUT TIME ZONE NOT NULL,
+    faculty_id UUID NOT NULL,
+    remark TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    CONSTRAINT faculty_remarks_pkey PRIMARY KEY (id),
+    CONSTRAINT faculty_remarks_faculty_id_fkey FOREIGN KEY (faculty_id) REFERENCES public.faculty(id) ON DELETE CASCADE
 );
 
 
@@ -247,7 +267,8 @@ ALTER TABLE public.master_timetable ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.faculty_leaves ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.daily_schedule ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lecture_execution ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.holidays ENABLE ROW LEVEL SECURITY;[cite: 4]
+ALTER TABLE public.holidays ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.faculty_remarks ENABLE ROW LEVEL SECURITY;
 
 -- Base RLS Pass-Through Policies (Allow access to verified accounts, modify using is_admin() restriction)
 CREATE POLICY "Allow public read access for authenticated users" ON public.rooms FOR SELECT USING (auth.role() = 'authenticated');
@@ -277,35 +298,18 @@ CREATE POLICY "Allow full access for administrators" ON public.lecture_execution
 CREATE POLICY "Allow public read access for authenticated users" ON public.faculty_leaves FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow full access for administrators" ON public.faculty_leaves FOR ALL USING (public.is_admin());
 
-CREATE POLICY "Allow public read access for authenticated users" ON public.holidays FOR SELECT USING (auth.role() = 'authenticated');[cite: 4]
-CREATE POLICY "Allow full access for administrators" ON public.holidays FOR ALL USING (public.is_admin());[cite: 4]
+CREATE POLICY "Allow public read access for authenticated users" ON public.holidays FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow full access for administrators" ON public.holidays FOR ALL USING (public.is_admin());
 
+CREATE POLICY "Allow public read access for authenticated users" ON public.faculty_remarks FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow full access for administrators" ON public.faculty_remarks FOR ALL USING (public.is_admin());
 
 
 -- ==============================================================================
--- FACULTY REMARKS FEATURE
--- Tracks what extra activities faculty are doing during specific periods
+-- 🚀 DEFAULT SYSTEM DATA / SEED DATA
 -- ==============================================================================
 
--- Create the faculty_remarks table
-CREATE TABLE IF NOT EXISTS public.faculty_remarks (
-    id UUID NOT NULL DEFAULT gen_random_uuid(),
-    date DATE NOT NULL,
-    start_time TIME WITHOUT TIME ZONE NOT NULL,
-    end_time TIME WITHOUT TIME ZONE NOT NULL,
-    faculty_id UUID NOT NULL,
-    remark TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    CONSTRAINT faculty_remarks_pkey PRIMARY KEY (id),
-    CONSTRAINT faculty_remarks_faculty_id_fkey FOREIGN KEY (faculty_id) REFERENCES public.faculty(id) ON DELETE CASCADE
-);
-
--- Enable Row Level Security
-ALTER TABLE public.faculty_remarks ENABLE ROW LEVEL SECURITY;
-
--- Apply standard RLS policies
-CREATE POLICY "Allow public read access for authenticated users" 
-ON public.faculty_remarks FOR SELECT USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow full access for administrators" 
-ON public.faculty_remarks FOR ALL USING (public.is_admin());
+-- Ensure the VIRTUAL room automatically exists for slotless/flexible online lectures
+INSERT INTO public.rooms (room_code, capacity, is_active) 
+VALUES ('VIRTUAL', 1000, true) 
+ON CONFLICT (room_code) DO NOTHING;
