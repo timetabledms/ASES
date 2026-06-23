@@ -20,29 +20,22 @@
     .date-badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.75rem; background: rgba(79, 106, 245, 0.1); color: var(--accent); border-radius: 20px; font-size: 0.75rem; font-weight: 600; width: fit-content; }
     .date-badge svg { width: 14px; height: 14px; }
 
-    /* Date Picker Input (FIXED) */
+    /* Date Picker Input */
     .date-picker-wrapper { position: relative; display: flex; align-items: center; }
     .date-picker-input {
       background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
-      padding: 0.65rem 1rem 0.65rem 2.6rem !important; /* Forced padding to protect the icon space */
+      padding: 0.65rem 1rem 0.65rem 2.6rem !important;
       font-family: var(--ff-body); font-weight: 600;
       color: var(--text-primary); font-size: 0.9rem; cursor: pointer;
       box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: border-color 0.2s;
-      width: 150px !important; /* Slightly wider to prevent text squishing */
+      width: 150px !important;
       outline: none;
     }
     .date-picker-input:focus, .date-picker-input:hover { border-color: var(--accent); }
     .date-picker-icon { 
-      position: absolute; 
-      left: 0.85rem; 
-      top: 50%; 
-      transform: translateY(-50%); 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      color: var(--text-muted); 
-      pointer-events: none; 
-      z-index: 10; 
+      position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); 
+      display: flex; align-items: center; justify-content: center; 
+      color: var(--text-muted); pointer-events: none; z-index: 10; 
     }
     .date-picker-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -59,7 +52,7 @@
     .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
     .stat-card.blue::before { background: var(--accent); }
     .stat-card.green::before { background: var(--success); }
-    .stat-card.gray::before { background: #94a3b8; } /* Slate/Gray */
+    .stat-card.gray::before { background: #94a3b8; } 
     .stat-card.yellow::before { background: #eab308; }
     .stat-card.red::before { background: var(--error); }
     
@@ -318,7 +311,7 @@
       // --- CALCULATE PERFECT MATH ---
       const scheduled = schedCount || 0;
       
-      // FIX 1: Explicitly exclude 'not_marked' from the marked array[cite: 3]
+      // Explicitly exclude 'not_marked' from the marked array
       const actuallyMarked = executions ? executions.filter(e => e.faculty_status !== 'not_marked') : [];
       const marked = actuallyMarked.length;
       const notEngaged = actuallyMarked.filter(e => e.faculty_status === 'not_engaged').length;
@@ -380,10 +373,10 @@
     listEl.innerHTML = '<div class="list-empty"><span class="spin"></span> Loading...</div>';
 
     try {
-      // FIX 2: Added safe inner fetch logic that filters out not_marked[cite: 3]
+      // FIX: Fetch 'updated_at' instead of 'created_at' to match the schema
       const { data, error } = await supabase.from('lecture_execution')
         .select(`
-          marked_at, faculty_status,
+          updated_at, faculty_status,
           daily_schedule:daily_schedule_id(
             subject:subject_id(subject_name),
             faculty:assigned_faculty_id(full_name)
@@ -391,7 +384,7 @@
         `)
         .eq('schedule_date', dateStr)
         .neq('faculty_status', 'not_marked') // Ensures empty/virtual markers don't flood the list
-        .order('marked_at', { ascending: false })
+        .order('updated_at', { ascending: false })
         .limit(6);
 
       if (error) throw error;
@@ -406,7 +399,7 @@
         const facName = ds.faculty?.full_name || 'Unknown Faculty';
         const subName = ds.subject?.subject_name || 'Unknown Subject';
         const statusLbl = STATUS_LABELS[e.faculty_status] || 'Not Marked';
-        const rawDate = new Date(e.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+        const rawDate = new Date(e.updated_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
 
         return `
           <li class="list-item">
@@ -417,7 +410,7 @@
               </div>
               <div class="item-subtitle">${rawDate} &middot; ${statusLbl}</div>
             </div>
-            <div class="item-meta">${timeAgo(e.created_at)}</div>
+            <div class="item-meta">${timeAgo(e.updated_at)}</div>
           </li>
         `;
       }).join('');
