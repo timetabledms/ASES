@@ -1,61 +1,71 @@
-# ASES - College Schedule Management System
+# ASES — Academic Schedule Management System
 
-**ASES** is a comprehensive, institutional-grade academic schedule and timetable management system built for colleges. It streamlines the entire scheduling lifecycle—from static master timetables to dynamic daily scheduling, absent faculty replacement, lecture execution tracking, and automated reporting.
+ASES is a comprehensive, real-time scheduling and execution-tracking platform designed for educational institutions. It bridges the gap between static timetable planning (Master Timetable) and dynamic daily realities (Daily Scheduler, Faculty Absences, Replacements, and Execution Logging). 
 
-## 🌟 Key Features
+Built with a lightweight Vanilla JavaScript frontend and a robust **Supabase (PostgreSQL)** backend, ASES ensures absolute data integrity, responsive design, and seamless PDF/Excel reporting.
 
-The system operates with strict Role-Based Access Control (RBAC), dividing functionalities between **Admins** and **Faculty**.
+---
 
-### 👨‍💼 Admin Features
-* **Master Timetable Management:** Create and maintain fixed weekly schedules with dedicated day-wise tabs (Monday–Saturday).
-* **Dynamic Daily Scheduler:** Automatically generates the day's timetable from the master schedule.
-* **Smart Absentee Resolution:** Highlights slots where assigned faculty are on leave. Allows admins to instantly swap in available replacement faculty (filtered by Course/Subject mapping) without schedule conflicts.
-* **Lecture Execution Logging:** A one-click grid interface to track daily lecture compliance (`On Time`, `Late`, `Not Engaged`, `Not Marked`).
-* **Leave & Holiday Management:** Add faculty leaves (automatically reflected in the daily scheduler) and declare institutional holidays (automatically excluding those dates from generation and reporting).
-* **Comprehensive Reporting:** Generate custom reports including Daily Execution Summaries, Faculty Load tracking (Master Load vs. Actual Scheduled vs. Extra), Rescheduled Slots, and Leave Summaries.
-* **Export Capabilities:** Export any report to formatted Excel spreadsheets or professional PDFs (complete with College Header, Logo, and timestamps).
-* **User Management:** Create and manage Faculty (Full-Time/Visiting) and Admin accounts via Supabase Edge Functions.
+## 🌟 What's New in v2.0
+The system has recently been upgraded with major architectural improvements:
 
-### 👨‍🏫 Faculty Portal (View-Only)
-* **Today's Lectures:** A clean dashboard showing their specific schedule for the current day, along with execution status.
-* **Lecture History:** Searchable history of past lectures with PDF/Excel export options.
-* **Leave Tracking:** Read-only view of their approved leaves.
-* **Master Timetables:** Access to view their personal master timetable as well as the full college-wide master timetable.
+* **🌐 Virtual & Flexible Load:** Master and Daily timetables now natively support "Virtual Lectures." These are slotless, flexible assignments that map to a dedicated `VIRTUAL` room, dynamically expanding as you add more lectures.
+* **🛡️ Automated Audit Trail (Activity Logs):** A tamper-proof, database-level logging system. PostgreSQL triggers automatically intercept and log every `CREATE`, `UPDATE`, and `DELETE` action across the system, saving the previous and new JSON states. Viewable via the new *Activity Logs* UI.
+* **📝 Faculty Remarks & Extra Duties:** A dedicated interface in the Daily Scheduler to log non-lecture activities (e.g., Exam Duties, Meetings). Fully integrated into the Daily PDF and Excel reports.
+* **📖 Enhanced Course Management:** Added `Course Code` tracking and upgraded the UI with a clean, card-based modal design. 
 
-## 🛠 Tech Stack
+---
 
-* **Frontend:** HTML5, CSS3, Vanilla JavaScript (ES6+), Tailwind CSS (for rapid UI utility styling)
-* **Backend & Database:** [Supabase](https://supabase.com/) (PostgreSQL database, Row Level Security, and Authentication)
-* **Serverless Functions:** Supabase Edge Functions (Deno/TypeScript) for secure admin user creation.
-* **Libraries:**
-  * `Flatpickr` - For seamless date selection.
-  * `TomSelect` - For advanced dropdowns and search filtering.
-  * `jsPDF` & `jspdf-autotable` - For generating perfectly centered, institutional PDF reports.
-  * `SheetJS (XLSX)` - For Excel data exports.
+## 🛠️ Core Modules
 
-## 🗄️ Core Database Entities
+### 1. Master Timetable (`master-timetable.html`)
+The blueprint of your institution's week.
+* Assign Subjects and Faculty to specific Rooms and Time Slots.
+* **New:** Manage unlimited "Virtual Lectures" for flexible workloads.
+* Automatically enforces physical double-booking constraints while allowing infinite virtual assignments.
 
-* `profiles` / `admin_users` / `faculty`: User and role management.
-* `courses`, `subjects`, `rooms`: Academic infrastructure.
-* `course_subject_faculty (CSF)`: Maps which faculty are permitted to teach which subjects in which courses.
-* `master_timetable`: The static weekday-based institutional timetable.
-* `daily_schedule`: The dynamic, generated daily timeline (handles replacements/cancellations).
-* `lecture_execution`: The compliance tracker for daily schedule slots.
-* `faculty_leaves` & `holidays`: Availability tracking.
+### 2. Daily Scheduler (`daily-scheduler.html`)
+The operational reality of a specific day.
+* **One-Click Generation:** Import the Master Timetable for today, or start blank.
+* **Absence & Replacement Management:** Automatically flags absent faculty (via `faculty_leaves` integration) and allows you to dynamically assign replacement faculty. 
+* **Remarks Module:** Log custom events and administrative duties for specific faculty members.
 
-## 🚀 Setup & Installation
+### 3. Execution Log (`execution.html`)
+Real-time compliance and tracking.
+* Click any cell (Physical or Virtual) to cycle its status: `Not Marked` → `On Time` → `Late` → `Not Engaged`.
+* Automatically calculates daily statistics (Lectures Allotted vs. Taken vs. Late).
+* Generates the **RC1 Daily Execution Report**.
 
-### 1. Supabase Setup
-1. Create a new project on [Supabase](https://supabase.com/).
-2. Run the provided SQL migration scripts in your Supabase SQL Editor in the following order:
-   * `schema.sql` (Base database setup)
-   * `add_faculty_type.sql` (Adds Full-Time/Visiting constraint)
-   * `per_day_timetable_migration.sql` (Sets up Monday-Saturday timetable tabs)
-3. Note your **Project URL** and **anon/public API key**.
+### 4. Activity Logs (`activity-logs.html`)
+Security and compliance.
+* Filter system-wide events by Date and Action Type (`CREATE`, `UPDATE`, `DELETE`).
+* Click "View JSON" to see the exact data state before and after a user made a change.
 
-### 2. Edge Function Deployment
-To allow Admins to create new users safely:
-1. Install the Supabase CLI.
-2. Navigate to the functions directory and deploy the user creation function:
-```bash
-   supabase functions deploy admin-create-user
+---
+
+## 🏗️ Technology Stack
+
+**Frontend:**
+* HTML5 / CSS3 (Custom modular variables & responsive flex/grid layouts)
+* Vanilla JavaScript (ES6 Modules)
+* **Libraries:** * `jsPDF` & `jsPDF-AutoTable` (A0 High-Res PDF Generation)
+  * `SheetJS / xlsx` (Excel Exporting)
+  * `Flatpickr` (Date selection)
+  * `Tom Select` (Searchable dropdowns)
+
+**Backend (Supabase / PostgreSQL):**
+* **Auth:** Supabase Authentication (Role-based access control via `admin_users` table).
+* **Database:** PostgreSQL with highly relational schemas (Courses → Subjects → Faculty → CSF Mapping).
+* **Security:** Row Level Security (RLS) policies enforcing `is_admin()` checks.
+* **Automation:** PL/pgSQL Triggers handling background Audit Trail logging.
+
+---
+
+## 🗄️ Database Architecture Note (Virtual Lectures)
+To support Virtual Lectures without breaking strict SQL constraints, the `time_slot_id` column in `master_timetable` and `daily_schedule` is `NULLABLE`. 
+
+The system utilizes **Partial Unique Indexes** to ensure physical classrooms cannot be double-booked at the same time, while allowing infinite `NULL` time-slots for the virtual room:
+```sql
+CREATE UNIQUE INDEX idx_daily_unique_slot 
+ON public.daily_schedule (schedule_date, time_slot_id, room_id) 
+WHERE time_slot_id IS NOT NULL;
