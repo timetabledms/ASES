@@ -317,8 +317,12 @@
 
       // --- CALCULATE PERFECT MATH ---
       const scheduled = schedCount || 0;
-      const marked = executions ? executions.length : 0;
-      const notEngaged = executions ? executions.filter(e => e.faculty_status === 'not_engaged').length : 0;
+      
+      // FIX 1: Explicitly exclude 'not_marked' from the marked array[cite: 3]
+      const actuallyMarked = executions ? executions.filter(e => e.faculty_status !== 'not_marked') : [];
+      const marked = actuallyMarked.length;
+      const notEngaged = actuallyMarked.filter(e => e.faculty_status === 'not_engaged').length;
+      
       // Pending / Unmarked is simply Total Scheduled minus Total Marked. Ensure it doesn't drop below 0.
       const unmarked = Math.max(0, scheduled - marked); 
 
@@ -376,6 +380,7 @@
     listEl.innerHTML = '<div class="list-empty"><span class="spin"></span> Loading...</div>';
 
     try {
+      // FIX 2: Added safe inner fetch logic that filters out not_marked[cite: 3]
       const { data, error } = await supabase.from('lecture_execution')
         .select(`
           created_at, faculty_status,
@@ -385,6 +390,7 @@
           )
         `)
         .eq('schedule_date', dateStr)
+        .neq('faculty_status', 'not_marked') // Ensures empty/virtual markers don't flood the list
         .order('created_at', { ascending: false })
         .limit(6);
 
@@ -396,8 +402,9 @@
       }
 
       listEl.innerHTML = data.map(e => {
-        const facName = e.daily_schedule?.faculty?.full_name || 'Unknown';
-        const subName = e.daily_schedule?.subject?.subject_name || 'Unknown Subject';
+        const ds = e.daily_schedule || {};
+        const facName = ds.faculty?.full_name || 'Unknown Faculty';
+        const subName = ds.subject?.subject_name || 'Unknown Subject';
         const statusLbl = STATUS_LABELS[e.faculty_status] || 'Not Marked';
         const rawDate = new Date(e.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
 
@@ -416,6 +423,7 @@
       }).join('');
     } catch(e) {
       listEl.innerHTML = `<div class="list-empty">Error loading executions.</div>`;
+      console.error(e);
     }
   }
 
