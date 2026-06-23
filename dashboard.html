@@ -383,7 +383,7 @@
       // FIX 2: Added safe inner fetch logic that filters out not_marked[cite: 3]
       const { data, error } = await supabase.from('lecture_execution')
         .select(`
-          created_at, faculty_status,
+          marked_at, faculty_status,
           daily_schedule:daily_schedule_id(
             subject:subject_id(subject_name),
             faculty:assigned_faculty_id(full_name)
@@ -391,7 +391,7 @@
         `)
         .eq('schedule_date', dateStr)
         .neq('faculty_status', 'not_marked') // Ensures empty/virtual markers don't flood the list
-        .order('created_at', { ascending: false })
+        .order('marked_at', { ascending: false })
         .limit(6);
 
       if (error) throw error;
