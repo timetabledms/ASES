@@ -1,7 +1,8 @@
 -- ============================================================
 -- ASES: Academic Schedule Management System
--- Comprehensive Database Schema (Updated for Virtual Lectures)
+-- Comprehensive Database Schema (v2.0)
 -- Target Database: PostgreSQL (Supabase)
+-- Features: Dynamic Scheduling, Virtual Loads, Audit Trails
 -- ============================================================
 
 -- 🧪 STEP 1: Custom Enumerated Types
@@ -16,9 +17,14 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'leave_type_enum') THEN
         CREATE TYPE leave_type_enum AS ENUM ('casual', 'medical', 'earned', 'duty', 'half_day_morning', 'half_day_afternoon', 'compensatory', 'other');
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'action_type_enum') THEN
+        CREATE TYPE action_type_enum AS ENUM ('CREATE', 'UPDATE', 'DELETE', 'EXPORT', 'AUTH', 'SYSTEM_ACTION');
+    END IF;
 END $$;
 
--- 🛠️ STEP 2: Access Control Helper Functions
+-- 🛠️ STEP 2: Core Functions
+
+-- Access Control Helper
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean SECURITY DEFINER AS $$
 BEGIN
@@ -31,9 +37,36 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Automated Audit Trail Trigger Function
+CREATE OR REPLACE FUNCTION public.log_table_change()
+RETURNS TRIGGER AS $$
+DECLARE
+    user_id_val UUID;
+BEGIN
+    user_id_val := auth.uid(); 
+
+    IF (TG_OP = 'INSERT') THEN
+        INSERT INTO public.activity_logs (user_id, action_type, entity_type, entity_id, description, new_data)
+        VALUES (user_id_val, 'CREATE', TG_TABLE_NAME, NEW.id, 'Created new record in ' || TG_TABLE_NAME, row_to_json(NEW)::jsonb);
+        RETURN NEW;
+    ELSIF (TG_OP = 'UPDATE') THEN
+        IF row_to_json(OLD)::jsonb != row_to_json(NEW)::jsonb THEN
+            INSERT INTO public.activity_logs (user_id, action_type, entity_type, entity_id, description, old_data, new_data)
+            VALUES (user_id_val, 'UPDATE', TG_TABLE_NAME, NEW.id, 'Updated record in ' || TG_TABLE_NAME, row_to_json(OLD)::jsonb, row_to_json(NEW)::jsonb);
+        END IF;
+        RETURN NEW;
+    ELSIF (TG_OP = 'DELETE') THEN
+        INSERT INTO public.activity_logs (user_id, action_type, entity_type, entity_id, description, old_data)
+        VALUES (user_id_val, 'DELETE', TG_TABLE_NAME, OLD.id, 'Deleted record from ' || TG_TABLE_NAME, row_to_json(OLD)::jsonb);
+        RETURN OLD;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
 -- 🏢 STEP 3: Structural & Infrastructure Tables
 
--- Administrative Profiles Linked to Auth
 CREATE TABLE public.admin_users (
     id UUID NOT NULL,
     full_name TEXT NOT NULL,
@@ -44,7 +77,6 @@ CREATE TABLE public.admin_users (
     CONSTRAINT admin_users_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
 );
 
--- Academic Rooms / Classrooms
 CREATE TABLE public.rooms (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     room_code TEXT NOT NULL,
@@ -54,7 +86,6 @@ CREATE TABLE public.rooms (
     CONSTRAINT rooms_room_code_key UNIQUE (room_code)
 );
 
--- Academic Courses / Classes
 CREATE TABLE public.courses (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     course_code TEXT NOT NULL,
@@ -67,7 +98,6 @@ CREATE TABLE public.courses (
     CONSTRAINT courses_uniq_prog_div UNIQUE NULLS NOT DISTINCT (year, program, division)
 );
 
--- Academic Subjects
 CREATE TABLE public.subjects (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     subject_code TEXT NOT NULL,
@@ -77,7 +107,6 @@ CREATE TABLE public.subjects (
     CONSTRAINT subjects_subject_code_key UNIQUE (subject_code)
 );
 
--- Faculty Profiles
 CREATE TABLE public.faculty (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     supabase_uid UUID,
@@ -95,7 +124,6 @@ CREATE TABLE public.faculty (
     CONSTRAINT faculty_supabase_uid_fkey FOREIGN KEY (supabase_uid) REFERENCES auth.users(id) ON DELETE SET NULL
 );
 
--- Course-Subject-Faculty (CSF) Mapping Grid
 CREATE TABLE public.course_subject_faculty (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     course_id UUID NOT NULL,
@@ -109,7 +137,6 @@ CREATE TABLE public.course_subject_faculty (
     CONSTRAINT course_subject_faculty_uniq UNIQUE (course_id, subject_id, faculty_id)
 );
 
--- Universal Time Slots (Uniform across Weekday and Saturday structures)
 CREATE TABLE public.time_slots (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     slot_label TEXT NOT NULL,
@@ -123,13 +150,13 @@ CREATE TABLE public.time_slots (
     CONSTRAINT time_slots_pkey PRIMARY KEY (id)
 );
 
+
 -- 🗓️ STEP 4: Timetable and Scheduling Core Engine
 
--- Day-Wise Master Allocation Matrix
 CREATE TABLE public.master_timetable (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     day_type TEXT NOT NULL CHECK (day_type IN ('monday','tuesday','wednesday','thursday','friday','saturday')),
-    time_slot_id UUID, -- NULLABLE: Allows for slotless "Virtual/Flexible" lectures
+    time_slot_id UUID, -- NULLABLE for Virtual Load
     room_id UUID NOT NULL,
     csf_id UUID NOT NULL,
     course_id UUID NOT NULL,
@@ -144,12 +171,10 @@ CREATE TABLE public.master_timetable (
     CONSTRAINT master_timetable_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.subjects(id) ON DELETE CASCADE,
     CONSTRAINT master_timetable_faculty_id_fkey FOREIGN KEY (faculty_id) REFERENCES public.faculty(id) ON DELETE CASCADE
 );
-
--- PARTIAL UNIQUE INDEX: Protects physical rooms from double-booking, but allows infinite Virtual (null slot) lectures
+-- PARTIAL UNIQUE INDEX: Protects physical rooms, allows infinite Virtual (null slot) lectures
 CREATE UNIQUE INDEX idx_master_unique_slot ON public.master_timetable (day_type, time_slot_id, room_id) WHERE time_slot_id IS NOT NULL;
 
 
--- Faculty Absence Tracking System
 CREATE TABLE public.faculty_leaves (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     faculty_id UUID NOT NULL,
@@ -165,12 +190,11 @@ CREATE TABLE public.faculty_leaves (
     CONSTRAINT faculty_leaves_date_fac_uniq UNIQUE (faculty_id, leave_date)
 );
 
--- Dynamic Operational Live Day Schedules
 CREATE TABLE public.daily_schedule (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     schedule_date DATE NOT NULL,
     master_entry_id UUID,
-    time_slot_id UUID, -- NULLABLE: Allows for slotless "Virtual/Flexible" lectures
+    time_slot_id UUID, -- NULLABLE for Virtual Load
     room_id UUID NOT NULL,
     csf_id UUID,
     course_id UUID NOT NULL,
@@ -193,12 +217,10 @@ CREATE TABLE public.daily_schedule (
     CONSTRAINT daily_schedule_original_faculty_id_fkey FOREIGN KEY (original_faculty_id) REFERENCES public.faculty(id) ON DELETE SET NULL,
     CONSTRAINT daily_schedule_generated_by_fkey FOREIGN KEY (generated_by) REFERENCES public.admin_users(id) ON DELETE SET NULL
 );
-
--- PARTIAL UNIQUE INDEX: Protects physical daily schedules from double-booking, but allows infinite Virtual (null slot) lectures
+-- PARTIAL UNIQUE INDEX: Protects physical daily schedules, allows infinite Virtual (null slot) lectures
 CREATE UNIQUE INDEX idx_daily_unique_slot ON public.daily_schedule (schedule_date, time_slot_id, room_id) WHERE time_slot_id IS NOT NULL;
 
 
--- Lecture Tracking & Compliance Auditing Log
 CREATE TABLE public.lecture_execution (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     daily_schedule_id UUID NOT NULL,
@@ -229,7 +251,6 @@ CREATE TABLE public.lecture_execution (
     CONSTRAINT lecture_execution_marked_by_fkey FOREIGN KEY (marked_by) REFERENCES public.admin_users(id) ON DELETE SET NULL
 );
 
--- Institutional Holidays Declaration Register
 CREATE TABLE public.holidays (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     holiday_date DATE NOT NULL,
@@ -241,8 +262,7 @@ CREATE TABLE public.holidays (
     CONSTRAINT holidays_declared_by_fkey FOREIGN KEY (declared_by) REFERENCES public.admin_users(id) ON DELETE SET NULL
 );
 
--- Faculty Remarks Feature (Extra Duties / Meetings)
-CREATE TABLE IF NOT EXISTS public.faculty_remarks (
+CREATE TABLE public.faculty_remarks (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     date DATE NOT NULL,
     start_time TIME WITHOUT TIME ZONE NOT NULL,
@@ -252,6 +272,21 @@ CREATE TABLE IF NOT EXISTS public.faculty_remarks (
     created_at TIMESTAMPTZ DEFAULT now(),
     CONSTRAINT faculty_remarks_pkey PRIMARY KEY (id),
     CONSTRAINT faculty_remarks_faculty_id_fkey FOREIGN KEY (faculty_id) REFERENCES public.faculty(id) ON DELETE CASCADE
+);
+
+CREATE TABLE public.activity_logs (
+    id UUID NOT NULL DEFAULT gen_random_uuid(),
+    user_id UUID, 
+    action_type public.action_type_enum NOT NULL,
+    entity_type TEXT NOT NULL, 
+    entity_id UUID, 
+    description TEXT NOT NULL, 
+    old_data JSONB, 
+    new_data JSONB, 
+    ip_address TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    CONSTRAINT activity_logs_pkey PRIMARY KEY (id),
+    CONSTRAINT activity_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.admin_users(id) ON DELETE SET NULL
 );
 
 
@@ -269,8 +304,9 @@ ALTER TABLE public.daily_schedule ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lecture_execution ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.holidays ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.faculty_remarks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 
--- Base RLS Pass-Through Policies (Allow access to verified accounts, modify using is_admin() restriction)
+-- Base RLS Pass-Through Policies
 CREATE POLICY "Allow public read access for authenticated users" ON public.rooms FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow full access for administrators" ON public.rooms FOR ALL USING (public.is_admin());
 
@@ -303,6 +339,24 @@ CREATE POLICY "Allow full access for administrators" ON public.holidays FOR ALL 
 
 CREATE POLICY "Allow public read access for authenticated users" ON public.faculty_remarks FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow full access for administrators" ON public.faculty_remarks FOR ALL USING (public.is_admin());
+
+-- Append-Only Rules for Activity Logs
+CREATE POLICY "Admins can view activity logs" ON public.activity_logs FOR SELECT USING (public.is_admin());
+CREATE POLICY "Admins can insert activity logs" ON public.activity_logs FOR INSERT WITH CHECK (public.is_admin());
+
+
+-- ⚡ STEP 6: Apply Audit Triggers to Monitor Data Changes
+CREATE TRIGGER audit_rooms_changes AFTER INSERT OR UPDATE OR DELETE ON public.rooms FOR EACH ROW EXECUTE FUNCTION public.log_table_change();
+CREATE TRIGGER audit_courses_changes AFTER INSERT OR UPDATE OR DELETE ON public.courses FOR EACH ROW EXECUTE FUNCTION public.log_table_change();
+CREATE TRIGGER audit_subjects_changes AFTER INSERT OR UPDATE OR DELETE ON public.subjects FOR EACH ROW EXECUTE FUNCTION public.log_table_change();
+CREATE TRIGGER audit_faculty_changes AFTER INSERT OR UPDATE OR DELETE ON public.faculty FOR EACH ROW EXECUTE FUNCTION public.log_table_change();
+CREATE TRIGGER audit_csf_changes AFTER INSERT OR UPDATE OR DELETE ON public.course_subject_faculty FOR EACH ROW EXECUTE FUNCTION public.log_table_change();
+CREATE TRIGGER audit_master_timetable_changes AFTER INSERT OR UPDATE OR DELETE ON public.master_timetable FOR EACH ROW EXECUTE FUNCTION public.log_table_change();
+CREATE TRIGGER audit_daily_schedule_changes AFTER INSERT OR UPDATE OR DELETE ON public.daily_schedule FOR EACH ROW EXECUTE FUNCTION public.log_table_change();
+CREATE TRIGGER audit_lecture_execution_changes AFTER INSERT OR UPDATE OR DELETE ON public.lecture_execution FOR EACH ROW EXECUTE FUNCTION public.log_table_change();
+CREATE TRIGGER audit_faculty_leaves_changes AFTER INSERT OR UPDATE OR DELETE ON public.faculty_leaves FOR EACH ROW EXECUTE FUNCTION public.log_table_change();
+CREATE TRIGGER audit_holidays_changes AFTER INSERT OR UPDATE OR DELETE ON public.holidays FOR EACH ROW EXECUTE FUNCTION public.log_table_change();
+CREATE TRIGGER audit_faculty_remarks_changes AFTER INSERT OR UPDATE OR DELETE ON public.faculty_remarks FOR EACH ROW EXECUTE FUNCTION public.log_table_change();
 
 
 -- ==============================================================================
