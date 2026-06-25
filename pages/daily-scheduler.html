@@ -393,15 +393,24 @@ flatpickr('#datePicker',{dateFormat:'Y-m-d',defaultDate:new Date(),disableMobile
 async function autoLoadIfExists(date){
   const checkDate = date ?? selectedDate;
   const dayType=getDayType(checkDate);
+  
+  // ADD THESE 4 LINES: Clear previous state to prevent exporting stale data
+  timeSlots = [];
+  rooms = [];
+  scheduleMap = {};
+  remarksData = [];
+
   if(dayType==='sunday'){
     hideAllUI();
     gridEmpty('No schedule on Sundays.');return;
   }
+  
   const{data:hol}=await supabase.from('holidays').select('name').eq('holiday_date',checkDate).maybeSingle();
   if(hol){
     hideAllUI();
     gridEmpty(`🎉 Holiday: ${hol.name}. No schedule for this day.`);return;
   }
+  
   const{data}=await supabase.from('daily_schedule').select('id').eq('schedule_date',checkDate).limit(1);
   if(data&&data.length>0){
     document.getElementById('dangerBar').style.display='flex';
