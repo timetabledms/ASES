@@ -147,7 +147,7 @@
   import { preloadLogoForPDF } from '/js/utils/exportHelpers.js';
 
   const session = await requireRole('admin');
-  initSidebar(session, 'timetable');
+initSidebar(session, 'weekly-tt');
   preloadLogoForPDF();
   const generatedBy = session?.profile?.full_name ?? 'Admin';
 
