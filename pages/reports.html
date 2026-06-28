@@ -1826,9 +1826,17 @@
       const dailyData = (dailyDataAll ?? []).filter(r => !holidayDates.has(r.schedule_date));
 
       const ids = dailyData.map(r => r.id);
+    // Fetch execution data using the date range instead of passing thousands of IDs
       let execRows = [];
-      if (ids.length) {
-          const { data: ex } = await supabase.from('lecture_execution').select('daily_schedule_id, faculty_status').in('daily_schedule_id', ids);
+      if (dailyData.length > 0) {
+          const { data: ex, error: exErr } = await supabase
+              .from('lecture_execution')
+              .select('daily_schedule_id, faculty_status')
+              .gte('schedule_date', from)
+              .lte('schedule_date', to)
+              .limit(50000); // Override client-side limits
+          
+          if (exErr) throw exErr;
           execRows = ex ?? [];
       }
       const execMap = {};
