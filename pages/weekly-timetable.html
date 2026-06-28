@@ -387,8 +387,8 @@
       if (!currentViewData) return;
       const { jsPDF } = window.jspdf;
       
-      // Using A2 size for large layout fitting onto 1 page
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a2' });
+      // Using A1 size for extremely large layout fitting onto 1 page
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a1' });
       const pageW = doc.internal.pageSize.width;
       
       const filterType = currentViewData.filterType;
@@ -435,12 +435,12 @@
       });
 
       doc.autoTable({
-          head, body, startY: 230, theme: 'grid',
-          // Scaled up for A2
-          styles: { fontSize: 14, cellPadding: 12, valign: 'middle', halign: 'center', overflow: 'linebreak', lineColor: [0, 0, 0], lineWidth: 1, textColor: [0,0,0] },
-          headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 16, halign: 'center' },
-          columnStyles: { 0: { cellWidth: 120 } },
-          margin: { left: 60, right: 60, bottom: 60 },
+          head, body, startY: 300, theme: 'grid',
+          // Massively scaled up for A1
+          styles: { fontSize: 16, cellPadding: 16, valign: 'middle', halign: 'center', overflow: 'linebreak', lineColor: [0, 0, 0], lineWidth: 1.5, textColor: [0,0,0] },
+          headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 20, halign: 'center' },
+          columnStyles: { 0: { cellWidth: 160 } },
+          margin: { left: 80, right: 80, bottom: 80 },
           didParseCell: function(data) {
               if (data.section === 'body' && data.column.index > 0 && data.row.raw._dataRowIndex !== undefined) {
                   const idx = data.row.raw._dataRowIndex;
@@ -457,28 +457,28 @@
               }
           },
           didDrawPage(data) {
-              if(window._ASES_LOGO_DATA) try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 60, 40, 160, 160); } catch(e){}
+              if(window._ASES_LOGO_DATA) try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 80, 50, 200, 200); } catch(e){}
               const cx = pageW / 2;
-              doc.setFont('times', 'bold'); doc.setFontSize(36); doc.setTextColor(0, 0, 0);
-              doc.text('B. K. Birla College, Kalyan', cx, 80, { align: 'center' });
-              doc.setFont('times', 'normal'); doc.setFontSize(20);
-              doc.text('(Empowered Autonomous Status)', cx, 110, { align: 'center' });
-              doc.setFont('times', 'bolditalic'); doc.setFontSize(24);
-              doc.text('Department of Management Studies', cx, 140, { align: 'center' });
+              doc.setFont('times', 'bold'); doc.setFontSize(48); doc.setTextColor(0, 0, 0);
+              doc.text('B. K. Birla College, Kalyan', cx, 110, { align: 'center' });
+              doc.setFont('times', 'normal'); doc.setFontSize(28);
+              doc.text('(Empowered Autonomous Status)', cx, 150, { align: 'center' });
+              doc.setFont('times', 'bolditalic'); doc.setFontSize(32);
+              doc.text('Department of Management Studies', cx, 190, { align: 'center' });
               
-              doc.setFont('helvetica', 'bold'); doc.setFontSize(22);
-              doc.text(`Weekly Timetable — ${filterType.toUpperCase()}: ${entityName}`, cx, 190, { align: 'center' });
-              doc.setFont('helvetica', 'normal'); doc.setFontSize(14); doc.setTextColor(100);
-              doc.text(`Generated On: ${new Date().toLocaleString('en-IN')}`, 60, doc.internal.pageSize.height - 30);
+              doc.setFont('helvetica', 'bold'); doc.setFontSize(30);
+              doc.text(`Weekly Timetable — ${filterType.toUpperCase()}: ${entityName}`, cx, 260, { align: 'center' });
+              doc.setFont('helvetica', 'normal'); doc.setFontSize(18); doc.setTextColor(100);
+              doc.text(`Generated On: ${new Date().toLocaleString('en-IN')}`, 80, doc.internal.pageSize.height - 40);
           }
       });
 
       // Export Virtual Lectures
       if (currentVirtualData && currentVirtualData.length > 0) {
-          let currentY = doc.lastAutoTable.finalY + 40;
+          let currentY = doc.lastAutoTable.finalY + 50;
           
-          doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(0,0,0);
-          doc.text('Virtual / Flexible Load', 60, currentY);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(26); doc.setTextColor(0,0,0);
+          doc.text('Virtual / Flexible Load', 80, currentY);
 
           const col1Name = getVirtualCol1(filterType);
           const col2Name = getVirtualCol2(filterType);
@@ -493,11 +493,11 @@
           doc.autoTable({
               head: [['Day', 'Time', col1Name, 'Subject', col2Name]],
               body: vBody,
-              startY: currentY + 20,
+              startY: currentY + 30,
               theme: 'grid',
-              styles: { fontSize: 14, cellPadding: 12, valign: 'middle', lineColor: [0, 0, 0], lineWidth: 1 },
-              headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 16 },
-              margin: { left: 60, right: 60 }
+              styles: { fontSize: 18, cellPadding: 16, valign: 'middle', lineColor: [0, 0, 0], lineWidth: 1.5 },
+              headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 20 },
+              margin: { left: 80, right: 80 }
           });
       }
 
