@@ -137,6 +137,7 @@
     .opt-warns{display:flex;gap:.25rem;flex-shrink:0}
     .warn-tag{font-size:.6rem;font-weight:700;padding:.1rem .35rem;border-radius:3px;background:rgba(245,166,35,.15);color:var(--warn)}
     .absent-tag{background:rgba(224,92,107,.15)!important;color:var(--error)!important}
+    
     .cancel-area{margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--border)}
     
     @media(max-width:768px){.sidebar{display:none}.content{padding:1rem}.topbar{padding:1rem}.controls-bar{flex-direction:column;align-items:stretch}}
@@ -261,6 +262,22 @@
         </div>
         <div class="option-list" id="optionList"><div style="color:var(--text-muted);font-size:.83rem;text-align:center;padding:1rem"><span class="spin" style="display:inline-block"></span></div></div>
       </div>
+      
+      <!-- Virtual Time Section -->
+      <div id="virtualTimeSection" style="display:none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+        <div class="msec-title">Virtual Lecture Time</div>
+        <div style="display: flex; gap: 1rem;">
+          <div class="field" style="flex: 1;">
+            <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Start Time (Optional)</label>
+            <input type="time" id="virtualStartTime" style="width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); font-family: inherit;">
+          </div>
+          <div class="field" style="flex: 1;">
+            <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">End Time (Optional)</label>
+            <input type="time" id="virtualEndTime" style="width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); font-family: inherit;">
+          </div>
+        </div>
+      </div>
+      
       <div class="cancel-area" id="cancelSection" style="display:none">
         <div class="msec-title">Or cancel this slot</div>
         <input type="text" id="cancelReason" placeholder="Reason for cancellation (optional)"/>
@@ -394,7 +411,6 @@ async function autoLoadIfExists(date){
   const checkDate = date ?? selectedDate;
   const dayType=getDayType(checkDate);
   
-  // ADD THESE 4 LINES: Clear previous state to prevent exporting stale data
   timeSlots = [];
   rooms = [];
   scheduleMap = {};
@@ -484,7 +500,7 @@ async function generateOrLoad(force=false, mode='master'){
     
     if (mode === 'master') {
       const{data:master,error:me}=await supabase.from('master_timetable')
-        .select('id,time_slot_id,room_id,course_id,subject_id,csf_id,faculty_id')
+        .select('id,time_slot_id,room_id,course_id,subject_id,csf_id,faculty_id,virtual_start_time,virtual_end_time')
         .eq('day_type',dayType).eq('is_active',true);
       if(me)throw me;
       if(!master||!master.length){toast('No master timetable found for this day type.','warn');gridEmpty('No master timetable entries. Set up the Master Timetable first.');return;}
@@ -494,6 +510,7 @@ async function generateOrLoad(force=false, mode='master'){
           time_slot_id:r.time_slot_id,room_id:r.room_id,
           course_id:r.course_id,subject_id:r.subject_id,csf_id:r.csf_id,
           assigned_faculty_id:r.faculty_id,original_faculty_id:r.faculty_id,
+          virtual_start_time:r.virtual_start_time,virtual_end_time:r.virtual_end_time,
           is_rescheduled:false,is_cancelled:false,generated_by:session.user.id}))
       );
       if(ie)throw ie;
@@ -520,7 +537,7 @@ async function loadSchedule(){
       supabase.from('rooms').select('id,room_code').eq('is_active',true).order('room_code'),
       supabase.from('daily_schedule').select(`
         id,is_cancelled,cancel_reason,is_rescheduled,original_faculty_id,
-        time_slot_id,room_id,course_id,
+        time_slot_id,room_id,course_id,virtual_start_time,virtual_end_time,
         time_slot:time_slots (id,slot_label,start_time,end_time,slot_type,sort_order),
         room:rooms (id,room_code),
         course:courses (id,course_code,year,program,division),
@@ -608,6 +625,10 @@ function buildCellHtml(row, slot, room, isVirtual=false) {
         const origFId = row.original_faculty?.id;
         const currFId = row.assigned_faculty?.id;
         const isReplaced = row.is_rescheduled && origFId !== currFId;
+        
+        const timeDisplay = (row.virtual_start_time && row.virtual_end_time) 
+            ? `<div style="font-size:0.6rem; color:var(--text-muted); margin-bottom: 3px; font-weight:600;">${row.virtual_start_time.slice(0,5)} - ${row.virtual_end_time.slice(0,5)}</div>` 
+            : '';
 
         if (isReplaced) {
             const origSub = row.subject?.subject_name ?? '—';
@@ -616,6 +637,7 @@ function buildCellHtml(row, slot, room, isVirtual=false) {
             const newFac = row.assigned_faculty?.full_name ?? '—';
             return `
             <div class="virtual-cell filled s-resolved" data-id="${row.id}" data-course="${row.course_id??''}" data-state="resolved" ${base}>
+                ${timeDisplay}
                 <div class="lc-course">${courseName(row.course)}</div>
                 <div style="border-bottom: 1px dashed rgba(62,207,142,.4); padding-bottom: 3px; margin-bottom: 3px;">
                     <div class="lc-subject" style="font-size:.65rem; color:var(--error); text-decoration:line-through">${origSub}</div>
@@ -630,6 +652,7 @@ function buildCellHtml(row, slot, room, isVirtual=false) {
         const badge={absent:'<span class="lc-badge absent" style="position: absolute; top: 0.5rem; right: 0.5rem;">⚠ ABSENT</span>',warn:'<span class="lc-badge warn" style="position: absolute; top: 0.5rem; right: 0.5rem;">⚠ DOUBLE</span>',cancelled:'<span class="lc-badge cancelled" style="position: absolute; top: 0.5rem; right: 0.5rem;">CANCELLED</span>',normal:''}[state]??'';
         return `
         <div class="virtual-cell filled s-${state}" data-id="${row.id}" data-course="${row.course_id??''}" data-state="${state}" ${base}>
+            ${timeDisplay}
             <div class="lc-course">${courseName(row.course)}</div>
             <div class="lc-subject">${row.subject?.subject_name??'—'}</div>
             <div class="lc-faculty">Prof. ${row.original_faculty?.full_name??'—'}</div>
@@ -911,19 +934,20 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
       doc.text('Virtual lecture', 80, currentY);
 
       const vBody = virtualEntries.map(row => {
+          const vt = (row.virtual_start_time && row.virtual_end_time) ? `${row.virtual_start_time.slice(0,5)} - ${row.virtual_end_time.slice(0,5)}` : 'Flexible';
           const c = courseName(row.course);
-          if (row.is_cancelled) return [c, 'CANCELLED', row.cancel_reason||'-'];
+          if (row.is_cancelled) return [vt, c, 'CANCELLED', row.cancel_reason||'-'];
           const isReplaced = row.is_rescheduled && row.original_faculty?.id !== row.assigned_faculty?.id;
           if (isReplaced) {
-              return [c, `[${row.subject?.subject_name||''}] -> ${row.csf?.subject?.subject_name||''}`, `[${row.original_faculty?.full_name||''} Absent] -> ${row.assigned_faculty?.full_name||''}`];
+              return [vt, c, `[${row.subject?.subject_name||''}] -> ${row.csf?.subject?.subject_name||''}`, `[${row.original_faculty?.full_name||''} Absent] -> ${row.assigned_faculty?.full_name||''}`];
           }
           let f = row.original_faculty?.full_name || '';
           if(absentIds.has(row.original_faculty?.id)) f += ' (ABSENT)';
-          return [c, row.subject?.subject_name||'-', f];
+          return [vt, c, row.subject?.subject_name||'-', f];
       });
 
       doc.autoTable({
-          head: [['Course', 'Subject', 'Faculty']],
+          head: [['Time', 'Course', 'Subject', 'Faculty']],
           body: vBody,
           startY: currentY + 20,
           theme: 'grid',
@@ -1016,17 +1040,18 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
 
   const virtualEntries = scheduleMap['null'] ? Object.values(scheduleMap['null']) : [];
   if (virtualEntries.length > 0) {
-      wsData.push([]); wsData.push(["Virtual lecture", "", ""]); wsData.push(["Course", "Subject", "Faculty"]);
+      wsData.push([]); wsData.push(["Virtual lecture", "", "", ""]); wsData.push(["Time", "Course", "Subject", "Faculty"]);
       virtualEntries.forEach(row => {
+          const vt = (row.virtual_start_time && row.virtual_end_time) ? `${row.virtual_start_time.slice(0,5)} - ${row.virtual_end_time.slice(0,5)}` : 'Flexible';
           const c = courseName(row.course);
-          if (row.is_cancelled) { wsData.push([c, 'CANCELLED', row.cancel_reason||'-']); return; }
+          if (row.is_cancelled) { wsData.push([vt, c, 'CANCELLED', row.cancel_reason||'-']); return; }
           const isReplaced = row.is_rescheduled && row.original_faculty?.id !== row.assigned_faculty?.id;
           if (isReplaced) {
-              wsData.push([c, `[${row.subject?.subject_name||''}] -> ${row.csf?.subject?.subject_name||''}`, `[${row.original_faculty?.full_name||''} Absent] -> ${row.assigned_faculty?.full_name||''}`]);
+              wsData.push([vt, c, `[${row.subject?.subject_name||''}] -> ${row.csf?.subject?.subject_name||''}`, `[${row.original_faculty?.full_name||''} Absent] -> ${row.assigned_faculty?.full_name||''}`]);
           } else {
               let f = row.original_faculty?.full_name || '';
               if(absentIds.has(row.original_faculty?.id)) f += ' (ABSENT)';
-              wsData.push([c, row.subject?.subject_name||'-', f]);
+              wsData.push([vt, c, row.subject?.subject_name||'-', f]);
           }
       });
   }
@@ -1067,8 +1092,15 @@ async function openModal(cell){
 
   if(isVirtual) {
       document.getElementById('modalSub').textContent=`VIRTUAL LECTURE`;
+      document.getElementById('virtualTimeSection').style.display='block';
+      document.getElementById('virtualStartTime').value = row?.virtual_start_time || '';
+      document.getElementById('virtualEndTime').value = row?.virtual_end_time || '';
+      
+      // If it's an existing virtual row, show save button so they can just update the time!
+      if(row) document.getElementById('saveBtn').style.display='';
   } else {
       document.getElementById('modalSub').textContent=`${time}  ·  Room ${rcode}`;
+      document.getElementById('virtualTimeSection').style.display='none';
   }
 
   document.getElementById('saveBtn').style.display='none';
@@ -1101,7 +1133,10 @@ async function openModal(cell){
     document.getElementById('replSection').style.display='';
     document.getElementById('replTitle').textContent='Replace with';
     document.getElementById('cancelSection').style.display='';
+    
+    // Always show saveBtn for editing Virtual lectures
     document.getElementById('saveBtn').style.display='';
+    
     document.getElementById('leftActs').innerHTML=`
       <button class="btn btn-danger btn-sm" id="cancelSlotBtn">✕ Cancel Slot</button>
       <button class="btn btn-ghost btn-sm" id="deleteSlotBtn" style="color:var(--error);border-color:rgba(224,92,107,.3)">🗑 Delete Lecture</button>`;
@@ -1182,34 +1217,53 @@ async function fillOptions(courseId,tsId){
 }
 
 document.getElementById('saveBtn').addEventListener('click',async()=>{
-  if(!selectedOpt){toast('Please select a subject & faculty.','warn');return;}
+  const isVirtual = activeCell.tsId === null;
+
+  // Validation
+  if(!activeCell.scheduleId && !selectedOpt){toast('Please select a subject & faculty.','warn');return;}
+  if(activeCell.scheduleId && !isVirtual && !selectedOpt){toast('Please select a replacement subject & faculty.','warn');return;}
   if(!activeCell.courseId){toast('Please select a course.','warn');return;}
+  
+  const vStart = isVirtual ? (document.getElementById('virtualStartTime').value || null) : null;
+  const vEnd = isVirtual ? (document.getElementById('virtualEndTime').value || null) : null;
+
   const btn=document.getElementById('saveBtn');btn.disabled=true;
   try{
     if(activeCell.scheduleId){
       
-      const{error}=await supabase.from('daily_schedule').update({
-        csf_id:selectedOpt.csfId,
-        assigned_faculty_id:selectedOpt.facultyId,
-        is_rescheduled:true,
-        is_cancelled:false,
-        cancel_reason:null
-      }).eq('id',activeCell.scheduleId);
+      const payload = {
+          is_cancelled: false,
+          cancel_reason: null
+      };
+
+      if (selectedOpt) {
+          payload.csf_id = selectedOpt.csfId;
+          payload.assigned_faculty_id = selectedOpt.facultyId;
+          payload.is_rescheduled = true;
+      }
+      
+      if (isVirtual) {
+          payload.virtual_start_time = vStart;
+          payload.virtual_end_time = vEnd;
+      }
+
+      const{error}=await supabase.from('daily_schedule').update(payload).eq('id',activeCell.scheduleId);
       if(error)throw error;
 
-      const { error: execErr } = await supabase.from('lecture_execution')
-        .upsert({
-          daily_schedule_id: activeCell.scheduleId,
-          schedule_date: selectedDate,
-          faculty_status: 'not_marked',
-          actual_faculty_id: selectedOpt.facultyId,
-          replacement_faculty_id: selectedOpt.facultyId,
-          is_replaced: true,
-          marked_by: session.user.id,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'daily_schedule_id' });
-      
-      if (execErr) throw execErr;
+      if (selectedOpt) {
+          const { error: execErr } = await supabase.from('lecture_execution')
+            .upsert({
+              daily_schedule_id: activeCell.scheduleId,
+              schedule_date: selectedDate,
+              faculty_status: 'not_marked',
+              actual_faculty_id: selectedOpt.facultyId,
+              replacement_faculty_id: selectedOpt.facultyId,
+              is_replaced: true,
+              marked_by: session.user.id,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'daily_schedule_id' });
+          if (execErr) throw execErr;
+      }
 
     }else{
       const{error}=await supabase.from('daily_schedule').insert({
@@ -1221,6 +1275,8 @@ document.getElementById('saveBtn').addEventListener('click',async()=>{
         csf_id:selectedOpt.csfId,
         assigned_faculty_id:selectedOpt.facultyId,
         original_faculty_id:selectedOpt.facultyId,
+        virtual_start_time:vStart,
+        virtual_end_time:vEnd,
         is_rescheduled:false,
         is_cancelled:false,
         generated_by:session.user.id
