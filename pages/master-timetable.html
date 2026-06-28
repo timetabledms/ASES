@@ -198,6 +198,20 @@
       <div id="loadingCSF" style="display:none;font-size:.82rem;color:var(--text-muted);padding:.5rem 0">
         <span class="spin" style="display: inline-block;"></span> Loading options…
       </div>
+
+      <div id="virtualTimeContainer" style="display:none; margin-top: 1rem;">
+        <div style="display: flex; gap: 1rem;">
+          <div class="field" style="flex: 1;">
+            <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Virtual Start Time (Optional)</label>
+            <input type="time" id="virtualStartTime" style="width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); color: var(--text-primary); font-size: 0.85rem;">
+          </div>
+          <div class="field" style="flex: 1;">
+            <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Virtual End Time (Optional)</label>
+            <input type="time" id="virtualEndTime" style="width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); color: var(--text-primary); font-size: 0.85rem;">
+          </div>
+        </div>
+      </div>
+
     </div>
     <div class="modal-footer">
       <div>
@@ -354,8 +368,14 @@
 
       let html = '';
       virtualEntries.forEach(entry => {
+          // Format Virtual time if exists
+          const timeDisplay = (entry.virtual_start_time && entry.virtual_end_time) 
+            ? `<div style="font-size:0.6rem; color:var(--text-muted); margin-bottom: 3px; font-weight:600;">${entry.virtual_start_time.slice(0,5)} - ${entry.virtual_end_time.slice(0,5)}</div>` 
+            : '';
+
           html += `
           <div class="virtual-cell filled" data-entry="${entry.id}">
+              ${timeDisplay}
               <div class="cell-course">${getCourseLabel(entry.course)}</div>
               <div class="cell-subject">${entry.subject?.subject_name ?? '—'}</div>
               <div class="cell-faculty">${entry.faculty?.full_name ?? '—'}</div>
@@ -458,9 +478,13 @@
         doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(26, 34, 68);
         doc.text('Virtual lecture', 80, remarksStartY);
 
-        const vBody = virtualEntries.map(e => [getCourseLabel(e.course), e.subject?.subject_name||'-', e.faculty?.full_name||'-']);
+        const vBody = virtualEntries.map(e => {
+            const vt = (e.virtual_start_time && e.virtual_end_time) ? `${e.virtual_start_time.slice(0,5)} - ${e.virtual_end_time.slice(0,5)}` : 'Flexible';
+            return [vt, getCourseLabel(e.course), e.subject?.subject_name||'-', e.faculty?.full_name||'-'];
+        });
+
         doc.autoTable({
-            head: [['Course', 'Subject', 'Faculty']],
+            head: [['Time', 'Course', 'Subject', 'Faculty']],
             body: vBody,
             startY: remarksStartY + 20,
             theme: 'grid',
@@ -516,10 +540,11 @@
     const virtualEntries = ttMap['null'] ? Object.values(ttMap['null']) : [];
     if(virtualEntries.length > 0) {
         wsData.push([]);
-        wsData.push(["Virtual lecture", "", ""]);
-        wsData.push(["Course", "Subject", "Faculty"]);
+        wsData.push(["Virtual lecture", "", "", ""]);
+        wsData.push(["Time", "Course", "Subject", "Faculty"]);
         virtualEntries.forEach(e => {
-            wsData.push([getCourseLabel(e.course), e.subject?.subject_name||'-', e.faculty?.full_name||'-']);
+            const vt = (e.virtual_start_time && e.virtual_end_time) ? `${e.virtual_start_time.slice(0,5)} - ${e.virtual_end_time.slice(0,5)}` : 'Flexible';
+            wsData.push([vt, getCourseLabel(e.course), e.subject?.subject_name||'-', e.faculty?.full_name||'-']);
         });
     }
 
@@ -544,12 +569,18 @@
     document.getElementById('modalTitle').textContent = entryId ? 'Edit Lecture' : 'Assign Lecture';
     document.getElementById('modal-ctx-day').textContent = currentDayType;
     
+    // Toggle Virtual Time Fields visibility
+    const vtContainer = document.getElementById('virtualTimeContainer');
     if (isVirtual) {
         document.getElementById('modal-ctx-location').textContent = `VIRTUAL LECTURE`;
+        vtContainer.style.display = 'block';
+        document.getElementById('virtualStartTime').value = '';
+        document.getElementById('virtualEndTime').value = '';
     } else {
         const slot = timeSlots.find(s => s.id === timeSlotId);
         const room = rooms.find(r => r.id === roomId);
         document.getElementById('modal-ctx-location').textContent = `Room ${room?.room_code} | ${slot?.start_time?.slice(0,5)}–${slot?.end_time?.slice(0,5)}`;
+        vtContainer.style.display = 'none';
     }
 
     document.getElementById('clearCellBtn').style.display = entryId ? '' : 'none';
@@ -595,7 +626,13 @@
       } else {
           existingEntry = ttMap[timeSlotId]?.[roomId];
       }
-      if (existingEntry?.course_id) tsCourse.setValue(existingEntry.course_id, true);
+      if (existingEntry) {
+          if (existingEntry.course_id) tsCourse.setValue(existingEntry.course_id, true);
+          if (isVirtual) {
+              document.getElementById('virtualStartTime').value = existingEntry.virtual_start_time || '';
+              document.getElementById('virtualEndTime').value = existingEntry.virtual_end_time || '';
+          }
+      }
     }
 
     document.getElementById('cellModal').classList.add('open');
@@ -621,6 +658,10 @@
     const opt = csfOptions.find(o => o.csfId === csfId);
     if (!opt) return;
 
+    // Get new time values if virtual
+    const virtualStartTime = document.getElementById('virtualStartTime').value || null;
+    const virtualEndTime = document.getElementById('virtualEndTime').value || null;
+
     const btn = document.getElementById('modalSave');
     btn.disabled = true;
     btn.innerHTML = '<span class="spin"></span> Saving…';
@@ -635,6 +676,9 @@
         courseId,
         subjectId:   opt.subjectId,
         facultyId:   opt.facultyId,
+        // Pass these down to the DB update module function
+        virtual_start_time: isVirtualAssignment ? virtualStartTime : null,
+        virtual_end_time: isVirtualAssignment ? virtualEndTime : null
       });
       toast('Timetable assigned successfully.');
       closeModal();
