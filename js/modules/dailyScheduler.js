@@ -40,7 +40,7 @@ export async function generateDailySchedule(date, adminId) {
   const dayType = getDayType(date);
   const { data: masterRows, error: masterErr } = await supabase
     .from('master_timetable')
-    .select('id, time_slot_id, room_id, course_id, subject_id, csf_id, faculty_id')
+    .select('id, time_slot_id, room_id, course_id, subject_id, csf_id, faculty_id, virtual_start_time, virtual_end_time')
     .eq('day_type', dayType)
     .eq('is_active', true);
 
@@ -68,6 +68,8 @@ export async function generateDailySchedule(date, adminId) {
     csf_id:              row.csf_id,
     assigned_faculty_id: row.faculty_id,
     original_faculty_id: row.faculty_id,
+    virtual_start_time:  row.virtual_start_time,
+    virtual_end_time:    row.virtual_end_time,
     is_rescheduled:      false,
     is_cancelled:        false,
     generated_by:        adminId,
@@ -99,6 +101,8 @@ export async function loadDailySchedule(date) {
         is_cancelled,
         cancel_reason,
         original_faculty_id,
+        virtual_start_time,
+        virtual_end_time,
         time_slot:time_slots!time_slot_id (
           id, slot_label, start_time, end_time, slot_type, sort_order
         ),
