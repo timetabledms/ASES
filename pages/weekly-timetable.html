@@ -147,7 +147,7 @@
   import { preloadLogoForPDF } from '/js/utils/exportHelpers.js';
 
   const session = await requireRole('admin');
-  initSidebar(session, 'timetable'); // Keep them in the timetable section
+  initSidebar(session, 'timetable');
   preloadLogoForPDF();
   const generatedBy = session?.profile?.full_name ?? 'Admin';
 
@@ -186,8 +186,10 @@
 
           courses = (crsRes.data || []).map(c => ({ id: c.id, label: c.division ? `${c.year} ${c.program} ${c.division}` : `${c.year} ${c.program}` }));
           courses.sort((a,b) => a.label.localeCompare(b.label));
-          faculties = (facRes.data || []).map(f => ({ id: f.id, label: `Prof. ${f.full_name}` }));
-          rooms = (rmRes.data || []).filter(r => r.room_code !== 'VIRTUAL').map(r => ({ id: r.id, label: `Room ${r.room_code}` }));
+          
+          // REMOVED 'Prof.' and 'Room' prefixes from labels
+          faculties = (facRes.data || []).map(f => ({ id: f.id, label: f.full_name }));
+          rooms = (rmRes.data || []).filter(r => r.room_code !== 'VIRTUAL').map(r => ({ id: r.id, label: r.room_code }));
           
           timeSlots = tsRes.data || [];
           masterData = masterRes.data || [];
@@ -285,15 +287,16 @@
       if(!row) return null;
       let line1 = '', line2 = row.subject?.subject_name || '—', line3 = '';
       
+      // REMOVED 'Prof. ' and 'Room ' prefixes from the grid cell text outputs
       if (filterType === 'room') {
           line1 = getCourseName(row.course);
-          line3 = `Prof. ${row.faculty?.full_name || ''}`;
+          line3 = row.faculty?.full_name || '';
       } else if (filterType === 'faculty') {
           line1 = getCourseName(row.course);
-          line3 = `Room ${row.room?.room_code || ''}`;
+          line3 = row.room?.room_code || '';
       } else if (filterType === 'course') {
-          line1 = `Room ${row.room?.room_code || ''}`;
-          line3 = `Prof. ${row.faculty?.full_name || ''}`;
+          line1 = row.room?.room_code || '';
+          line3 = row.faculty?.full_name || '';
       }
       return { line1, line2, line3 };
   }
@@ -466,8 +469,12 @@
               doc.setFont('times', 'bolditalic'); doc.setFontSize(32);
               doc.text('Department of Management Studies', cx, 190, { align: 'center' });
               
+              // Clean Title Formatting
               doc.setFont('helvetica', 'bold'); doc.setFontSize(30);
-              doc.text(`Weekly Timetable — ${filterType.toUpperCase()}: ${entityName}`, cx, 260, { align: 'center' });
+              let titleStr = `Weekly Timetable — ${entityName}`;
+              if (filterType === 'room') titleStr = `Weekly Timetable — Room ${entityName}`;
+              
+              doc.text(titleStr, cx, 260, { align: 'center' });
               doc.setFont('helvetica', 'normal'); doc.setFontSize(18); doc.setTextColor(100);
               doc.text(`Generated On: ${new Date().toLocaleString('en-IN')}`, 80, doc.internal.pageSize.height - 40);
           }
@@ -501,7 +508,7 @@
           });
       }
 
-      doc.save(`Weekly_Timetable_${entityName}.pdf`);
+      doc.save(`Weekly_Timetable_${entityName.replace(/\s+/g, '_')}.pdf`);
   });
 
   // --- EXPORT EXCEL ---
@@ -511,7 +518,10 @@
       const entityName = tsSelect.options[currentViewData.entityId].label;
       const wsData = []; const merges = [];
       
-      wsData.push([`Weekly Timetable - ${filterType.toUpperCase()}: ${entityName}`]);
+      let titleStr = `Weekly Timetable — ${entityName}`;
+      if (filterType === 'room') titleStr = `Weekly Timetable — Room ${entityName}`;
+      
+      wsData.push([titleStr]);
       wsData.push([]);
       
       const headRow = ['Time', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -575,7 +585,7 @@
       ws['!cols'] = [{ wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Weekly TT");
-      XLSX.writeFile(wb, `Weekly_Timetable_${entityName}.xlsx`);
+      XLSX.writeFile(wb, `Weekly_Timetable_${entityName.replace(/\s+/g, '_')}.xlsx`);
   });
 
   loadBaseData();
