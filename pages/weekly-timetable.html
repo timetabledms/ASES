@@ -12,6 +12,11 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
   <style>
+    /* Prevent Tom Select from wrapping text to the next line */
+    .ts-wrapper.single .ts-control { display: flex !important; flex-wrap: nowrap !important; align-items: center; overflow: hidden !important; }
+    .ts-wrapper.single .ts-control .item { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; max-width: 95% !important; pointer-events: none; }
+    .ts-wrapper.single .ts-control input { min-width: 0 !important; }
+
     .controls-bar { display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; flex-wrap:wrap; background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:1.1rem 1.35rem; margin-bottom:1.25rem; transition:background .25s,border-color .25s; }
     .controls-group { display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap; }
     .btn-export { display: flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); font-size: 0.85rem; cursor: pointer; transition: background 0.2s; font-weight: 500; height: 38px;}
@@ -123,7 +128,7 @@
 
     <div class="virtual-section" id="virtualSection">
         <div class="virtual-header">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
             Virtual / Flexible Load
         </div>
         <div id="virtualGrid" class="v-grid"></div>
@@ -207,7 +212,11 @@
 
       typeSel.addEventListener('change', (e) => {
           const val = e.target.value;
+          
+          // Clear current selection completely
+          tsSelect.clear();
           tsSelect.clearOptions();
+          
           if (val === 'course') {
               label.textContent = 'Select Course';
               tsSelect.addOptions(courses);
@@ -244,7 +253,7 @@
       const virtualLoad = [];
 
       timeSlots.forEach(slot => {
-          if(slot.day_type === 'saturday') return; // We'll handle saturday slots separately if needed, but assuming uniform times for simplicity here based on generic layout
+          if(slot.day_type === 'saturday') return; 
           matrix[slot.id] = { slot, days: {} };
           daysOfWeek.forEach(d => matrix[slot.id].days[d] = null);
       });
@@ -288,6 +297,16 @@
       }
       return { line1, line2, line3 };
   }
+  
+  // Helpers to get correct column headers for exports based on the selected filter
+  function getVirtualCol1(filter) {
+      if (filter === 'course') return 'Room';
+      return 'Course';
+  }
+  function getVirtualCol2(filter) {
+      if (filter === 'faculty') return 'Room';
+      return 'Faculty';
+  }
 
   function renderGridHTML(matrix, filterType) {
       let html = `<div class="weekly-grid-wrap">
@@ -312,11 +331,8 @@
               html += `<div class="break-label">${lbl}</div>`;
           } else {
               daysOfWeek.forEach(day => {
-                  // Special check: If saturday, make sure we use saturday slot logic if they differ. 
-                  // Assuming they align for this view's simplicity. If a slot doesn't exist for saturday, leave empty.
                   let rowData = matrix[slot.id]?.days[day];
                   if (!rowData && day === 'saturday') {
-                      // Attempt to find a saturday slot with matching times
                       const satSlot = timeSlots.find(s => s.day_type === 'saturday' && s.start_time === slot.start_time);
                       if(satSlot && matrix[satSlot.id]) rowData = matrix[satSlot.id].days['saturday'];
                   }
@@ -370,7 +386,9 @@
   document.getElementById('exportPdfBtn').addEventListener('click', () => {
       if (!currentViewData) return;
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+      
+      // Using A2 size for large layout fitting onto 1 page
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a2' });
       const pageW = doc.internal.pageSize.width;
       
       const filterType = currentViewData.filterType;
@@ -380,7 +398,7 @@
       const body = [];
       const weekdaySlots = timeSlots.filter(s => s.day_type === 'weekday').sort((a,b) => a.sort_order - b.sort_order);
 
-      let dataRowIndex = 0; // Track actual lecture rows for coloring
+      let dataRowIndex = 0; 
 
       weekdaySlots.forEach(slot => {
           const timeLabel = slot.slot_type === 'lecture'
@@ -411,59 +429,59 @@
                   }
               });
               
-              // Attach custom meta property for coloring hook
               rowData._dataRowIndex = dataRowIndex++;
               body.push(rowData);
           }
       });
 
       doc.autoTable({
-          head, body, startY: 150, theme: 'grid',
-          styles: { fontSize: 9, cellPadding: 6, valign: 'middle', halign: 'center', overflow: 'linebreak', lineColor: [0, 0, 0], lineWidth: 0.5, textColor: [0,0,0] },
-          headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 10, halign: 'center' },
-          columnStyles: { 0: { cellWidth: 70 } },
-          margin: { left: 30, right: 30, bottom: 40 },
+          head, body, startY: 230, theme: 'grid',
+          // Scaled up for A2
+          styles: { fontSize: 14, cellPadding: 12, valign: 'middle', halign: 'center', overflow: 'linebreak', lineColor: [0, 0, 0], lineWidth: 1, textColor: [0,0,0] },
+          headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 16, halign: 'center' },
+          columnStyles: { 0: { cellWidth: 120 } },
+          margin: { left: 60, right: 60, bottom: 60 },
           didParseCell: function(data) {
-              // Row Color Coding Logic based on images
               if (data.section === 'body' && data.column.index > 0 && data.row.raw._dataRowIndex !== undefined) {
                   const idx = data.row.raw._dataRowIndex;
                   if (idx < 3) {
-                      data.cell.styles.fillColor = [252, 235, 240]; // Light Pink (Morning)
+                      data.cell.styles.fillColor = [252, 235, 240]; // Light Pink
                   } else if (idx < 5) {
-                      data.cell.styles.fillColor = [235, 245, 255]; // Light Blue (Mid-Day)
+                      data.cell.styles.fillColor = [235, 245, 255]; // Light Blue
                   } else {
-                      data.cell.styles.fillColor = [255, 243, 230]; // Light Peach (Afternoon)
+                      data.cell.styles.fillColor = [255, 243, 230]; // Light Peach
                   }
               }
-              // Gray out breaks
               if (data.section === 'body' && data.row.raw._dataRowIndex === undefined && data.column.index > 0) {
                   data.cell.styles.fillColor = [245, 245, 245];
               }
           },
           didDrawPage(data) {
-              if(window._ASES_LOGO_DATA) try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 30, 20, 110, 110); } catch(e){}
+              if(window._ASES_LOGO_DATA) try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 60, 40, 160, 160); } catch(e){}
               const cx = pageW / 2;
-              doc.setFont('times', 'bold'); doc.setFontSize(26); doc.setTextColor(0, 0, 0);
-              doc.text('B. K. Birla College, Kalyan', cx, 40, { align: 'center' });
-              doc.setFont('times', 'normal'); doc.setFontSize(14);
-              doc.text('(Empowered Autonomous Status)', cx, 60, { align: 'center' });
-              doc.setFont('times', 'bolditalic'); doc.setFontSize(16);
-              doc.text('Department of Management Studies', cx, 80, { align: 'center' });
+              doc.setFont('times', 'bold'); doc.setFontSize(36); doc.setTextColor(0, 0, 0);
+              doc.text('B. K. Birla College, Kalyan', cx, 80, { align: 'center' });
+              doc.setFont('times', 'normal'); doc.setFontSize(20);
+              doc.text('(Empowered Autonomous Status)', cx, 110, { align: 'center' });
+              doc.setFont('times', 'bolditalic'); doc.setFontSize(24);
+              doc.text('Department of Management Studies', cx, 140, { align: 'center' });
               
-              doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
-              doc.text(`Weekly Timetable — ${filterType.toUpperCase()}: ${entityName}`, cx, 115, { align: 'center' });
-              doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(100);
-              doc.text(`Generated On: ${new Date().toLocaleString('en-IN')}`, 30, doc.internal.pageSize.height - 20);
+              doc.setFont('helvetica', 'bold'); doc.setFontSize(22);
+              doc.text(`Weekly Timetable — ${filterType.toUpperCase()}: ${entityName}`, cx, 190, { align: 'center' });
+              doc.setFont('helvetica', 'normal'); doc.setFontSize(14); doc.setTextColor(100);
+              doc.text(`Generated On: ${new Date().toLocaleString('en-IN')}`, 60, doc.internal.pageSize.height - 30);
           }
       });
 
       // Export Virtual Lectures
       if (currentVirtualData && currentVirtualData.length > 0) {
-          let currentY = doc.lastAutoTable.finalY + 30;
-          if (currentY > doc.internal.pageSize.height - 100) { doc.addPage(); currentY = 50; }
+          let currentY = doc.lastAutoTable.finalY + 40;
           
-          doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(0,0,0);
-          doc.text('Virtual / Flexible Load', 30, currentY);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(0,0,0);
+          doc.text('Virtual / Flexible Load', 60, currentY);
+
+          const col1Name = getVirtualCol1(filterType);
+          const col2Name = getVirtualCol2(filterType);
 
           const vBody = currentVirtualData.map(row => {
               const text = formatCellText(row, filterType);
@@ -473,13 +491,13 @@
           });
 
           doc.autoTable({
-              head: [['Day', 'Time', 'Col 1', 'Subject', 'Col 2']],
+              head: [['Day', 'Time', col1Name, 'Subject', col2Name]],
               body: vBody,
-              startY: currentY + 15,
+              startY: currentY + 20,
               theme: 'grid',
-              styles: { fontSize: 9, cellPadding: 6, valign: 'middle', lineColor: [0, 0, 0], lineWidth: 0.5 },
-              headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-              margin: { left: 30, right: 30 }
+              styles: { fontSize: 14, cellPadding: 12, valign: 'middle', lineColor: [0, 0, 0], lineWidth: 1 },
+              headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 16 },
+              margin: { left: 60, right: 60 }
           });
       }
 
@@ -539,8 +557,11 @@
       });
 
       if (currentVirtualData && currentVirtualData.length > 0) {
+          const col1Name = getVirtualCol1(filterType);
+          const col2Name = getVirtualCol2(filterType);
+
           wsData.push([], ['Virtual / Flexible Load']);
-          wsData.push(['Day', 'Time', 'Col 1', 'Subject', 'Col 2']);
+          wsData.push(['Day', 'Time', col1Name, 'Subject', col2Name]);
           currentVirtualData.forEach(row => {
               const text = formatCellText(row, filterType);
               const dayCap = row.day_type.charAt(0).toUpperCase() + row.day_type.slice(1);
@@ -557,7 +578,6 @@
       XLSX.writeFile(wb, `Weekly_Timetable_${entityName}.xlsx`);
   });
 
-  // Run initial fetch
   loadBaseData();
 </script>
 </body>
