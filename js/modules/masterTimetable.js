@@ -38,6 +38,8 @@ export async function getMasterTimetable(dayType) {
       is_active,
       time_slot_id, 
       room_id,
+      virtual_start_time,
+      virtual_end_time,
       time_slot:time_slots (id, slot_label, start_time, end_time, slot_type, sort_order),
       room:rooms (id, room_code),
       course:courses (id, course_code, year, program, division),
@@ -75,16 +77,18 @@ export async function getMasterTimetable(dayType) {
 }
 
 // ── upsertMasterEntry ─────────────────────────────────────────────────────────
-export async function upsertMasterEntry({ entryId, dayType, timeSlotId, roomId, csfId, courseId, subjectId, facultyId }) {
+export async function upsertMasterEntry({ entryId, dayType, timeSlotId, roomId, csfId, courseId, subjectId, facultyId, virtual_start_time, virtual_end_time }) {
   const payload = {
-    day_type:     dayType,
-    time_slot_id: timeSlotId || null,
-    room_id:      roomId,
-    csf_id:       csfId,
-    course_id:    courseId,
-    subject_id:   subjectId,
-    faculty_id:   facultyId,
-    is_active:    true,
+    day_type:           dayType,
+    time_slot_id:       timeSlotId || null,
+    room_id:            roomId,
+    csf_id:             csfId,
+    course_id:          courseId,
+    subject_id:         subjectId,
+    faculty_id:         facultyId,
+    virtual_start_time: virtual_start_time || null, 
+    virtual_end_time:   virtual_end_time || null,
+    is_active:          true,
   };
 
   let result;
