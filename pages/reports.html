@@ -760,7 +760,7 @@
     } catch(e) { toast(e.message,'error'); emptyRow('r3Body',5,'Error.'); }
   });
   
-  document.getElementById('r3ExportPdf').addEventListener('click', () => {
+ document.getElementById('r3ExportPdf').addEventListener('click', () => {
     if (!r3Data.length) { toast('Run report first.', 'warn'); return; }
     if (!window.jspdf) { alert('PDF library not loaded.'); return; }
 
@@ -787,12 +787,13 @@
       headStyles: { fillColor: [26, 34, 68], textColor: 255, fontStyle: 'bold', halign: 'center' },
       columnStyles: {
           0: { cellWidth: 'auto', halign: 'left' },
-          1: { cellWidth: 70, halign: 'center' },
+          1: { cellWidth: 75, halign: 'center' },
           2: { cellWidth: 80, halign: 'center' },
-          3: { cellWidth: 160, halign: 'left' }, // Gives the reason plenty of room
-          4: { cellWidth: 60, halign: 'center' }
+          3: { cellWidth: 160, halign: 'left' },
+          4: { cellWidth: 80, halign: 'center' } // Increased to 80 so "APPROVED" stays on one line
       },
-      margin: { left: 40, right: 40, bottom: 40 },
+      // Added "top: 150" so Page 2 and beyond start below the custom header
+      margin: { top: 150, left: 40, right: 40, bottom: 40 }, 
       didDrawPage: function(data) {
         if(window._ASES_LOGO_DATA) try { doc.addImage(window._ASES_LOGO_DATA, 'PNG', 40, 30, 80, 80); } catch(e){}
         const cx = pageW / 2;
