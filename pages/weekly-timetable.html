@@ -255,7 +255,6 @@ initSidebar(session, 'weekly-tt');
       const virtualLoad = [];
 
       timeSlots.forEach(slot => {
-          if(slot.day_type === 'saturday') return; 
           matrix[slot.id] = { slot, days: {} };
           daysOfWeek.forEach(d => matrix[slot.id].days[d] = null);
       });
